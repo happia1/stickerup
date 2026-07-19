@@ -65,3 +65,14 @@ npm run dev
 `main` 브랜치에 푸시하면 Vercel에 자동 배포됩니다. Vercel 프로젝트 설정의 Environment Variables에도 위 Supabase 값을 동일하게 등록해야 합니다.
 
 ## 프로젝트 구조 (예정)
+
+stickerup/
+├─ app/                # Next.js 라우트 (학생 앱 / 관리자 앱)
+├─ components/         # 공통 UI 컴포넌트
+├─ lib/                # Supabase 클라이언트, 유틸
+├─ docs/               # PRD, IA, 디자인 가이드
+└─ supabase/           # 마이그레이션, RLS 정책
+
+## 라이선스
+
+미정 (Private)
