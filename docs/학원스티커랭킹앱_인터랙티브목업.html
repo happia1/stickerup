@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>학원 스티커 랭킹 앱 - 클릭형 목업 v1.1</title>
+<style>
+  :root{
+    --amber:#FF9F1C; --amber-dark:#C9741A; --gold:#F2B807; --silver:#9AA3AE; --bronze:#C0703C;
+    --bg:#F4F5F7; --card:#FFFFFF; --line:#E4E6EA; --ink:#20242B; --sub:#69707C; --muted:#9AA0AA;
+    --green:#2FAE66; --red:#E0483D; --blue:#3A7BF2;
+    --dark-bg:#1B1E24; --dark-card:#242832; --dark-line:#333844;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);}
+  .switch-bar{display:flex;justify-content:center;gap:8px;padding:16px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50;}
+  .switch-btn{padding:10px 22px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:14px;font-weight:600;cursor:pointer;color:var(--sub);}
+  .switch-btn.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .hint{text-align:center;font-size:12px;color:var(--muted);padding:6px 16px 0;}
+  .view{padding:28px 16px 60px;}
+
+  /* ---------- student phone frame ---------- */
+  .phone-wrap{display:flex;justify-content:center;}
+  .phone-frame{width:390px;background:#000;border-radius:44px;padding:14px;box-shadow:0 20px 50px rgba(0,0,0,.25);}
+  .phone-screen{position:relative;background:var(--bg);border-radius:32px;overflow:hidden;display:flex;flex-direction:column;height:800px;}
+  .phone-status{height:26px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#888;background:var(--bg);flex-shrink:0;}
+  .student-topbar{background:var(--card);padding:12px 18px;border-bottom:1px solid var(--line);flex-shrink:0;}
+  .student-topbar .row{display:flex;align-items:center;justify-content:space-between;}
+  .brand{font-weight:800;font-size:15px;letter-spacing:-.3px;}
+  .icon-btn{border:none;background:none;font-size:18px;cursor:pointer;padding:4px;line-height:1;position:relative;}
+  .phone-content{flex:1;overflow-y:auto;padding:16px;}
+  .phone-nav{display:flex;background:var(--card);border-top:1px solid var(--line);flex-shrink:0;}
+  .phone-nav button{flex:1;border:none;background:none;padding:10px 2px 8px;font-size:11px;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:inherit;}
+  .phone-nav button .ic{font-size:19px;}
+  .phone-nav button.active{color:var(--amber-dark);font-weight:700;}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;}
+  .card h3{margin:0 0 10px;font-size:14px;font-weight:700;}
+  .muted{color:var(--sub);font-size:12.5px;}
+  .big-num{font-size:28px;font-weight:800;color:var(--amber-dark);}
+  .pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;}
+  .pill.wait{background:#FFF0D6;color:#B9700A;}
+  .pill.ok{background:#E4F7EC;color:#1F8A50;}
+  .pill.cancel{background:#FBE7E6;color:#B4342B;}
+  .btn{display:inline-block;padding:11px 16px;border-radius:12px;border:none;background:var(--amber);color:#fff;font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit;text-align:center;}
+  .btn.secondary{background:#fff;border:1px solid var(--line);color:var(--ink);}
+  .btn.block{display:block;width:100%;margin-top:10px;}
+  .btn:disabled{background:#E7E9EC;color:var(--muted);cursor:not-allowed;}
+  select,input[type=text],input[type=date],input[type=number],textarea{width:100%;padding:9px 10px;border-radius:10px;border:1px solid var(--line);font-size:13px;font-family:inherit;background:#fff;color:var(--ink);}
+  textarea{resize:vertical;min-height:60px;}
+  label.f{display:block;font-size:12px;color:var(--sub);margin:10px 0 4px;font-weight:600;}
+  .radio-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;}
+  .radio-grid.c3{grid-template-columns:1fr 1fr 1fr;}
+  .radio-opt{border:1px solid var(--line);border-radius:10px;padding:9px 4px;font-size:12px;text-align:center;cursor:pointer;}
+  .radio-opt.sel{border-color:var(--amber);background:#FFF6E9;color:var(--amber-dark);font-weight:700;}
+  .tab-row{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;}
+  .tab-chip{padding:7px 13px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:12px;white-space:nowrap;cursor:pointer;color:var(--sub);}
+  .tab-chip.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .rank-row{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--line);}
+  .rank-row:last-child{border-bottom:none;}
+  .rank-row.me{background:#FFF6E9;border-radius:10px;padding:9px 8px;}
+  .medal{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0;}
+  .medal.gold{background:var(--gold);}
+  .medal.silver{background:var(--silver);}
+  .medal.bronze{background:var(--bronze);}
+  .medal.none{background:#E4E6EA;color:var(--sub);}
+  .rank-name{flex:1;font-size:13px;font-weight:600;}
+  .rank-sub{font-size:11px;color:var(--muted);}
+  .rank-count{font-weight:800;font-size:13.5px;}
+  .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 20px;border-radius:12px;font-size:13px;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,.3);}
+  .reward-card{min-width:140px;max-width:140px;border:1px solid var(--line);border-radius:12px;padding:10px;flex-shrink:0;}
+  .reward-emoji{font-size:24px;text-align:center;}
+  .dday{background:var(--ink);color:#fff;font-size:11px;font-weight:800;padding:3px 8px;border-radius:8px;flex-shrink:0;}
+  .field-row{display:flex;gap:8px;}
+  .field-row > div{flex:1;}
+  hr.sep{border:none;border-top:1px solid var(--line);margin:14px 0;}
+
+  /* flap banner */
+  .flap-banner{background:var(--ink);color:#fff;border-radius:14px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:8px;cursor:pointer;}
+  .flap-badge{background:var(--amber);color:#fff;font-size:10px;font-weight:800;padding:3px 7px;border-radius:6px;flex-shrink:0;}
+  .flap-text-wrap{flex:1;overflow:hidden;height:16px;perspective:300px;}
+  #flapBannerText{font-size:12.5px;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transform-origin:top;}
+  @keyframes flapIn{0%{transform:rotateX(80deg);opacity:0;}100%{transform:rotateX(0deg);opacity:1;}}
+  .flap-anim{animation:flapIn .45s ease;}
+  .flap-arrow{opacity:.7;font-size:13px;flex-shrink:0;}
+
+  /* accordion */
+  .acc-header{display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:2px 0;font-size:12.5px;font-weight:700;color:var(--sub);}
+  .acc-header .car{transition:transform .2s;font-size:11px;}
+  .acc-header.open .car{transform:rotate(180deg);}
+  .acc-body{margin-top:8px;}
+
+  /* modal */
+  .phone-modal-overlay{position:absolute;inset:0;background:rgba(20,22,26,.5);display:none;align-items:flex-end;z-index:80;}
+  .phone-modal-card{background:var(--bg);width:100%;max-height:85%;overflow-y:auto;border-radius:22px 22px 0 0;padding:18px 16px 24px;position:relative;}
+  .modal-close{position:absolute;top:10px;right:12px;background:#EFF0F2;border:none;width:28px;height:28px;border-radius:50%;font-size:14px;cursor:pointer;color:var(--sub);}
+  .modal-title{font-size:15px;font-weight:800;margin:0 0 12px;padding-right:24px;}
+
+  /* ---------- admin ---------- */
+  .admin-shell{display:flex;max-width:1180px;margin:0 auto;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--card);min-height:760px;}
+  .admin-sidebar{width:210px;background:var(--dark-bg);color:#d9dce2;flex-shrink:0;padding:18px 10px;}
+  .admin-sidebar .logo{font-weight:800;color:#fff;font-size:14px;padding:6px 10px 18px;}
+  .admin-nav-item{padding:10px 12px;border-radius:10px;font-size:13px;cursor:pointer;margin-bottom:2px;color:#b7bcc7;}
+  .admin-nav-item.active{background:var(--dark-card);color:#fff;font-weight:700;}
+  .admin-main{flex:1;padding:26px 30px;overflow-x:auto;}
+  .admin-main h2{margin:0 0 4px;font-size:19px;}
+  .admin-main .sub-desc{color:var(--sub);font-size:13px;margin:0 0 20px;}
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px;}
+  .kpi{background:#F7F8FA;border-radius:14px;padding:16px;}
+  .kpi .l{font-size:12px;color:var(--sub);margin-bottom:6px;}
+  .kpi .n{font-size:24px;font-weight:800;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;color:var(--sub);font-weight:600;font-size:12px;padding:8px 10px;border-bottom:1px solid var(--line);}
+  td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  .table-wrap{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:20px;}
+  .btn-sm{padding:6px 11px;font-size:12px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-family:inherit;}
+  .btn-sm.primary{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .btn-sm.danger{background:#fff;color:var(--red);border-color:#F3C6C3;}
+  .btn-sm.green{background:#fff;color:var(--green);border-color:#BEE7CE;}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+  .form-block{background:#F7F8FA;border-radius:14px;padding:16px 18px;margin-bottom:18px;}
+  .form-block h4{margin:0 0 12px;font-size:13.5px;}
+  .chip-tag{display:inline-block;background:#EEF1F5;border-radius:8px;padding:3px 9px;font-size:11.5px;margin:2px 3px 0 0;color:var(--sub);}
+  .section-title{font-size:14px;font-weight:700;margin:22px 0 10px;}
+</style>
+</head>
+<body>
+
+<div class="switch-bar">
+  <button class="switch-btn active" onclick="switchMode('student')">🎓 학생 앱 미리보기</button>
+  <button class="switch-btn" onclick="switchMode('admin')">🛠 관리자 앱 미리보기</button>
+</div>
+<div class="hint">모든 데이터는 데모용 목업 데이터입니다. 버튼을 눌러 실제 동작 흐름을 확인해보세요. (오늘 날짜 데모 기준: 2026-07-19)</div>
+
+<div id="student-view" class="view">
+  <div class="phone-wrap">
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="phone-status">9:41</div>
+        <div class="student-topbar">
+          <div class="row">
+            <div class="brand">🏅 StickerUp</div>
+            <div style="display:flex;gap:12px;align-items:center;">
+              <button class="icon-btn" aria-label="알림" onclick="openModal(()=>notifPanelHTML(studentById(state.currentStudentId)))">🔔</button>
+              <button class="icon-btn" aria-label="설정" onclick="openModal(()=>settingsPanelHTML(studentById(state.currentStudentId)))">⚙️</button>
+            </div>
+          </div>
+        </div>
+        <div class="phone-content" id="student-content"></div>
+        <div class="phone-nav" id="student-nav"></div>
+        <div class="phone-modal-overlay" id="phoneModal">
+          <div class="phone-modal-card">
+            <button class="modal-close" onclick="closeModal()">✕</button>
+            <div id="phoneModalBody"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="admin-view" class="view" style="display:none">
+  <div class="admin-shell">
+    <div class="admin-sidebar" id="admin-sidebar">
+      <div class="logo">🛠 StickerUp Admin</div>
+    </div>
+    <div class="admin-main" id="admin-content"></div>
+  </div>
+</div>
+
+<script>
+/* ===================== mock data & state ===================== */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const rng = mulberry32(42);
+
+const NOW = new Date('2026-07-19T10:00:00');
+const fmt = d => d.toISOString().slice(0,10);
+const CLASS_LIST = ['기본','대수','수2','미적','수능'];
+
+const classConfig = {
+  '기본': {attendTime:'15:00', tiers:[{label:'정시 이전',count:5},{label:'10분 이내',count:4},{label:'30분 이내',count:2},{label:'30분 초과',count:1}], special:null},
+  '대수': {attendTime:'19:00', tiers:[{label:'정시 이전',count:5},{label:'10분 이내',count:3},{label:'30분 이내',count:2},{label:'30분 초과',count:1}], special:{start:'2026-07-01',end:'2026-08-31'}},
+  '수2': {attendTime:'20:00', tiers:[{label:'정시 이전',count:5},{label:'10분 이내',count:4},{label:'30분 이내',count:2},{label:'30분 초과',count:1}], special:{start:'2026-07-01',end:'2026-08-31'}},
+  '미적': {attendTime:'20:30', tiers:[{label:'정시 이전',count:5},{label:'10분 이내',count:4},{label:'30분 이내',count:1},{label:'30분 초과',count:1}], special:{start:'2026-06-15',end:'2026-07-31'}},
+  '수능': {attendTime:'09:00', tiers:[{label:'정시 이전',count:5},{label:'10분 이내',count:4},{label:'30분 이내',count:2},{label:'30분 초과',count:1}], special:{start:'2026-07-01',end:'2026-09-30'}},
+};
+const homeworkTiers = [{rate:100,label:'완료',count:5},{rate:50,label:'절반 완료',count:3},{rate:0,label:'미완료',count:0}];
+
+const students = [
+  {id:'s1', name:'김민준', classes:['기본','대수']},
+  {id:'s2', name:'이서연', classes:['기본','대수','수2']},
+  {id:'s3', name:'박도윤', classes:['기본','수2']},
+  {id:'s4', name:'최지우', classes:['기본','미적']},
+  {id:'s5', name:'정하은', classes:['기본','미적','수능']},
+  {id:'s6', name:'강주원', classes:['기본','수능']},
+  {id:'s7', name:'조은우', classes:['기본']},
+  {id:'s8', name:'윤시우', classes:['기본','대수','미적']},
+];
+
+let state = {
+  currentStudentId: 's1',
+  ledger: [],
+  pendingRequests: [],
+  medalPct: {gold:0.1, silver:0.2, bronze:0.3},
+  rankExposure: {start:'2026-07-01', end:'2026-07-19'},
+  campaigns: [
+    {id:'c1', name:'7월 랭킹 보상 이벤트', scope:'전체', start:'2026-07-15', end:'2026-07-25',
+     rankPeriod:{start:'2026-07-01', end:'2026-07-19'}, eligibleRatio:0.5,
+     items:[
+       {id:'i1', title:'스타벅스 아메리카노 기프티콘', emoji:'☕', link:'https://example.com/gift1', qty:3, claims:[]},
+       {id:'i2', title:'문화상품권 1만원', emoji:'🎟️', link:'https://example.com/gift2', qty:5, claims:[]},
+       {id:'i3', title:'베스트셀러 수학 문제집', emoji:'📘', link:'https://example.com/gift3', qty:2, claims:[]},
+     ]},
+    {id:'c2', name:'8월 전체 학생 감사 선물', scope:'전체', start:'2026-08-01', end:'2026-08-10',
+     rankPeriod:{start:'2026-07-20', end:'2026-08-01'}, eligibleRatio:1.0,
+     items:[{id:'i4', title:'전원 간식 쿠폰', emoji:'🍪', link:'https://example.com/gift4', qty:8, claims:[]}]},
+  ],
+  notices:[
+    {id:'n1', title:'📢 7월 정기고사 대비 특강 안내', content:'7/22(월)부터 정기고사 대비 특강이 진행됩니다. 시간표는 반별 공지를 참고해주세요.', pinned:true, createdAt:'2026-07-18T09:00:00'},
+    {id:'n2', title:'🎉 7월 랭킹 보상 이벤트 진행중!', content:'7/25까지 랭킹 상위 50% 학생에게 푸짐한 상품을 드려요. 홈 화면 상품 블록에서 확인하세요.', pinned:true, createdAt:'2026-07-15T09:00:00'},
+    {id:'n3', title:'🕐 이번 주 목요일 휴원 안내', content:'시설 점검으로 7/23(목)은 휴원합니다. 숙제는 온라인으로 제출해주세요.', pinned:false, createdAt:'2026-07-17T09:00:00'},
+  ],
+  logFilter:{studentId:'all', type:'all', status:'all'},
+};
+
+let studentNav = 'home';
+let stickerSubTab = 'attend';
+let uiOpen = {attendCriteria:false, praiseHistory:false, myHistory:false};
+let bannerIndex = 0;
+let bannerTimer = null;
+let modalRenderFn = null;
+let adminNav = 'dashboard';
+let rankScope = '전체';
+let rankPeriodMode = 'exposure';
+let rankCustom = {start:'2026-07-01', end:'2026-07-19'};
+let hwSelectedRate = 100;
+let attendDemoScenario = 'ontime';
+
+/* ---------- seed ledger data ---------- */
+(function seed(){
+  let idc = 1;
+  const days = [];
+  for(let d=1; d<=18; d++){ days.push('2026-07-'+String(d).padStart(2,'0')); }
+  students.forEach(st=>{
+    st.classes.forEach(cls=>{
+      days.forEach(day=>{
+        if(rng() < 0.85){
+          const r = rng();
+          let tierIdx = r<0.55?0:(r<0.75?1:(r<0.9?2:3));
+          const count = classConfig[cls].tiers[tierIdx].count;
+          state.ledger.push({id:'L'+(idc++), studentId:st.id, classId:cls, type:'attendance', count, date:day+'T'+classConfig[cls].attendTime+':00', note:classConfig[cls].tiers[tierIdx].label+' 출석', status:'active', actor:'system'});
+        } else {
+          state.ledger.push({id:'L'+(idc++), studentId:st.id, classId:cls, type:'attendance', count:0, date:day+'T23:59:00', note:'결석', status:'active', actor:'system'});
+        }
+        if(rng() < 0.8){
+          const r2 = rng();
+          const tier = r2<0.5 ? homeworkTiers[0] : (r2<0.8 ? homeworkTiers[1] : homeworkTiers[2]);
+          state.ledger.push({id:'L'+(idc++), studentId:st.id, classId:cls, type:'homework', count:tier.count, date:day+'T21:00:00', note:'숙제 '+tier.label, status:'active', actor:'선생님 승인'});
+        }
+      });
+    });
+    if(rng()<0.7){
+      state.ledger.push({id:'L'+(idc++), studentId:st.id, classId:'기본', type:'praise', count: 1+Math.floor(rng()*3), date:'2026-07-'+String(3+Math.floor(rng()*10)).padStart(2,'0')+'T14:00:00', note:'수업 태도 우수', status:'active', actor:'선생님 승인'});
+    }
+  });
+  state.ledger.push({id:'L'+(idc++), studentId:'s2', classId:'대수', type:'praise', count:5, date:'2026-07-10T15:00:00', note:'중복 신청 오지급 건', status:'cancelled', actor:'관리자 지급', rollbackReason:'동일 사유로 중복 지급 확인되어 취소', rollbackAt:'2026-07-11T09:00:00'});
+  state.pendingRequests.push({id:'P1', studentId:'s1', type:'homework', classId:'대수', rate:50, count:3, note:'', date:'2026-07-19T20:50:00', status:'pending'});
+  state.pendingRequests.push({id:'P2', studentId:'s3', type:'praise', classId:'기본', reason:'친구 숙제 도와줌', count:null, date:'2026-07-19T18:20:00', status:'pending'});
+  state.pendingRequests.push({id:'P3', studentId:'s6', type:'homework', classId:'수능', rate:100, count:5, note:'', date:'2026-07-19T21:10:00', status:'pending'});
+})();
+
+/* ===================== helpers ===================== */
+function studentById(id){ return students.find(s=>s.id===id); }
+function fmtDate(iso){ return iso.slice(0,10).replace('2026-','26.').replace(/-/g,'.'); }
+function totalStickers(studentId, opts){
+  opts = opts||{};
+  return state.ledger.filter(l=>{
+    if(l.studentId!==studentId || l.status!=='active') return false;
+    if(opts.classId && opts.classId!=='전체' && l.classId!==opts.classId) return false;
+    if(opts.start && l.date.slice(0,10) < opts.start) return false;
+    if(opts.end && l.date.slice(0,10) > opts.end) return false;
+    return true;
+  }).reduce((a,l)=>a+l.count,0);
+}
+function computeRanking(scope, start, end){
+  let pool = scope==='전체' ? students : students.filter(s=>s.classes.includes(scope));
+  let rows = pool.map(s=>({id:s.id, name:s.name, total: totalStickers(s.id, {classId:scope, start, end})}));
+  rows.sort((a,b)=>b.total-a.total);
+  const N = rows.length;
+  const goldN = Math.max(1, Math.round(N*state.medalPct.gold));
+  const silverN = Math.max(1, Math.round(N*state.medalPct.silver));
+  const bronzeN = Math.max(1, Math.round(N*state.medalPct.bronze));
+  rows.forEach((r,i)=>{
+    r.rank = i+1;
+    if(i < goldN) r.medal='gold';
+    else if(i < goldN+silverN) r.medal='silver';
+    else if(i < goldN+silverN+bronzeN) r.medal='bronze';
+    else r.medal=null;
+  });
+  return rows;
+}
+function toast(msg){
+  const t = document.createElement('div');
+  t.className='toast'; t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2200);
+}
+function medalLabel(m){ return m==='gold'?'금':(m==='silver'?'은':(m==='bronze'?'동':'-')); }
+function campaignStatus(c){
+  if(NOW < new Date(c.start+'T00:00:00')) return 'upcoming';
+  if(NOW > new Date(c.end+'T23:59:59')) return 'ended';
+  return 'active';
+}
+function ddayStr(dateStr){
+  const target = new Date(dateStr+'T00:00:00');
+  const diff = Math.round((target-NOW)/86400000);
+  if(diff>0) return 'D-'+diff;
+  if(diff===0) return 'D-DAY';
+  return '종료';
+}
+function getCampaignMeta(c, s){
+  const status = campaignStatus(c);
+  const rows = computeRanking(c.scope, c.rankPeriod.start, c.rankPeriod.end);
+  const eligibleCount = Math.max(1, Math.round(rows.length*c.eligibleRatio));
+  const myRow = rows.find(r=>r.id===s.id);
+  const myRank = myRow ? myRow.rank : null;
+  const claimedIds = new Set(c.items.flatMap(i=>i.claims.map(cl=>cl.studentId)));
+  let nextTurnId = null;
+  for(const r of rows){ if(r.rank<=eligibleCount && !claimedIds.has(r.id)){ nextTurnId=r.id; break; } }
+  const iAmEligible = !!(myRank && myRank<=eligibleCount);
+  const iHaveClaimed = claimedIds.has(s.id);
+  const isMyTurn = status==='active' && iAmEligible && !iHaveClaimed && nextTurnId===s.id;
+  return {status, rows, eligibleCount, myRank, iAmEligible, iHaveClaimed, isMyTurn};
+}
+function pickFeaturedCampaign(){
+  let active = state.campaigns.find(c=>campaignStatus(c)==='active');
+  if(active) return active;
+  return state.campaigns.find(c=>campaignStatus(c)==='upcoming') || null;
+}
+function rewardCardHTML(c, it, s){
+  const meta = getCampaignMeta(c, s);
+  const left = it.qty - it.claims.length;
+  let label, disabled=true;
+  if(meta.iHaveClaimed) label='다른 상품 수령함';
+  else if(meta.status==='ended') label='이벤트 종료';
+  else if(meta.status==='upcoming') label='시작 전';
+  else if(!meta.iAmEligible) label='자격 미달';
+  else if(left<=0) label='품절';
+  else if(!meta.isMyTurn) label='순서 대기중';
+  else { label='선택하기'; disabled=false; }
+  return `
+  <div class="reward-card">
+    <div class="reward-emoji">${it.emoji}</div>
+    <div style="font-weight:700;font-size:12px;margin:6px 0 2px;text-align:center;">${it.title}</div>
+    <div class="muted" style="text-align:center;">잔여 ${left}/${it.qty}</div>
+    <button class="btn secondary block" style="padding:7px;font-size:11px;margin-top:8px;" ${disabled?'disabled':''} onclick="claimReward('${c.id}','${it.id}','${s.id}')">${label}</button>
+  </div>`;
+}
+function claimReward(campaignId, itemId, sid){
+  const c = state.campaigns.find(x=>x.id===campaignId);
+  const it = c.items.find(x=>x.id===itemId);
+  it.claims.push({studentId:sid, claimedAt:'2026-07-19T22:30:00'});
+  toast(`"${it.title}" 선택 완료!`);
+  refreshModal();
+  renderStudent();
+}
+
+/* ===================== modal ===================== */
+function openModal(renderFn){
+  modalRenderFn = renderFn;
+  document.getElementById('phoneModal').style.display = 'flex';
+  document.getElementById('phoneModalBody').innerHTML = renderFn();
+}
+function refreshModal(){
+  if(modalRenderFn){ document.getElementById('phoneModalBody').innerHTML = modalRenderFn(); }
+}
+function closeModal(){
+  modalRenderFn = null;
+  document.getElementById('phoneModal').style.display = 'none';
+}
+
+/* ===================== mode switch ===================== */
+function switchMode(mode){
+  document.querySelectorAll('.switch-btn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('student-view').style.display = mode==='student' ? '' : 'none';
+  document.getElementById('admin-view').style.display = mode==='admin' ? '' : 'none';
+}
+
+/* ===================== student nav ===================== */
+const STUDENT_TABS = [
+  {id:'home', ic:'🏠', label:'홈'},
+  {id:'sticker', ic:'🏷️', label:'스티커'},
+  {id:'mypage', ic:'👤', label:'마이'},
+];
+function renderStudentNav(){
+  const nav = document.getElementById('student-nav');
+  nav.innerHTML = STUDENT_TABS.map(t=>`<button class="${studentNav===t.id?'active':''}" onclick="setStudentTab('${t.id}')"><span class="ic">${t.ic}</span>${t.label}</button>`).join('');
+}
+function setStudentTab(id){ studentNav = id; renderStudent(); }
+function goCheckIn(){ studentNav='sticker'; stickerSubTab='attend'; renderStudent(); }
+
+function renderStudent(){
+  renderStudentNav();
+  const el = document.getElementById('student-content');
+  const s = studentById(state.currentStudentId);
+  if(studentNav==='home'){ el.innerHTML = homeHTML(s); startBannerTimer(); }
+  else { stopBannerTimer(); }
+  if(studentNav==='sticker') el.innerHTML = stickerHTML(s);
+  else if(studentNav==='mypage') el.innerHTML = mypageHTML(s);
+}
+
+/* ---------- banner ---------- */
+function startBannerTimer(){
+  if(bannerTimer) return;
+  bannerTimer = setInterval(()=>{
+    if(!state.notices.length) return;
+    bannerIndex = (bannerIndex+1) % state.notices.length;
+    updateBannerDom();
+  }, 3200);
+}
+function stopBannerTimer(){ clearInterval(bannerTimer); bannerTimer=null; }
+function updateBannerDom(){
+  const el = document.getElementById('flapBannerText');
+  if(!el || !state.notices.length) return;
+  el.textContent = state.notices[bannerIndex % state.notices.length].title;
+  el.classList.remove('flap-anim');
+  void el.offsetWidth;
+  el.classList.add('flap-anim');
+}
+
+/* ---------- home ---------- */
+function homeHTML(s){
+  const totalAll = totalStickers(s.id, {});
+  const rankRows = computeRanking('전체', state.rankExposure.start, state.rankExposure.end).slice(0,5);
+  const featured = pickFeaturedCampaign();
+  const noticeTitle = state.notices.length ? state.notices[bannerIndex % state.notices.length].title : '등록된 공지가 없어요';
+  return `
+  <div class="flap-banner" onclick="openModal(noticesModalHTML)">
+    <span class="flap-badge">공지</span>
+    <div class="flap-text-wrap"><span id="flapBannerText">${noticeTitle}</span></div>
+    <span class="flap-arrow">›</span>
+  </div>
+  <div class="card" style="display:flex;align-items:center;gap:12px;">
+    <div style="width:44px;height:44px;border-radius:50%;background:#FFF0D6;display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--amber-dark);flex-shrink:0;">${s.name[0]}</div>
+    <div><div style="font-weight:700;font-size:14.5px;">${s.name}</div><div class="muted">${s.classes.join(' · ')}</div></div>
+  </div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <h3 style="margin:0;">전체 랭킹 TOP 5</h3>
+      <button class="btn secondary" style="padding:6px 10px;font-size:11.5px;" onclick="openModal(fullRankingModalHTML)">전체보기</button>
+    </div>
+    ${rankRows.map(r=>`
+      <div class="rank-row ${r.id===s.id?'me':''}">
+        <div class="medal ${r.medal||'none'}">${r.medal? medalLabel(r.medal): r.rank}</div>
+        <div class="rank-name">${r.name}${r.id===s.id?' (나)':''}</div>
+        <div class="rank-count">${r.total}장</div>
+      </div>`).join('')}
+  </div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div><div class="muted">보유 총 스티커</div><div class="big-num">${totalAll}장</div></div>
+      <button class="btn" style="padding:9px 13px;font-size:12.5px;" onclick="goCheckIn()">체크 하러가기</button>
+    </div>
+  </div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <h3 style="margin:0;">${featured ? featured.name : '진행중인 이벤트 없음'}</h3>
+      <button class="btn secondary" style="padding:6px 10px;font-size:11.5px;" onclick="openModal(allRewardsModalHTML)">다른 이벤트</button>
+    </div>
+    ${featured ? `
+      <div class="muted" style="margin-bottom:8px;">${campaignStatus(featured)==='upcoming' ? ddayStr(featured.start)+' 시작 예정' : ddayStr(featured.end)+' 마감'}</div>
+      <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;">
+        ${featured.items.map(it=>rewardCardHTML(featured, it, s)).join('')}
+      </div>` : `<div class="muted">진행중이거나 예정된 상품 이벤트가 없어요.</div>`}
+  </div>`;
+}
+
+/* ---------- sticker tab (attendance + homework + praise merged) ---------- */
+function stickerHTML(s){
+  const chips = [{id:'attend',l:'출석'},{id:'homework',l:'숙제'},{id:'praise',l:'칭찬'}];
+  return `
+  <div class="tab-row">
+    ${chips.map(c=>`<div class="tab-chip ${stickerSubTab===c.id?'active':''}" onclick="setStickerSubTab('${c.id}')">${c.l}</div>`).join('')}
+  </div>
+  ${stickerSubTab==='attend' ? attendSectionHTML(s) : (stickerSubTab==='homework' ? homeworkSectionHTML(s) : praiseSectionHTML(s))}
+  `;
+}
+function setStickerSubTab(id){ stickerSubTab=id; renderStudent(); }
+
+function attendSectionHTML(s){
+  const selectedClass = s.classes[0];
+  return `
+  <div class="card">
+    <h3>출석 체크</h3>
+    <div class="muted">반마다 정규 출석 인정 시각과 지급 스티커 수가 다르게 설정되어 있어요.</div>
+    <label class="f">체크할 반 선택</label>
+    <select id="attendClass">${s.classes.map(c=>`<option value="${c}">${c} (정규 ${classConfig[c].attendTime})</option>`).join('')}</select>
+    <label class="f">데모: 접속 시각 시나리오</label>
+    <div class="radio-grid">
+      <div class="radio-opt ${attendDemoScenario==='ontime'?'sel':''}" onclick="setAttendScenario('ontime')">정시 이전</div>
+      <div class="radio-opt ${attendDemoScenario==='m10'?'sel':''}" onclick="setAttendScenario('m10')">10분 이내</div>
+      <div class="radio-opt ${attendDemoScenario==='m30'?'sel':''}" onclick="setAttendScenario('m30')">30분 이내</div>
+      <div class="radio-opt ${attendDemoScenario==='late'?'sel':''}" onclick="setAttendScenario('late')">30분 초과</div>
+    </div>
+    <button class="btn block" onclick="doCheckIn('${s.id}')">출석 체크 버튼 누르기</button>
+  </div>
+  <div class="card">
+    <div class="acc-header ${uiOpen.attendCriteria?'open':''}" onclick="toggleAcc('attendCriteria')">
+      <span>출석 기준 안내</span><span class="car">▾</span>
+    </div>
+    ${uiOpen.attendCriteria ? `<div class="acc-body">
+      ${classConfig[selectedClass].tiers.map(t=>`<div class="muted" style="margin-bottom:4px;">${t.label} → <b>${t.count}장</b></div>`).join('')}
+      <div class="muted">결석 시 0장 (반별로 기준이 달라요)</div>
+    </div>` : ''}
+  </div>`;
+}
+function setAttendScenario(v){ attendDemoScenario=v; renderStudent(); }
+function doCheckIn(sid){
+  const cls = document.getElementById('attendClass').value;
+  const tierMap = {ontime:0, m10:1, m30:2, late:3};
+  const tier = classConfig[cls].tiers[tierMap[attendDemoScenario]];
+  state.ledger.push({id:'L'+Date.now(), studentId:sid, classId:cls, type:'attendance', count:tier.count, date:'2026-07-19T'+classConfig[cls].attendTime+':00', note:tier.label+' 출석', status:'active', actor:'system'});
+  toast(`${cls} 출석 완료 — ${tier.label}, ${tier.count}장 지급!`);
+  renderStudent();
+}
+
+function homeworkSectionHTML(s){
+  return `
+  <div class="card">
+    <h3>숙제 인증 신청</h3>
+    <div class="muted">스스로 완료율을 선택해 신청하면, 관리자가 확인 후 승인해야 스티커가 지급돼요.</div>
+    <label class="f">신청할 반</label>
+    <select id="hwClass">${s.classes.map(c=>`<option value="${c}">${c}</option>`).join('')}</select>
+    <label class="f">완료율 선택</label>
+    <div class="radio-grid c3">
+      ${homeworkTiers.map(t=>`<div class="radio-opt ${hwSelectedRate===t.rate?'sel':''}" onclick="setHwRate(${t.rate})">${t.label}<br>(${t.count}장)</div>`).join('')}
+    </div>
+    <button class="btn block" onclick="submitHomework('${s.id}')">인증 신청하기</button>
+  </div>
+  <div class="card">
+    <h3>내 신청 내역</h3>
+    ${state.pendingRequests.filter(p=>p.studentId===s.id && p.type==='homework').map(p=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);">
+        <div><div style="font-size:12.5px;font-weight:600;">${p.classId} · ${homeworkTiers.find(t=>t.rate===p.rate)?.label || p.rate+'%'}</div><div class="muted">${fmtDate(p.date)}</div></div>
+        <span class="pill ${p.status==='pending'?'wait':(p.status==='approved'?'ok':'cancel')}">${p.status==='pending'?'승인대기':(p.status==='approved'?'승인됨':'반려됨')}</span>
+      </div>`).join('') || '<div class="muted">신청 내역이 없어요.</div>'}
+  </div>`;
+}
+function setHwRate(v){ hwSelectedRate=v; document.getElementById('student-content').innerHTML=stickerHTML(studentById(state.currentStudentId)); }
+function submitHomework(sid){
+  const cls = document.getElementById('hwClass').value;
+  const tier = homeworkTiers.find(t=>t.rate===hwSelectedRate);
+  state.pendingRequests.push({id:'P'+Date.now(), studentId:sid, type:'homework', classId:cls, rate:tier.rate, count:tier.count, date:'2026-07-19T22:00:00', status:'pending'});
+  toast('숙제 인증 신청 완료 — 관리자 승인을 기다려주세요.');
+  renderStudent();
+}
+
+function praiseSectionHTML(s){
+  const myRequests = state.pendingRequests.filter(p=>p.studentId===s.id && p.type==='praise');
+  return `
+  <div class="card">
+    <h3>칭찬 스티커 요청</h3>
+    <div class="muted">정형화되지 않은 칭찬받을 행동은 사유를 적어 요청하면, 관리자가 확인 후 스티커를 지급해요.</div>
+    <label class="f">사유</label>
+    <textarea id="praiseReason" placeholder="예: 어려운 문제 친구에게 설명해줌"></textarea>
+    <button class="btn block" onclick="submitPraise('${s.id}')">스티커 주세요 🙌</button>
+  </div>
+  <div class="card">
+    <div class="acc-header ${uiOpen.praiseHistory?'open':''}" onclick="toggleAcc('praiseHistory')">
+      <span>내 요청 내역 (${myRequests.length})</span><span class="car">▾</span>
+    </div>
+    ${uiOpen.praiseHistory ? `<div class="acc-body">
+      ${myRequests.map(p=>`
+        <div style="padding:7px 0;border-bottom:1px solid var(--line);">
+          <div style="display:flex;justify-content:space-between;"><div style="font-size:12.5px;font-weight:600;">${p.reason}</div><span class="pill ${p.status==='pending'?'wait':(p.status==='approved'?'ok':'cancel')}">${p.status==='pending'?'대기':(p.status==='approved'?'승인':'반려')}</span></div>
+          <div class="muted">${fmtDate(p.date)}</div>
+        </div>`).join('') || '<div class="muted">요청 내역이 없어요.</div>'}
+    </div>` : ''}
+  </div>`;
+}
+function submitPraise(sid){
+  const reason = document.getElementById('praiseReason').value.trim() || '칭찬 스티커 요청';
+  state.pendingRequests.push({id:'P'+Date.now(), studentId:sid, type:'praise', classId:'기본', reason, count:null, date:'2026-07-19T22:10:00', status:'pending'});
+  toast('칭찬 스티커 요청을 보냈어요.');
+  renderStudent();
+}
+function toggleAcc(key){ uiOpen[key] = !uiOpen[key]; renderStudent(); }
+
+/* ---------- mypage (class management first, history collapsed) ---------- */
+function mypageHTML(s){
+  const logs = state.ledger.filter(l=>l.studentId===s.id).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,25);
+  return `
+  <div class="card">
+    <h3>소속 반 관리</h3>
+    <div class="muted" style="margin-bottom:8px;">기본반은 자동 소속이며 해제할 수 없어요. 특강반은 신청/해제가 가능해요.</div>
+    ${CLASS_LIST.filter(c=>c!=='기본').map(c=>{
+      const joined = s.classes.includes(c);
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);">
+        <div><div style="font-size:13px;font-weight:600;">${c}</div><div class="muted">특강기간 ${classConfig[c].special.start} ~ ${classConfig[c].special.end}</div></div>
+        <button class="btn secondary" style="padding:7px 12px;font-size:12px;" onclick="toggleClass('${s.id}','${c}')">${joined?'해제':'신청'}</button>
+      </div>`;
+    }).join('')}
+  </div>
+  <div class="card">
+    <div class="acc-header ${uiOpen.myHistory?'open':''}" onclick="toggleAcc('myHistory')">
+      <span>내 스티커 이력</span><span class="car">▾</span>
+    </div>
+    ${uiOpen.myHistory ? `<div class="acc-body">
+      ${logs.map(l=>`
+        <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);">
+          <div>
+            <div style="font-size:12.5px;font-weight:600;">${l.classId} · ${l.type==='attendance'?'출석':(l.type==='homework'?'숙제':'칭찬')} · ${l.note}</div>
+            <div class="muted">${fmtDate(l.date)}</div>
+          </div>
+          <div style="text-align:right;"><div class="rank-count">${l.status==='cancelled'?'취소':(l.count>0?'+'+l.count+'장':'0장')}</div></div>
+        </div>`).join('')}
+    </div>` : ''}
+  </div>`;
+}
+function toggleClass(sid, cls){
+  const s = studentById(sid);
+  const idx = s.classes.indexOf(cls);
+  if(idx>-1){ s.classes.splice(idx,1); toast(cls+' 특강반에서 해제되었어요.'); }
+  else { s.classes.push(cls); toast(cls+' 특강반에 신청되었어요.'); }
+  renderStudent();
+}
+
+/* ---------- modal contents: ranking / rewards / notices / notif / settings ---------- */
+function fullRankingModalHTML(){
+  const s = studentById(state.currentStudentId);
+  const scopes = ['전체', ...s.classes];
+  const start = rankPeriodMode==='exposure'? state.rankExposure.start : rankCustom.start;
+  const end = rankPeriodMode==='exposure'? state.rankExposure.end : rankCustom.end;
+  const effStart = rankPeriodMode==='all' ? null : start;
+  const effEnd = rankPeriodMode==='all' ? null : end;
+  const rows = computeRanking(rankScope, effStart, effEnd);
+  return `
+  <div class="modal-title">전체 랭킹</div>
+  <div class="tab-row">
+    ${scopes.map(sc=>`<div class="tab-chip ${rankScope===sc?'active':''}" onclick="setRankScope('${sc}')">${sc}</div>`).join('')}
+  </div>
+  <div class="tab-row">
+    <div class="tab-chip ${rankPeriodMode==='exposure'?'active':''}" onclick="setRankPeriodMode('exposure')">기본 노출기간</div>
+    <div class="tab-chip ${rankPeriodMode==='all'?'active':''}" onclick="setRankPeriodMode('all')">전체 기간</div>
+    <div class="tab-chip ${rankPeriodMode==='custom'?'active':''}" onclick="setRankPeriodMode('custom')">직접 지정</div>
+  </div>
+  ${rankPeriodMode==='custom' ? `
+  <div class="field-row" style="margin-bottom:10px;">
+    <div><label class="f" style="margin-top:0;">시작일</label><input type="date" value="${rankCustom.start}" onchange="rankCustom.start=this.value; refreshModal();"></div>
+    <div><label class="f" style="margin-top:0;">종료일</label><input type="date" value="${rankCustom.end}" onchange="rankCustom.end=this.value; refreshModal();"></div>
+  </div>` : `<div class="muted" style="margin-bottom:8px;">${rankPeriodMode==='all'?'전체 기간 기준':(start+' ~ '+end)}</div>`}
+  <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">금 ${Math.round(state.medalPct.gold*100)}% / 은 ${Math.round(state.medalPct.silver*100)}% / 동 ${Math.round(state.medalPct.bronze*100)}% (상대평가, 관리자 설정)</div>
+  <div class="card">
+    ${rows.map(r=>`
+      <div class="rank-row ${r.id===s.id?'me':''}">
+        <div class="medal ${r.medal||'none'}">${r.medal? medalLabel(r.medal): r.rank}</div>
+        <div class="rank-name">${r.name}${r.id===s.id?' (나)':''}<div class="rank-sub">${r.rank}위</div></div>
+        <div class="rank-count">${r.total}장</div>
+      </div>`).join('')}
+  </div>`;
+}
+function setRankScope(sc){ rankScope=sc; refreshModal(); }
+function setRankPeriodMode(m){ rankPeriodMode=m; refreshModal(); }
+
+function allRewardsModalHTML(){
+  const s = studentById(state.currentStudentId);
+  return `<div class="modal-title">전체 상품 이벤트</div>` + state.campaigns.map(c=>{
+    const status = campaignStatus(c);
+    return `<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-weight:700;font-size:13.5px;">${c.name}</div>
+        <span class="dday">${status==='upcoming'?ddayStr(c.start):(status==='active'?ddayStr(c.end)+' 마감':'종료')}</span>
+      </div>
+      <div class="muted" style="margin:6px 0 10px;">대상 ${c.scope} 상위 ${Math.round(c.eligibleRatio*100)}%</div>
+      ${status==='upcoming' ? `<div class="muted">이벤트 시작 전이에요.</div>` : `<div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;">${c.items.map(it=>rewardCardHTML(c,it,s)).join('')}</div>`}
+    </div>`;
+  }).join('');
+}
+
+function noticesModalHTML(){
+  const list = state.notices.slice().sort((a,b)=> (b.pinned - a.pinned) || b.createdAt.localeCompare(a.createdAt));
+  return `<div class="modal-title">공지사항</div>` + list.map(n=>`
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;gap:8px;">
+        <div style="font-weight:700;font-size:13px;">${n.title}</div>
+        ${n.pinned?'<span class="pill wait">고정</span>':''}
+      </div>
+      <div class="muted" style="margin:4px 0 8px;">${fmtDate(n.createdAt)}</div>
+      <div style="font-size:13px;line-height:1.5;">${n.content}</div>
+    </div>`).join('') || `<div class="muted">등록된 공지사항이 없어요.</div>`;
+}
+
+function notifPanelHTML(s){
+  const items = [];
+  state.pendingRequests.filter(p=>p.studentId===s.id && p.status!=='pending').forEach(p=>{
+    items.push({text:(p.type==='homework'?'숙제 인증':'칭찬 스티커')+' 요청이 '+(p.status==='approved'?'승인':'반려')+'되었어요.', date:p.date});
+  });
+  state.ledger.filter(l=>l.studentId===s.id && l.status==='cancelled').forEach(l=>{
+    items.push({text:'스티커 지급이 취소(롤백)되었어요: '+l.note, date:l.rollbackAt||l.date});
+  });
+  items.sort((a,b)=> (b.date||'').localeCompare(a.date||''));
+  return `<div class="modal-title">알림</div>` + (items.length ? items.map(i=>`
+    <div class="card"><div style="font-size:13px;">${i.text}</div><div class="muted" style="margin-top:4px;">${fmtDate(i.date)}</div></div>
+  `).join('') : `<div class="muted">새로운 알림이 없어요.</div>`);
+}
+
+function settingsPanelHTML(s){
+  return `
+  <div class="modal-title">설정</div>
+  <label class="f" style="margin-top:0;">데모 계정 전환 (테스트용)</label>
+  <select onchange="onChangeStudent(this.value); closeModal();">
+    ${students.map(st=>`<option value="${st.id}" ${st.id===s.id?'selected':''}>${st.name} (${st.classes.join(', ')})</option>`).join('')}
+  </select>
+  <hr class="sep">
+  <div class="muted">알림 수신 설정, 비밀번호 변경 등은 추후 지원 예정이에요.</div>`;
+}
+function onChangeStudent(id){ state.currentStudentId = id; renderStudent(); }
+
+/* ===================== admin ===================== */
+const ADMIN_TABS = [
+  {id:'dashboard', label:'대시보드'},
+  {id:'notices', label:'공지사항 게시판'},
+  {id:'policy', label:'스티커 정책 설정'},
+  {id:'classes', label:'반 관리'},
+  {id:'students', label:'학생 관리'},
+  {id:'approvals', label:'승인함'},
+  {id:'logs', label:'스티커 로그 · 감사'},
+  {id:'rankSettings', label:'랭킹 노출 설정'},
+  {id:'rewards', label:'상품(리워드) 관리'},
+];
+function renderAdminSidebar(){
+  const el = document.getElementById('admin-sidebar');
+  el.innerHTML = `<div class="logo">🛠 StickerUp Admin</div>` +
+    ADMIN_TABS.map(t=>`<div class="admin-nav-item ${adminNav===t.id?'active':''}" onclick="setAdminTab('${t.id}')">${t.label}</div>`).join('');
+}
+function setAdminTab(id){ adminNav=id; renderAdmin(); }
+function renderAdmin(){
+  renderAdminSidebar();
+  const el = document.getElementById('admin-content');
+  if(adminNav==='dashboard') el.innerHTML = adminDashboardHTML();
+  else if(adminNav==='notices') el.innerHTML = adminNoticesHTML();
+  else if(adminNav==='policy') el.innerHTML = adminPolicyHTML();
+  else if(adminNav==='classes') el.innerHTML = adminClassesHTML();
+  else if(adminNav==='students') el.innerHTML = adminStudentsHTML();
+  else if(adminNav==='approvals') el.innerHTML = adminApprovalsHTML();
+  else if(adminNav==='logs') el.innerHTML = adminLogsHTML();
+  else if(adminNav==='rankSettings') el.innerHTML = adminRankSettingsHTML();
+  else if(adminNav==='rewards') el.innerHTML = adminRewardsHTML();
+}
+
+function adminDashboardHTML(){
+  const pendingHw = state.pendingRequests.filter(p=>p.type==='homework'&&p.status==='pending').length;
+  const pendingPraise = state.pendingRequests.filter(p=>p.type==='praise'&&p.status==='pending').length;
+  const cancelled = state.ledger.filter(l=>l.status==='cancelled').length;
+  const todayAttend = state.ledger.filter(l=>l.type==='attendance' && l.date.startsWith('2026-07-19') && l.count>0).length;
+  return `
+  <h2>대시보드</h2>
+  <p class="sub-desc">오늘(2026-07-19) 현황 요약이에요.</p>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="l">숙제 승인 대기</div><div class="n">${pendingHw}건</div></div>
+    <div class="kpi"><div class="l">칭찬 스티커 승인 대기</div><div class="n">${pendingPraise}건</div></div>
+    <div class="kpi"><div class="l">오늘 출석 학생</div><div class="n">${todayAttend}명</div></div>
+    <div class="kpi"><div class="l">누적 롤백(취소) 건</div><div class="n">${cancelled}건</div></div>
+  </div>
+  <div class="section-title">전체 총 랭킹 TOP 5 (전체 기간)</div>
+  <div class="table-wrap"><table>
+    <tr><th>순위</th><th>이름</th><th>소속 반</th><th>총 스티커</th><th>등급</th></tr>
+    ${computeRanking('전체', null, null).slice(0,5).map(r=>`<tr><td>${r.rank}</td><td>${r.name}</td><td>${studentById(r.id).classes.join(', ')}</td><td>${r.total}</td><td>${medalLabel(r.medal)}</td></tr>`).join('')}
+  </table></div>`;
+}
+
+function adminNoticesHTML(){
+  const list = state.notices.slice().sort((a,b)=> (b.pinned - a.pinned) || b.createdAt.localeCompare(a.createdAt));
+  return `
+  <h2>공지사항 게시판</h2>
+  <p class="sub-desc">여기에 등록한 공지는 학생 앱 홈 화면 상단의 플랩 배너에 순환 노출돼요.</p>
+  <div class="table-wrap"><table>
+    <tr><th>제목</th><th>내용</th><th>등록일</th><th>고정</th><th></th></tr>
+    ${list.map(n=>`<tr>
+      <td>${n.title}</td>
+      <td style="max-width:280px;">${n.content}</td>
+      <td>${fmtDate(n.createdAt)}</td>
+      <td>${n.pinned?'<span class="pill wait">고정</span>':'-'}</td>
+      <td>
+        <button class="btn-sm" onclick="toggleNoticePin('${n.id}')">${n.pinned?'고정 해제':'고정'}</button>
+        <button class="btn-sm danger" onclick="deleteNotice('${n.id}')">삭제</button>
+      </td>
+    </tr>`).join('') || `<tr><td colspan="5" style="text-align:center;color:var(--sub);">등록된 공지가 없어요.</td></tr>`}
+  </table></div>
+  <div class="form-block">
+    <h4>새 공지 작성</h4>
+    <div class="form-grid">
+      <div><label class="f" style="margin-top:0;">제목</label><input type="text" id="newNoticeTitle" placeholder="예: 8월 시간표 안내"></div>
+      <div><label class="f" style="margin-top:0;">고정 여부</label><select id="newNoticePinned"><option value="0">일반</option><option value="1">상단 고정</option></select></div>
+    </div>
+    <label class="f" style="margin-top:0;">내용</label>
+    <textarea id="newNoticeContent" placeholder="공지 내용을 입력하세요"></textarea>
+    <button class="btn" style="margin-top:12px;" onclick="addNotice()">공지 등록하기</button>
+  </div>`;
+}
+function addNotice(){
+  const title = document.getElementById('newNoticeTitle').value.trim();
+  const content = document.getElementById('newNoticeContent').value.trim();
+  const pinned = document.getElementById('newNoticePinned').value==='1';
+  if(!title){ toast('제목을 입력해주세요.'); return; }
+  state.notices.push({id:'n'+Date.now(), title, content: content||'-', pinned, createdAt:'2026-07-19T23:00:00'});
+  toast('공지사항이 등록되었어요.');
+  renderAdmin();
+}
+function toggleNoticePin(id){
+  const n = state.notices.find(x=>x.id===id);
+  n.pinned = !n.pinned;
+  renderAdmin();
+}
+function deleteNotice(id){
+  const idx = state.notices.findIndex(x=>x.id===id);
+  if(idx>-1) state.notices.splice(idx,1);
+  toast('공지사항이 삭제되었어요.');
+  renderAdmin();
+}
+
+function adminPolicyHTML(){
+  return `
+  <h2>스티커 정책 설정</h2>
+  <p class="sub-desc">출석/숙제 구간별 지급 수, 랭킹 등급 비율을 반별 또는 전역으로 설정해요.</p>
+  <div class="section-title">숙제 완료율별 지급 수 (전역 기본값, 3단계)</div>
+  <div class="table-wrap"><table>
+    <tr><th>완료 단계</th><th>지급 스티커</th></tr>
+    ${homeworkTiers.map(t=>`<tr><td>${t.label} (${t.rate}%)</td><td><input type="number" value="${t.count}" style="width:70px;" onchange="homeworkTiers.find(x=>x.rate===${t.rate}).count=Number(this.value)"></td></tr>`).join('')}
+  </table></div>
+  <div class="section-title">출석 구간별 지급 수 (반별 설정)</div>
+  ${CLASS_LIST.map(c=>`
+    <div class="form-block">
+      <h4>${c}반 · 정규 출석 ${classConfig[c].attendTime}</h4>
+      <div class="form-grid">
+        ${classConfig[c].tiers.map((t,i)=>`
+          <div>
+            <label class="f" style="margin-top:0;">${t.label}</label>
+            <input type="number" value="${t.count}" onchange="classConfig['${c}'].tiers[${i}].count=Number(this.value)">
+          </div>`).join('')}
+      </div>
+    </div>`).join('')}
+  <div class="section-title">랭킹 등급(금/은/동) 비율</div>
+  <div class="form-block">
+    <div class="form-grid">
+      <div><label class="f" style="margin-top:0;">금 상위 %</label><input type="number" value="${Math.round(state.medalPct.gold*100)}" onchange="state.medalPct.gold=Number(this.value)/100"></div>
+      <div><label class="f" style="margin-top:0;">은 다음 %</label><input type="number" value="${Math.round(state.medalPct.silver*100)}" onchange="state.medalPct.silver=Number(this.value)/100"></div>
+      <div><label class="f" style="margin-top:0;">동 다음 %</label><input type="number" value="${Math.round(state.medalPct.bronze*100)}" onchange="state.medalPct.bronze=Number(this.value)/100"></div>
+    </div>
+  </div>`;
+}
+
+function adminClassesHTML(){
+  return `
+  <h2>반 관리</h2>
+  <p class="sub-desc">기본반은 상시 운영, 특강반은 운영 기간이 끝나면 자동 해제돼요.</p>
+  <div class="table-wrap"><table>
+    <tr><th>반</th><th>정규 출석 시각</th><th>특강 기간</th><th>소속 학생 수</th></tr>
+    ${CLASS_LIST.map(c=>`<tr>
+      <td>${c}</td>
+      <td>${classConfig[c].attendTime}</td>
+      <td>${classConfig[c].special? classConfig[c].special.start+' ~ '+classConfig[c].special.end : '상시'}</td>
+      <td>${students.filter(s=>s.classes.includes(c)).length}명</td>
+    </tr>`).join('')}
+  </table></div>`;
+}
+
+function adminStudentsHTML(){
+  return `
+  <h2>학생 관리</h2>
+  <p class="sub-desc">학생별 반 배정 현황이에요. 체크를 눌러 반을 배정/해제할 수 있어요.</p>
+  <div class="table-wrap"><table>
+    <tr><th>이름</th>${CLASS_LIST.map(c=>`<th>${c}</th>`).join('')}<th>총 스티커</th></tr>
+    ${students.map(s=>`<tr>
+      <td>${s.name}</td>
+      ${CLASS_LIST.map(c=>`<td><input type="checkbox" ${s.classes.includes(c)?'checked':''} ${c==='기본'?'disabled':''} onchange="toggleClassAdmin('${s.id}','${c}')"></td>`).join('')}
+      <td>${totalStickers(s.id,{})}</td>
+    </tr>`).join('')}
+  </table></div>`;
+}
+function toggleClassAdmin(sid, cls){
+  const s = studentById(sid);
+  const idx = s.classes.indexOf(cls);
+  if(idx>-1) s.classes.splice(idx,1); else s.classes.push(cls);
+  renderAdmin();
+}
+
+function adminApprovalsHTML(){
+  const pending = state.pendingRequests.filter(p=>p.status==='pending');
+  return `
+  <h2>승인함</h2>
+  <p class="sub-desc">학생이 신청한 숙제 인증과 칭찬 스티커 요청을 확인하고 승인/반려해요.</p>
+  <div class="table-wrap"><table>
+    <tr><th>유형</th><th>학생</th><th>반</th><th>내용</th><th>신청일</th><th>처리</th></tr>
+    ${pending.map(p=>`<tr>
+      <td>${p.type==='homework'?'숙제 인증':'칭찬 스티커'}</td>
+      <td>${studentById(p.studentId).name}</td>
+      <td>${p.classId}</td>
+      <td>${p.type==='homework'? (homeworkTiers.find(t=>t.rate===p.rate)?.label||p.rate+'%')+' ('+p.count+'장)' : p.reason}</td>
+      <td>${fmtDate(p.date)}</td>
+      <td>
+        ${p.type==='praise' ? `<input type="number" id="cnt-${p.id}" value="2" style="width:46px;display:inline-block;"> 장` : ''}
+        <button class="btn-sm green" onclick="approveRequest('${p.id}')">승인</button>
+        <button class="btn-sm danger" onclick="rejectRequest('${p.id}')">반려</button>
+      </td>
+    </tr>`).join('') || `<tr><td colspan="6" style="text-align:center;color:var(--sub);">대기 중인 요청이 없어요.</td></tr>`}
+  </table></div>`;
+}
+function approveRequest(pid){
+  const p = state.pendingRequests.find(x=>x.id===pid);
+  p.status='approved';
+  let count = p.count;
+  if(p.type==='praise'){
+    const el = document.getElementById('cnt-'+pid);
+    count = el? Number(el.value) : 2;
+  }
+  state.ledger.push({id:'L'+Date.now(), studentId:p.studentId, classId:p.classId, type:p.type, count, date:'2026-07-19T22:40:00', note:(p.type==='homework'?(homeworkTiers.find(t=>t.rate===p.rate)?.label||p.rate+'%'):p.reason), status:'active', actor:'관리자 승인'});
+  toast('승인 완료 — 스티커가 지급되었어요.');
+  renderAdmin();
+}
+function rejectRequest(pid){
+  const p = state.pendingRequests.find(x=>x.id===pid);
+  p.status='rejected';
+  toast('반려 처리했어요.');
+  renderAdmin();
+}
+
+function adminLogsHTML(){
+  const f = state.logFilter;
+  let rows = state.ledger.slice().sort((a,b)=>b.date.localeCompare(a.date));
+  if(f.studentId!=='all') rows = rows.filter(l=>l.studentId===f.studentId);
+  if(f.type!=='all') rows = rows.filter(l=>l.type===f.type);
+  if(f.status!=='all') rows = rows.filter(l=>l.status===f.status);
+  rows = rows.slice(0,60);
+  return `
+  <h2>스티커 로그 · 감사</h2>
+  <p class="sub-desc">모든 지급 내역을 확인하고, 부정 지급이 확인되면 롤백(취소)할 수 있어요.</p>
+  <div class="field-row" style="max-width:640px;margin-bottom:16px;">
+    <div><label class="f" style="margin-top:0;">학생</label><select onchange="state.logFilter.studentId=this.value; renderAdmin();">
+      <option value="all">전체</option>${students.map(s=>`<option value="${s.id}" ${f.studentId===s.id?'selected':''}>${s.name}</option>`).join('')}
+    </select></div>
+    <div><label class="f" style="margin-top:0;">유형</label><select onchange="state.logFilter.type=this.value; renderAdmin();">
+      <option value="all">전체</option>
+      <option value="attendance" ${f.type==='attendance'?'selected':''}>출석</option>
+      <option value="homework" ${f.type==='homework'?'selected':''}>숙제</option>
+      <option value="praise" ${f.type==='praise'?'selected':''}>칭찬</option>
+    </select></div>
+    <div><label class="f" style="margin-top:0;">상태</label><select onchange="state.logFilter.status=this.value; renderAdmin();">
+      <option value="all">전체</option>
+      <option value="active" ${f.status==='active'?'selected':''}>정상</option>
+      <option value="cancelled" ${f.status==='cancelled'?'selected':''}>취소됨</option>
+    </select></div>
+  </div>
+  <div class="table-wrap"><table>
+    <tr><th>학생</th><th>반</th><th>유형</th><th>내용</th><th>지급 수</th><th>일시</th><th>처리자</th><th>상태</th><th></th></tr>
+    ${rows.map(l=>`<tr>
+      <td>${studentById(l.studentId).name}</td>
+      <td>${l.classId}</td>
+      <td>${l.type==='attendance'?'출석':(l.type==='homework'?'숙제':'칭찬')}</td>
+      <td>${l.note}${l.status==='cancelled'?'<br><span class="muted">사유: '+l.rollbackReason+'</span>':''}</td>
+      <td>${l.count}</td>
+      <td>${fmtDate(l.date)}</td>
+      <td>${l.actor}</td>
+      <td><span class="pill ${l.status==='active'?'ok':'cancel'}">${l.status==='active'?'정상':'취소됨'}</span></td>
+      <td>${l.status==='active' ? `<button class="btn-sm danger" onclick="rollbackLog('${l.id}')">롤백</button>` : ''}</td>
+    </tr>`).join('')}
+  </table></div>`;
+}
+function rollbackLog(lid){
+  const reason = prompt('롤백(취소) 사유를 입력하세요.', '부정 지급 확인');
+  if(reason===null) return;
+  const l = state.ledger.find(x=>x.id===lid);
+  l.status='cancelled';
+  l.rollbackReason = reason || '사유 미입력';
+  l.rollbackAt = '2026-07-19T22:50:00';
+  toast('해당 지급 건이 롤백되었어요.');
+  renderAdmin();
+}
+
+function adminRankSettingsHTML(){
+  return `
+  <h2>랭킹 노출 설정</h2>
+  <p class="sub-desc">학생 화면의 "기본 노출 기간" 기본값을 설정해요. 학생은 이 화면에서 별도로 기간을 직접 지정해 볼 수도 있어요.</p>
+  <div class="form-block" style="max-width:420px;">
+    <h4>기본 노출 기간</h4>
+    <div class="field-row">
+      <div><label class="f" style="margin-top:0;">시작일</label><input type="date" value="${state.rankExposure.start}" onchange="state.rankExposure.start=this.value;"></div>
+      <div><label class="f" style="margin-top:0;">종료일</label><input type="date" value="${state.rankExposure.end}" onchange="state.rankExposure.end=this.value;"></div>
+    </div>
+  </div>`;
+}
+
+function adminRewardsHTML(){
+  return `
+  <h2>상품(리워드) 관리</h2>
+  <p class="sub-desc">기간(디데이)과 대상 비율을 설정해 상품을 등록하면, 기간 시작 후 랭킹 순서대로 학생들이 순차적으로 상품을 선택해요.</p>
+  ${state.campaigns.map(c=>{
+    const claimed = c.items.reduce((a,i)=>a+i.claims.length,0);
+    const total = c.items.reduce((a,i)=>a+i.qty,0);
+    return `
+    <div class="form-block">
+      <h4>${c.name} <span class="chip-tag">${c.start} ~ ${c.end}</span> <span class="chip-tag">대상 ${c.scope} 상위 ${Math.round(c.eligibleRatio*100)}%</span></h4>
+      <div class="table-wrap"><table>
+        <tr><th>상품</th><th>수량</th><th>선택 완료</th><th>남은 수량</th></tr>
+        ${c.items.map(it=>`<tr><td>${it.emoji} ${it.title}</td><td>${it.qty}</td><td>${it.claims.map(cl=>studentById(cl.studentId).name).join(', ')||'-'}</td><td>${it.qty-it.claims.length}</td></tr>`).join('')}
+      </table></div>
+      <div class="muted">전체 진행률: ${claimed}/${total} 선택 완료</div>
+    </div>`;
+  }).join('')}
+  <div class="form-block">
+    <h4>새 상품 이벤트 등록 (데모)</h4>
+    <div class="form-grid">
+      <div><label class="f" style="margin-top:0;">이벤트명</label><input type="text" id="newCampName" placeholder="예: 9월 랭킹 보상"></div>
+      <div><label class="f" style="margin-top:0;">대상 범위</label><select id="newCampScope"><option>전체</option>${CLASS_LIST.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div><label class="f" style="margin-top:0;">시작일</label><input type="date" id="newCampStart" value="2026-09-01"></div>
+      <div><label class="f" style="margin-top:0;">종료일</label><input type="date" id="newCampEnd" value="2026-09-10"></div>
+      <div><label class="f" style="margin-top:0;">대상 비율(%)</label><input type="number" id="newCampRatio" value="30"></div>
+      <div><label class="f" style="margin-top:0;">상품명 · 수량</label><input type="text" id="newCampItem" placeholder="예: 아이스크림 쿠폰 · 5"></div>
+    </div>
+    <button class="btn" onclick="addCampaign()">이벤트 등록하기</button>
+  </div>`;
+}
+function addCampaign(){
+  const name = document.getElementById('newCampName').value.trim() || '새 이벤트';
+  const scope = document.getElementById('newCampScope').value;
+  const start = document.getElementById('newCampStart').value;
+  const end = document.getElementById('newCampEnd').value;
+  const ratio = Number(document.getElementById('newCampRatio').value)/100;
+  const itemRaw = document.getElementById('newCampItem').value.trim();
+  const parts = itemRaw.split('·').map(x=>x&&x.trim());
+  const title = parts[0], qtyStr = parts[1];
+  state.campaigns.push({id:'c'+Date.now(), name, scope, start, end, rankPeriod:{start:'2026-07-01', end:'2026-07-19'}, eligibleRatio:ratio||0.3,
+    items:[{id:'i'+Date.now(), title: title||'신규 상품', emoji:'🎁', link:'#', qty: Number(qtyStr)||5, claims:[]}]});
+  toast('새 상품 이벤트가 등록되었어요.');
+  renderAdmin();
+}
+
+/* ===================== init ===================== */
+renderStudent();
+renderAdmin();
+</script>
+</body>
+</html>
