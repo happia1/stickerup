@@ -91,7 +91,7 @@ export default function SettingsPage() {
                   onClick={() => toggleClass(c.id)}
                   className={clsx(
                     "border rounded-lg px-2.5 py-2.5 text-body text-center",
-                    selected ? "border-brand-amber bg-state-warningBg text-brand-amberDark font-bold" : "border-border"
+                    selected ? "border-brand-amber bg-state-warningBg text-brand-amber font-bold" : "border-border"
                   )}
                 >
                   {c.name}

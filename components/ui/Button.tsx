@@ -12,7 +12,7 @@ export function Button({ variant = "primary", fullWidth, className, children, ..
   const sizing = "px-4 py-2.5 text-body";
   const variants = {
     primary: "bg-brand-amber text-white disabled:bg-border disabled:text-text-muted",
-    secondary: "bg-white border border-border text-text-primary disabled:text-text-muted",
+    secondary: "bg-surface-card border border-border text-text-primary disabled:text-text-muted",
   };
   return (
     <button

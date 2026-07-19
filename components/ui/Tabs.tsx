@@ -27,7 +27,7 @@ export function ChipTabs({
             "px-3 py-1.5 rounded-full text-caption whitespace-nowrap border",
             value === opt.value
               ? "bg-text-primary text-white border-text-primary"
-              : "bg-white text-text-secondary border-border"
+              : "bg-surface-card text-text-secondary border-border"
           )}
         >
           {opt.label}

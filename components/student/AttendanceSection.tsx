@@ -56,7 +56,7 @@ export function AttendanceSection() {
               onClick={() => setScenario(s.tier)}
               className={clsx(
                 "border rounded-lg px-1 py-2 text-caption text-center",
-                scenario === s.tier ? "border-brand-amber bg-state-warningBg text-brand-amberDark font-bold" : "border-border"
+                scenario === s.tier ? "border-brand-amber bg-state-warningBg text-brand-amber font-bold" : "border-border"
               )}
             >
               {s.label}

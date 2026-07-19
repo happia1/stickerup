@@ -32,7 +32,7 @@ export default function StudentHomePage() {
       <div className="bg-surface-card border border-border rounded-card p-4 mb-3.5 flex items-center justify-between">
         <div>
           <p className="text-caption text-text-secondary">보유 총 스티커</p>
-          <p className="text-display text-brand-amberDark">{total}장</p>
+          <p className="text-display text-brand-amber">{total}장</p>
         </div>
         <Link
           href="/student/sticker?tab=attend"

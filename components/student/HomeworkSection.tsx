@@ -48,7 +48,7 @@ export function HomeworkSection() {
               onClick={() => setTier(t.tier)}
               className={clsx(
                 "border rounded-lg px-1 py-2 text-caption text-center",
-                tier === t.tier ? "border-brand-amber bg-state-warningBg text-brand-amberDark font-bold" : "border-border"
+                tier === t.tier ? "border-brand-amber bg-state-warningBg text-brand-amber font-bold" : "border-border"
               )}
             >
               {t.label}

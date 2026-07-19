@@ -16,21 +16,18 @@ export function BottomSheet({
 }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/45" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/65" onClick={onClose}>
       <div
         className={clsx(
           "w-full max-w-app max-h-[85%] overflow-y-auto rounded-t-sheet p-5 pb-6 relative",
-          dark ? "bg-dark-surface0 text-dark-textPrimary" : "bg-surface-page text-text-primary"
+          dark ? "bg-surface-raised text-text-primary" : "bg-surface-page text-text-primary"
         )}
         onClick={(e) => e.stopPropagation()}
       >
         <button
           type="button"
           onClick={onClose}
-          className={clsx(
-            "absolute top-3 right-3 w-7 h-7 rounded-full text-caption flex items-center justify-center",
-            dark ? "bg-dark-border text-dark-textSecondary" : "bg-surface-page text-text-secondary"
-          )}
+          className="absolute top-3 right-3 w-7 h-7 rounded-full bg-surface-card text-text-secondary text-caption flex items-center justify-center"
           aria-label="닫기"
         >
           ✕
@@ -64,15 +61,15 @@ export function CelebrationModal({
 }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-6" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-6" onClick={onClose}>
       <div
-        className="w-full max-w-[320px] rounded-[20px] bg-dark-surface0 text-dark-textPrimary p-6 text-center"
+        className="w-full max-w-[320px] rounded-[20px] bg-surface-raised text-text-primary p-6 text-center"
         onClick={(e) => e.stopPropagation()}
       >
-        <p className="text-caption text-dark-textSecondary mb-2">{eyebrow}</p>
+        <p className="text-caption text-text-secondary mb-2">{eyebrow}</p>
         <p className="text-title mb-4">{headline}</p>
         <div className="text-[64px] leading-none mb-4">{icon}</div>
-        <p className="text-body text-dark-textSecondary mb-5">{message}</p>
+        <p className="text-body text-text-secondary mb-5">{message}</p>
         <button
           type="button"
           onClick={onCta}

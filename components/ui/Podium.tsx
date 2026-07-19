@@ -38,7 +38,7 @@ export function Podium({
     return (
       <div
         className={clsx(
-          "bg-dark-surface1 rounded-card flex flex-col items-center text-center px-2",
+          "bg-surface-card rounded-card flex flex-col items-center text-center px-2",
           size === "lg" ? "py-4 -mt-3" : "py-3",
           isMe && "ring-2 ring-brand-amber"
         )}
@@ -55,7 +55,7 @@ export function Podium({
           </div>
         )}
         <Avatar name={findName(row.student_id)} size={size === "lg" ? 56 : 44} />
-        <p className="text-subtitle text-dark-textPrimary mt-2 truncate max-w-full">
+        <p className="text-subtitle text-text-primary mt-2 truncate max-w-full">
           {findName(row.student_id)}
           {isMe ? " (나)" : ""}
         </p>
@@ -65,9 +65,9 @@ export function Podium({
   };
 
   return (
-    <div className="bg-dark-surface0 rounded-card p-4">
+    <div className="bg-surface-raised rounded-card p-4">
       {rows.length === 0 ? (
-        <p className="text-caption text-dark-textSecondary text-center py-4">아직 랭킹 데이터가 없어요.</p>
+        <p className="text-caption text-text-secondary text-center py-4">아직 랭킹 데이터가 없어요.</p>
       ) : (
         <>
           <div className="grid grid-cols-3 gap-2 items-end mb-2">
@@ -81,19 +81,19 @@ export function Podium({
               <div
                 key={row.student_id}
                 className={clsx(
-                  "flex items-center gap-2.5 py-2 border-t border-dark-border",
-                  isMe && "bg-dark-surface1 rounded-lg px-2"
+                  "flex items-center gap-2.5 py-2 border-t border-border",
+                  isMe && "bg-surface-card rounded-lg px-2"
                 )}
               >
-                <div className="w-6 h-6 rounded-full bg-dark-surface1 text-dark-textSecondary text-micro flex items-center justify-center flex-shrink-0">
+                <div className="w-6 h-6 rounded-full bg-surface-card text-text-secondary text-micro flex items-center justify-center flex-shrink-0">
                   {row.rank}
                 </div>
                 <Avatar name={findName(row.student_id)} size={32} />
-                <p className="flex-1 text-body text-dark-textPrimary truncate">
+                <p className="flex-1 text-body text-text-primary truncate">
                   {findName(row.student_id)}
                   {isMe ? " (나)" : ""}
                 </p>
-                <p className="text-body font-extrabold text-dark-textPrimary">{row.total_count}장</p>
+                <p className="text-body font-extrabold text-text-primary">{row.total_count}장</p>
               </div>
             );
           })}

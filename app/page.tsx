@@ -18,7 +18,7 @@ export default function Home() {
         </Link>
         <Link
           href="/admin/dashboard"
-          className="w-full py-3.5 rounded-xl bg-white border border-border text-text-primary font-bold text-center"
+          className="w-full py-3.5 rounded-xl bg-surface-card border border-border text-text-primary font-bold text-center"
         >
           🛠 관리자 앱으로 들어가기
         </Link>

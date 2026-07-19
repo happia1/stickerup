@@ -19,8 +19,8 @@ const NAV = [
 export function AdminSidebar() {
   const pathname = usePathname();
   return (
-    <div className="w-[210px] flex-shrink-0 bg-dark-surface0 text-dark-textSecondary p-3">
-      <div className="text-dark-textPrimary font-extrabold text-body px-2.5 py-2 mb-3">🛠 관리자</div>
+    <div className="w-[210px] flex-shrink-0 bg-surface-raised text-text-secondary p-3">
+      <div className="text-text-primary font-extrabold text-body px-2.5 py-2 mb-3">🛠 관리자</div>
       {NAV.map((item) => {
         const active = pathname?.startsWith(item.href);
         return (
@@ -29,7 +29,7 @@ export function AdminSidebar() {
             href={item.href}
             className={clsx(
               "block px-3 py-2.5 rounded-lg text-body mb-0.5",
-              active ? "bg-dark-surface1 text-dark-textPrimary font-bold" : "text-dark-textSecondary"
+              active ? "bg-surface-card text-text-primary font-bold" : "text-text-secondary"
             )}
           >
             {item.label}

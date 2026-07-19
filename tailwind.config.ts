@@ -9,28 +9,21 @@ const config: Config = {
     extend: {
       colors: {
         surface: {
-          page: "#F4F5F7",
-          card: "#FFFFFF",
+          page: "#0A0B0E",
+          card: "#17191F",
+          raised: "#20232B",
         },
         border: {
-          DEFAULT: "#E4E6EA",
-          strong: "#D8DAE0",
+          DEFAULT: "#2A2D35",
+          strong: "#383C46",
         },
         text: {
-          primary: "#20242B",
-          secondary: "#69707C",
-          muted: "#9AA0AA",
+          primary: "#F5F6F7",
+          secondary: "#9AA0AA",
+          muted: "#6E7480",
         },
         brand: {
           amber: "#FF9F1C",
-          amberDark: "#C9741A",
-        },
-        dark: {
-          surface0: "#14161B",
-          surface1: "#1E2128",
-          textPrimary: "#F5F6F7",
-          textSecondary: "#9AA0AA",
-          border: "#2C3038",
         },
         medal: {
           gold: "#F2B807",
@@ -38,12 +31,12 @@ const config: Config = {
           bronze: "#C0703C",
         },
         state: {
-          success: "#2FAE66",
-          successBg: "#E4F7EC",
-          danger: "#E0483D",
-          dangerBg: "#FBE7E6",
-          warningBg: "#FFF0D6",
-          warningText: "#B9700A",
+          success: "#3DBE75",
+          successBg: "#14301F",
+          danger: "#FF6B61",
+          dangerBg: "#3A1B18",
+          warningBg: "#3A2A12",
+          warningText: "#FFC670",
         },
       },
       fontSize: {
