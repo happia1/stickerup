@@ -15,3 +15,9 @@
 - 증상: 학생 마이페이지/설정/스티커와 관리자 주요 페이지가 단순 안내 카드 수준으로 축소되어 앱 구조가 뒤섞여 보였고, 이전 복원 내용이 일부 누락됨.
 - 원인: `3e44de5` 이후 라우트 파일이 삭제되거나 stub으로 재생성되면서, `61b9aa9`의 레이아웃/정책/store 기능 일부가 워크트리에 반영되지 않음.
 - 조치: 학생 화면을 PRD 기준으로 홈·스티커·마이페이지·설정 역할에 맞게 재구성하고, 관리자 라우트/store/type을 이전 완성 커밋 기준으로 복원했다. `npm.cmd run build`로 Windows PowerShell 실행 정책을 우회해 production build 통과 확인.
+
+## [2026-07-20] Supabase 패키지 설치 및 build trace 잠금
+
+- 증상: `npm.cmd install @supabase/supabase-js` 최초 실행 시 사용자 npm cache 경로에서 `EPERM` 실패. 이후 `npm.cmd run build` 최초 실행 시 `.next/trace` open `EPERM` 실패.
+- 원인: npm cache 접근 권한이 sandbox에 막혔고, 3001 dev 서버가 `.next/trace`를 잡고 있어 production build가 trace 파일을 열 수 없었음.
+- 조치: npm install은 승인된 권한으로 재실행해 성공. 3001 dev 서버 프로세스를 종료한 뒤 `npm.cmd run build`를 재실행해 성공.

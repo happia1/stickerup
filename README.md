@@ -20,12 +20,13 @@
 - **프론트엔드**: Next.js (React), 반응형 웹
 - **배포**: Vercel
 - **백엔드 / DB / 인증 / 스토리지**: Supabase (Postgres, Auth, Storage, Row Level Security)
+- **현재 상태**: mock store 기반 UI 유지 + Supabase client 구조 준비
 
 ## 문서
 
-- [`docs/PRD.md`](./docs/PRD.md) — 제품 요구사항 정의서
-- [`docs/IA.md`](./docs/IA.md) — 정보 구조(IA) 및 화면 흐름
-- [`docs/DESIGN_GUIDE.md`](./docs/DESIGN_GUIDE.md) — 디자인 가이드(컬러, 타이포, 컴포넌트 스펙)
+- [`docs/PRD_학원스티커랭킹앱.md`](./docs/PRD_학원스티커랭킹앱.md) — 제품 요구사항 정의서
+- [`docs/IA_학원스티커랭킹앱.md`](./docs/IA_학원스티커랭킹앱.md) — 정보 구조(IA) 및 화면 흐름
+- [`docs/디자인가이드_학원스티커랭킹앱.md`](./docs/디자인가이드_학원스티커랭킹앱.md) — 디자인 가이드(컬러, 타이포, 컴포넌트 스펙)
 
 ## 시작하기
 
@@ -44,13 +45,15 @@ npm install
 
 ### 환경 변수
 
-루트에 `.env.local` 파일을 만들고 아래 값을 채워주세요.
+루트의 `.env.example`을 참고해 로컬에서만 `.env.local`을 만들고 값을 채워주세요. `.env.local`은 Git에 커밋하지 않습니다.
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 ```
+
+브라우저에서 사용하는 값은 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`뿐입니다. `SUPABASE_SERVICE_ROLE_KEY`는 서버 전용이며 client component에서 import하지 않도록 `lib/supabase/admin.ts`에 분리되어 있습니다.
 
 ### 개발 서버 실행
 
@@ -62,7 +65,13 @@ npm run dev
 
 ### 배포
 
-`main` 브랜치에 푸시하면 Vercel에 자동 배포됩니다. Vercel 프로젝트 설정의 Environment Variables에도 위 Supabase 값을 동일하게 등록해야 합니다.
+`main` 브랜치에 푸시하면 Vercel에 자동 배포됩니다. Vercel 프로젝트 설정의 Environment Variables에도 `.env.example`의 Supabase 값을 동일하게 등록해야 합니다.
+
+### Supabase 연동 구조
+
+- `lib/supabase/client.ts`: 브라우저/client component에서 사용할 anon key 기반 client
+- `lib/supabase/admin.ts`: 서버 전용 service role 기반 admin client (`server-only` import로 client bundle 유입 방지)
+- 기존 `lib/store` mock store는 Supabase 전환 중에도 UI가 깨지지 않도록 유지합니다.
 
 ## 프로젝트 구조 (예정)
 
