@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppState } from "@/lib/store/provider";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Pill } from "@/components/ui/Pill";
@@ -32,9 +32,9 @@ export function FlapBanner() {
       <div
         role="button"
         onClick={() => setOpen(true)}
-        className="bg-surface-raised text-black rounded-2xl px-3.5 py-3 mb-3.5 flex items-center gap-2 cursor-pointer"
+        className="bg-surface-raised text-text-primary rounded-2xl px-3.5 py-3 mb-3.5 flex items-center gap-2 cursor-pointer"
       >
-        <span className="bg-brand-amber text-black text-micro font-extrabold px-1.5 py-0.5 rounded-md flex-shrink-0">공지</span>
+        <span className="bg-brand-amber text-surface-page text-micro font-extrabold px-1.5 py-0.5 rounded-md flex-shrink-0">공지</span>
         <div className="flex-1 overflow-hidden h-4">
           <span key={animKey} className="animate-flap block text-body font-semibold whitespace-nowrap overflow-hidden text-ellipsis">
             {notices[index % notices.length].title}

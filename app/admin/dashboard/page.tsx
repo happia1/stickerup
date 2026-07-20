@@ -10,10 +10,6 @@ export default function AdminDashboardPage() {
   const counts = pendingCounts(state);
   const cancelled = state.ledger.filter((l) => l.status === "rolled_back").length;
   const todayStr = DEMO_NOW.toISOString().slice(0, 10);
-  const todayAttendance = state.ledger.filter(
-    (l) => l.source_type === "attendance" && l.created_at.startsWith(todayStr) && l.count > 0
-  ).length;
-
   const rows = getRanking({
     ledger: state.ledger,
     enrollments: state.enrollments,

@@ -1,5 +1,4 @@
 "use client";
-import { useState } from "react";
 import { useAppState, useAppDispatch } from "@/lib/store/provider";
 import { computePeriodBounds } from "@/lib/ranking";
 import { RANKING_UNIT_LABEL } from "@/lib/types";

@@ -7,7 +7,7 @@ import {
   rankingForScope,
   rankingPeriodLabel,
 } from "@/lib/store/selectors";
-import { getRanking, computePeriodBounds } from "@/lib/ranking";
+import { getRanking } from "@/lib/ranking";
 import { RANKING_UNIT_LABEL } from "@/lib/types";
 import { Podium } from "@/components/ui/Podium";
 import { ChipTabs } from "@/components/ui/Tabs";

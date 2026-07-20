@@ -7,7 +7,6 @@ interface PodiumStudent {
   name: string;
 }
 
-const MEDAL_LABEL: Record<string, string> = { gold: "1", silver: "2", bronze: "3" };
 const MEDAL_BG: Record<string, string> = {
   gold: "bg-medal-gold",
   silver: "bg-medal-silver",
@@ -47,7 +46,7 @@ export function Podium({
                 <div
                   className={clsx(
                     "w-7 h-7 rounded-full text-micro font-extrabold flex items-center justify-center flex-shrink-0",
-                    row.medal ? `${MEDAL_BG[row.medal]} text-black` : "bg-surface-card text-text-secondary"
+                    row.medal ? `${MEDAL_BG[row.medal]} text-surface-page` : "bg-surface-card text-text-secondary"
                   )}
                 >
                   {row.rank}

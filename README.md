@@ -27,6 +27,7 @@
 - [`docs/PRD_학원스티커랭킹앱.md`](./docs/PRD_학원스티커랭킹앱.md) — 제품 요구사항 정의서
 - [`docs/IA_학원스티커랭킹앱.md`](./docs/IA_학원스티커랭킹앱.md) — 정보 구조(IA) 및 화면 흐름
 - [`docs/디자인가이드_학원스티커랭킹앱.md`](./docs/디자인가이드_학원스티커랭킹앱.md) — 디자인 가이드(컬러, 타이포, 컴포넌트 스펙)
+- [`docs/SUPABASE_SETUP.md`](./docs/SUPABASE_SETUP.md) — Supabase/Vercel 환경 설정 및 client 분리 규칙
 
 ## 시작하기
 
@@ -69,8 +70,8 @@ npm run dev
 
 ### Supabase 연동 구조
 
-- `lib/supabase/client.ts`: 브라우저/client component에서 사용할 anon key 기반 client
-- `lib/supabase/admin.ts`: 서버 전용 service role 기반 admin client (`server-only` import로 client bundle 유입 방지)
+- `lib/supabase/client.ts`: 브라우저/client component에서 사용할 anon key 기반 client factory
+- `lib/supabase/admin.ts`: 서버 전용 service role 기반 admin client factory (`server-only` import로 client bundle 유입 방지)
 - 기존 `lib/store` mock store는 Supabase 전환 중에도 UI가 깨지지 않도록 유지합니다.
 
 ## 프로젝트 구조 (예정)

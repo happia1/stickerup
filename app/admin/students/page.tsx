@@ -1,7 +1,6 @@
 "use client";
 import { useAppState, useAppDispatch } from "@/lib/store/provider";
 import { totalStickers } from "@/lib/store/selectors";
-import { Pill } from "@/components/ui/Pill";
 
 export default function AdminStudentsPage() {
   const state = useAppState();
