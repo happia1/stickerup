@@ -26,7 +26,7 @@ export default function StudentHomePage() {
       const { data: sessionData } = await supabase.auth.getSession();
       const accessToken = sessionData.session?.access_token;
       if (!accessToken) {
-        if (active) setConnectionMessage("Supabase 로그인 전에는 데모 데이터를 표시합니다.");
+        if (active) setConnectionMessage("로그인하면 최신 정보를 불러옵니다.");
         return;
       }
 
@@ -41,7 +41,7 @@ export default function StudentHomePage() {
         if (active) setRemoteData(payload.data);
       } catch (error) {
         if (active) {
-          setConnectionMessage(error instanceof Error ? `${error.message} 데모 데이터를 계속 표시합니다.` : "데모 데이터를 계속 표시합니다.");
+          setConnectionMessage(error instanceof Error ? error.message : "학생 홈 데이터를 불러오지 못했습니다.");
         }
       }
     }

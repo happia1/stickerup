@@ -47,7 +47,7 @@ export default function JoinInvitePage({ params }: { params: { inviteCode: strin
     event.preventDefault();
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
-      setMessage("Supabase 환경변수를 설정하면 학생 가입을 진행할 수 있습니다. 현재는 데모 모드입니다.");
+      setMessage("Supabase 환경변수를 설정한 뒤 다시 시도해 주세요.");
       return;
     }
 
@@ -110,7 +110,7 @@ export default function JoinInvitePage({ params }: { params: { inviteCode: strin
       <div className="rounded-card bg-surface-card p-5">
         <p className="text-display">학생 계정 만들기</p>
         <p className="mt-3 text-body text-text-secondary">{invite.academyName} · {invite.teacherName} 선생님 초대</p>
-        {configError && <p className="mt-4 text-caption text-text-secondary">`.env.local` 값이 비어 있어 현재는 데모 모드입니다.</p>}
+        {configError && <p className="mt-4 text-caption text-text-secondary">Supabase 환경변수를 설정한 뒤 가입을 진행해 주세요.</p>}
         <form onSubmit={handleSubmit} className="mt-5 space-y-3">
           <label className="block text-caption text-text-secondary">학생 이름
             <input required value={studentName} onChange={(event) => setStudentName(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none" />

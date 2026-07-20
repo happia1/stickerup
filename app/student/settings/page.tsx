@@ -38,7 +38,7 @@ export default function StudentSettingsPage() {
       </Card>
 
       <Card>
-        <h2 className="text-subtitle mb-2">데모 계정 전환</h2>
+        <h2 className="text-subtitle mb-2">계정 전환</h2>
         <select
           className="w-full border border-border rounded-lg px-2.5 py-2 text-body"
           value={state.currentUserId}

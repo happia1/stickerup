@@ -50,7 +50,7 @@ export function RewardBlock({ data }: { data?: StudentHomeData }) {
 
   const handleClaim = (campaign: RewardCampaign, itemId: string, itemTitle: string) => {
     if (isReadOnly) {
-      showToast("보상 신청은 다음 Supabase 단계에서 연결됩니다.");
+      showToast("보상 신청은 현재 준비 중입니다.");
       return;
     }
     const meta = getCampaignMeta(state, campaign, state.currentUserId);
@@ -105,8 +105,6 @@ export function RewardBlock({ data }: { data?: StudentHomeData }) {
       ) : (
         <p className="text-caption text-text-muted">진행중이거나 예정된 상품 이벤트가 없어요.</p>
       )}
-      {isReadOnly && <p className="mt-2 text-micro text-text-muted">보상 신청 기능은 아직 데모 모드에서만 동작합니다.</p>}
-
       <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title="전체 상품 이벤트">
         {allVisible.map((c) => (
           <div key={c.id} className="bg-surface-card rounded-card p-3 mb-3">

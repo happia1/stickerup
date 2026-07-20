@@ -18,7 +18,7 @@ export default function LoginPage() {
     event.preventDefault();
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
-      setMessage("Supabase 환경변수를 설정하면 로그인할 수 있습니다. 현재는 데모 화면을 이용할 수 있습니다.");
+      setMessage("Supabase 환경변수를 설정한 뒤 다시 시도해 주세요.");
       return;
     }
 
@@ -59,7 +59,7 @@ export default function LoginPage() {
       <div className="mt-8 rounded-card bg-surface-card p-5">
         <p className="text-display">로그인</p>
         <p className="mt-2 text-body text-text-secondary">계정 역할에 맞는 화면으로 이동합니다.</p>
-        {configError && <p className="mt-4 text-caption text-text-secondary">`.env.local` 값이 비어 있어 현재는 데모 모드입니다.</p>}
+        {configError && <p className="mt-4 text-caption text-text-secondary">Supabase 환경변수를 설정한 뒤 로그인해 주세요.</p>}
         <form onSubmit={handleSubmit} className="mt-5 space-y-3">
           <label className="block text-caption text-text-secondary">이메일
             <input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none" />

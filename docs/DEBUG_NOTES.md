@@ -1,5 +1,12 @@
 # DEBUG NOTES
 
+## [2026-07-20] Vercel deployment readiness verification
+
+- Symptom: `next build` emitted `outputFileTracing` deprecation and webpack cache snapshot warnings on Windows.
+- Cause: the current Next.js configuration disables output file tracing, and the local Windows cache cannot snapshot some dependency paths.
+- Resolution: the warnings are non-blocking. With no process listening on port 3001, `npm.cmd run typecheck` passed and `npm.cmd run build` generated `BUILD_ID`, `app-paths-manifest.json`, and `prerender-manifest.json`. No `.next/trace` `EPERM` occurred.
+- Note: Vercel CLI `50.28.0` is installed. In this PowerShell environment the `vercel.ps1` shim is blocked by execution policy, so use `vercel.cmd` when running CLI commands locally.
+
 ## [2026-07-20] Removed-route Next type cache
 
 - Symptom: `npm run typecheck` still referenced deleted `/auth` and `/api/onboarding` route modules.

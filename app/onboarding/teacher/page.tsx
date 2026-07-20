@@ -20,7 +20,7 @@ export default function TeacherOnboardingPage() {
     event.preventDefault();
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
-      setMessage("Supabase 환경변수를 설정하면 선생님 계정을 만들 수 있습니다. 현재는 데모 모드입니다.");
+      setMessage("Supabase 환경변수를 설정한 뒤 다시 시도해 주세요.");
       return;
     }
 
@@ -69,7 +69,7 @@ export default function TeacherOnboardingPage() {
       <div className="mt-8 rounded-card bg-surface-card p-5">
         <p className="text-display">선생님 계정 만들기</p>
         <p className="mt-2 text-body text-text-secondary">학원을 만들고 기본 반과 초대 링크를 자동으로 준비합니다.</p>
-        {configError && <p className="mt-4 text-caption text-text-secondary">`.env.local` 값이 비어 있어 현재는 데모 모드입니다.</p>}
+        {configError && <p className="mt-4 text-caption text-text-secondary">Supabase 환경변수를 설정한 뒤 가입을 진행해 주세요.</p>}
         <form onSubmit={handleSubmit} className="mt-5 space-y-3">
           <label className="block text-caption text-text-secondary">학원 이름
             <input required value={academyName} onChange={(event) => setAcademyName(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none" />

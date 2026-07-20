@@ -38,6 +38,7 @@
 - [`docs/IA_학원스티커랭킹앱.md`](./docs/IA_학원스티커랭킹앱.md) — 정보 구조(IA) 및 화면 흐름
 - [`docs/디자인가이드_학원스티커랭킹앱.md`](./docs/디자인가이드_학원스티커랭킹앱.md) — 디자인 가이드(컬러, 타이포, 컴포넌트 스펙)
 - [`docs/SUPABASE_SETUP.md`](./docs/SUPABASE_SETUP.md) — Supabase/Vercel 환경 설정 및 client 분리 규칙
+- [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md) — Vercel 환경변수, GitHub 자동 배포, CLI 배포 검증
 
 ## 시작하기
 
@@ -76,7 +77,13 @@ npm run dev
 
 ### 배포
 
-`main` 브랜치에 푸시하면 Vercel에 자동 배포됩니다. Vercel 프로젝트 설정의 Environment Variables에도 `.env.example`의 Supabase 값을 동일하게 등록해야 합니다.
+Vercel 프로젝트의 **Environment Variables**에 아래 값을 Development, Preview, Production 환경별로 등록하세요.
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+`NEXT_PUBLIC_` 접두사의 두 값만 브라우저에 노출됩니다. `SUPABASE_SERVICE_ROLE_KEY`는 서버 전용이며 절대 `NEXT_PUBLIC_` 접두사를 붙이지 마세요. GitHub 연동 프로젝트는 Production Branch를 `main`으로 설정하면 `main` 푸시마다 자동으로 프로덕션 배포됩니다. 자세한 절차는 [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md)를 참고하세요.
 
 ### Supabase 연동 구조
 
