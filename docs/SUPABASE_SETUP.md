@@ -42,7 +42,7 @@ After migration 03, run `supabase/migrations/20260719_05_service_role_permission
 ## Auth and onboarding
 
 - `/login` uses the browser anon-key client for email/password sign-in without a role selector. It checks `teachers` and `students` through a server route and redirects by the stored application role.
-- `/signup` is the single public signup screen. Teacher signup initializes the academy; student signup uses either an invite link or an existing academy name. The legacy `/onboarding` routes redirect to `/signup`.
+- `/signup` is the single public signup screen. Teacher signup initializes the academy; student signup uses either an invite link or an academy name. When the name is not registered, it creates a pending academy that a later teacher signup with the same name can claim. The legacy `/onboarding` routes redirect to `/signup`.
 - `/join/[inviteCode]` redirects to `/signup?invite=[inviteCode]`. The public server handler confirms the invite token, then the signup screen fixes the student type and academy name. The invite token and selected role are stored in Supabase Auth user metadata so email-confirmation flows can resume signup after login.
 - Email signup does not send `emailRedirectTo`. Supabase uses the Dashboard Site URL as the confirmation return location, avoiding application-side redirect URL validation.
 - The signup and login forms accept an email address or a 2–10 character Korean/English identifier. Identifier accounts are created by the server with an internal Auth email and `login_identifier` user metadata; the internal address is never shown in the UI. Use a real email address when email confirmation or password recovery is required.

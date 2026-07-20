@@ -99,11 +99,22 @@ export async function completeTeacherOnboarding(
 ) {
   await ensureProfileIsNew(supabase, input.userId);
 
-  const tenantResult = await supabase
+  const existingTenantResult = await supabase
     .from("tenants")
-    .insert({ name: input.academyName })
     .select("id")
-    .single();
+    .eq("name", input.academyName)
+    .is("owner_teacher_id", null)
+    .limit(1)
+    .maybeSingle();
+  if (existingTenantResult.error) fail(existingTenantResult.error, "Unable to find academy.");
+
+  const tenantResult = existingTenantResult.data
+    ? { data: existingTenantResult.data, error: null }
+    : await supabase
+      .from("tenants")
+      .insert({ name: input.academyName })
+      .select("id")
+      .single();
   if (tenantResult.error || !tenantResult.data) fail(tenantResult.error, "Unable to create academy.");
 
   const teacherResult = await supabase.from("teachers").insert({
@@ -170,8 +181,19 @@ export async function completeStudentOnboarding(
       .limit(1)
       .maybeSingle();
     if (tenantResult.error) fail(tenantResult.error, "Unable to find academy.");
-    if (!tenantResult.data) throw new Error("Academy was not found. Please check the academy name or ask your teacher for an invite link.");
-    tenantId = tenantResult.data.id;
+    if (tenantResult.data) {
+      tenantId = tenantResult.data.id;
+    } else {
+      const pendingTenantResult = await supabase
+        .from("tenants")
+        .insert({ name: academyName })
+        .select("id")
+        .single();
+      if (pendingTenantResult.error || !pendingTenantResult.data) {
+        fail(pendingTenantResult.error, "Unable to prepare academy request.");
+      }
+      tenantId = pendingTenantResult.data.id;
+    }
   }
 
   const studentResult = await supabase.from("students").insert({

@@ -75,3 +75,15 @@
 - 증상: 한글 아이디 가입에서 인증 링크 오류 메시지가 반복됐다.
 - 원인: `NEXT_PUBLIC_SUPABASE_URL`이 프로젝트 root가 아닌 `.../rest/v1/` endpoint였다. 한글 아이디 가입은 server-only admin Auth 요청을 사용하므로 SDK가 잘못된 경로를 조합했다.
 - 조치: Supabase browser/admin client 생성 전에 URL을 HTTPS origin으로 정규화했다. Vercel 환경변수도 `/rest/v1/` 없는 프로젝트 root URL로 수정해야 한다.
+
+## 2026-07-21 students 테이블 권한 거부
+
+- 증상: 한글 아이디 가입 시 `permission denied for table students`가 표시됐다.
+- 원인: 서버 전용 `service_role`에 마이그레이션으로 생성된 public 테이블 권한이 명시적으로 부여되지 않았다.
+- 조치: `20260719_05_service_role_permissions.sql`에 service_role 권한 부여를 추가하고, 가입 전 admin 상태 점검과 API 오류를 SQL 실행 안내로 매핑했다. Supabase SQL Editor에서 migration 05 실행이 필요하다.
+
+## 2026-07-21 학원 미등록 학생 가입
+
+- 증상: 초대 링크 없이 학원명을 입력한 학생이 `Academy was not found` 오류를 받았다.
+- 원인: 가입 로직이 기존 tenant만 허용해 pending 또는 미연결 학생 가입 요구사항과 맞지 않았다.
+- 조치: 미등록 학원명에는 ownerless pending tenant와 pending enrollment를 생성하고, 동일 학원명 선생님 가입 시 그 tenant를 이어받도록 변경했다.

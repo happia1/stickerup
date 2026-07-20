@@ -1,5 +1,17 @@
 # DEBUG NOTES
 
+## [2026-07-21] Academy not found during general student signup
+
+- Symptom: a student without an invite link received `Academy was not found` after entering an academy name.
+- Cause: the onboarding flow required a pre-existing `tenants` row even though the product flow allows general student signup to remain pending before teacher approval.
+- Resolution: when no tenant matches the submitted academy name, the server creates an ownerless pending tenant, creates a pending enrollment, and lets a later teacher signup with the same name claim that tenant.
+
+## [2026-07-21] Students table permission denied during signup
+
+- Symptom: Korean identifier signup reached the server onboarding path but failed with `permission denied for table students`.
+- Cause: the browser remains protected by RLS, and the deployed database did not have explicit PostgreSQL privileges for the server-only `service_role` on the migrated public tables. The student onboarding flow checks and then inserts into `students`.
+- Resolution: added `20260719_05_service_role_permissions.sql`, which grants privileges only to `service_role` and leaves browser RLS enabled. Run this migration in the Supabase SQL Editor before retrying signup.
+
 ## [2026-07-21] Supabase REST endpoint used as project URL
 
 - Symptom: Korean identifier signup kept failing with `Invalid path specified in request URL` even after redirect handling changes.
