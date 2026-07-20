@@ -1,5 +1,11 @@
 # DEBUG NOTES
 
+## [2026-07-21] Supabase Hosted Auth password minimum
+
+- Symptom: the app allowed passwords shorter than the Supabase Hosted Auth minimum, so signup attempts were rejected.
+- Cause: Supabase Hosted Auth does not allow its minimum password length to be configured below 6 characters.
+- Resolution: aligned signup API and client validation, login validation, and user-facing password guidance to a minimum of 6 characters.
+
 ## [2026-07-21] Signup invalid request-path message
 
 - Symptom: signup displayed `Invalid path specified in request URL` below the password input.

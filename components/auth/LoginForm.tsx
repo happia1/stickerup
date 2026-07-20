@@ -21,6 +21,10 @@ export function LoginForm() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (password.length < 6) {
+      setMessage("비밀번호는 최소 6자 이상 입력해 주세요.");
+      return;
+    }
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
       setMessage("Supabase 환경변수를 설정한 뒤 다시 시도해 주세요.");
@@ -67,12 +71,13 @@ export function LoginForm() {
         </label>
         <label className="block text-caption text-text-secondary">비밀번호
           <div className="relative mt-1">
-            <input required type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-xl bg-surface-raised py-2.5 pl-3 pr-11 text-text-primary outline-none" />
+            <input required minLength={6} type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-xl bg-surface-raised py-2.5 pl-3 pr-11 text-text-primary outline-none" />
             <button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"} className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-text-secondary">
               <PasswordVisibilityIcon hidden={!showPassword} />
             </button>
           </div>
         </label>
+        <p className="text-caption text-text-muted">비밀번호는 최소 6자 이상 입력해 주세요.</p>
         {message && <p className="text-caption text-text-secondary">{message}</p>}
         <button disabled={submitting} className="w-full rounded-xl bg-brand-amber py-3 text-body font-bold text-surface-page disabled:opacity-60">
           {submitting ? "로그인 중..." : "로그인"}

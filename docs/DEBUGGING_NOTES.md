@@ -39,3 +39,9 @@
 - 증상: 회원가입 시 비밀번호 입력 아래에 `Invalid path specified in request URL`이 표시되었습니다.
 - 확인: Supabase URL 형식과 server-only service key 읽기 연결은 정상입니다.
 - 조치: 이메일 확인 복귀 주소를 현재 앱의 `/login`으로 명시하고, 같은 Auth 오류는 Supabase Site URL 및 Redirect URLs 설정을 안내하는 문구로 교체했습니다.
+
+## 2026-07-21 Supabase Hosted Auth password minimum
+
+- 증상: 앱의 6자 미만 비밀번호 정책과 Supabase Hosted Auth의 가입 제한이 달라 회원가입이 거부될 수 있었다.
+- 원인: Supabase Hosted Auth의 최소 비밀번호 길이는 6자 미만으로 설정할 수 없다.
+- 조치: 로그인·회원가입 검증과 화면 안내를 최소 6자로 통일했다.

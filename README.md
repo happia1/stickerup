@@ -6,6 +6,7 @@
 
 - `/login`은 역할 선택 없이 이메일/비밀번호로 로그인합니다. `students` 테이블에 있으면 `/student/home`, `teachers` 테이블에 있으면 `/admin/dashboard`로 이동합니다.
 - `/signup`은 학생/선생님 유형을 선택하는 단일 회원가입 화면입니다. 선생님 가입은 학원, owner 선생님, 기본반, 기본 랭킹 주기, 기본 초대 링크를 생성합니다.
+- 비밀번호 정책은 Supabase Hosted Auth 기준과 동일하게 **최소 6자**입니다. 회원가입 화면의 비밀번호 입력란에서 조건을 안내합니다.
 - 학생 초대 링크는 `/join/[inviteCode]`에서 `/signup?invite=[inviteCode]`로 연결됩니다. 유효한 링크는 학생 유형과 학원명을 자동으로 설정하고 기본반 승인 등록을 생성합니다.
 - 초대 링크가 없는 학생은 기존 학원명을 입력해 가입할 수 있으며, 기본반 등록은 `pending` 상태로 생성되어 선생님의 승인 또는 반 신청이 필요할 수 있습니다.
 - `/onboarding`, `/onboarding/teacher`, `/onboarding/student`은 이전 링크 호환을 위해 `/signup`으로 이동합니다.

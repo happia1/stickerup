@@ -33,8 +33,8 @@ export async function POST(request: Request) {
   if (!user) {
     const identifier = normalizeLoginIdentifier(payload.identifier ?? "");
     const password = payload.password ?? "";
-    if (!isUsernameLoginIdentifier(identifier) || password.length < 4) {
-      return NextResponse.json({ error: "한글 아이디는 2~10자, 비밀번호는 4자 이상으로 입력해 주세요." }, { status: 400 });
+    if (!isUsernameLoginIdentifier(identifier) || password.length < 6) {
+      return NextResponse.json({ error: "한글 아이디는 2~10자, 비밀번호는 최소 6자 이상으로 입력해 주세요." }, { status: 400 });
     }
 
     const authEmail = getAuthEmailForIdentifier(identifier);

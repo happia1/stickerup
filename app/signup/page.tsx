@@ -111,6 +111,10 @@ function SignupForm() {
       setMessage("학생 나이는 1부터 100 사이로 입력해 주세요.");
       return;
     }
+    if (!existingSession && password.length < 6) {
+      setMessage("비밀번호는 최소 6자 이상 입력해 주세요.");
+      return;
+    }
     if (inviteCode && !invite) {
       setMessage("유효한 초대 링크를 확인한 뒤 가입해 주세요.");
       return;
@@ -184,7 +188,7 @@ function SignupForm() {
       const errorMessage = error instanceof Error ? error.message : "회원가입을 완료하지 못했습니다.";
       setMessage(
         errorMessage.includes("Password should be at least")
-          ? "Supabase Auth 비밀번호 최소 길이를 4자로 설정해 주세요. 설정 전에는 6자 이상이 필요합니다."
+          ? "Supabase Auth 비밀번호는 최소 6자 이상이어야 합니다."
           : errorMessage.includes("Invalid path specified in request URL")
           ? "회원가입 인증 경로를 확인하지 못했습니다. Supabase Auth의 Site URL과 Redirect URLs에 현재 앱 주소를 등록해 주세요."
           : errorMessage
@@ -234,13 +238,13 @@ function SignupForm() {
           <p className="text-caption text-text-muted">한글 아이디는 2~10자로 만들 수 있어요.</p>
           <label className="block text-caption text-text-secondary">비밀번호
             <div className="relative mt-1">
-              <input required={!existingSession} disabled={existingSession} minLength={4} type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-xl bg-surface-raised py-2.5 pl-3 pr-11 text-text-primary outline-none disabled:opacity-60" />
+              <input required={!existingSession} disabled={existingSession} minLength={6} type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-xl bg-surface-raised py-2.5 pl-3 pr-11 text-text-primary outline-none disabled:opacity-60" />
               <button type="button" disabled={existingSession} onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"} className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-text-secondary disabled:opacity-60">
                 <PasswordVisibilityIcon hidden={!showPassword} />
               </button>
             </div>
           </label>
-          <p className="text-caption text-text-muted">비밀번호는 4자 이상 입력해 주세요.</p>
+          <p className="text-caption text-text-muted">비밀번호는 최소 6자 이상 입력해 주세요.</p>
           {existingSession && <p className="text-caption text-text-secondary">인증된 계정입니다. 가입 정보를 확인한 뒤 완료해 주세요.</p>}
           {message && <p className="text-caption text-text-secondary">{message}</p>}
           <button disabled={!canSubmit} className="w-full rounded-xl bg-brand-amber py-3 text-body font-bold text-surface-page disabled:opacity-60">
