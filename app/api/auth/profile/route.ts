@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   }
 
   if (studentResult.data) return NextResponse.json({ role: "student", onboarded: true });
-  if (teacherResult.data) return NextResponse.json({ role: "teacher", onboarded: true });
+  if (teacherResult.data) return NextResponse.json({ role: teacherResult.data.role, onboarded: true });
 
   return NextResponse.json({ role: null, onboarded: false });
 }

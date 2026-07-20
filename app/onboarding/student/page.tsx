@@ -5,7 +5,7 @@ export default function StudentOnboardingPage() {
     <main className="mx-auto flex min-h-screen max-w-app flex-col justify-center px-6 py-10 text-center">
       <p className="text-display">학생 가입</p>
       <p className="mt-3 text-body text-text-secondary">선생님에게 초대 링크를 받아 가입해주세요.</p>
-      <p className="mt-2 text-caption text-text-muted">학원 코드 입력 기능은 다음 단계에서 추가될 예정입니다.</p>
+      <p className="mt-2 text-caption text-text-muted">초대 링크를 연 뒤 학생 계정 정보를 입력해 주세요.</p>
       <Link href="/login" className="mt-8 rounded-xl bg-surface-card px-4 py-3.5 text-body font-bold text-text-primary">
         이미 계정이 있나요? 로그인
       </Link>

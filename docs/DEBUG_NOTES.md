@@ -1,5 +1,11 @@
 # DEBUG NOTES
 
+## [2026-07-20] Auth entry flow build lock prevention
+
+- Symptom: port 3001 was occupied by an existing Next.js development server before the production build.
+- Cause: the development server can keep `.next/trace` open on Windows, which risks the known `EPERM` build failure.
+- Resolution: stopped the port 3001 process before running the build. `npm.cmd run typecheck` passed, and the production build generated `BUILD_ID`, `app-paths-manifest.json`, and `prerender-manifest.json` successfully.
+
 ## [2026-07-20] Vercel deployment readiness verification
 
 - Symptom: `next build` emitted `outputFileTracing` deprecation and webpack cache snapshot warnings on Windows.
