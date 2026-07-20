@@ -17,7 +17,7 @@ Vercel Dashboard에서 프로젝트를 열고 **Settings > Environment Variables
 
 | 이름 | 용도 | 브라우저 노출 |
 | --- | --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase 프로젝트 URL | 예 |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase 프로젝트 root URL (`https://<project-ref>.supabase.co`, `/rest/v1/` 제외) | 예 |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 브라우저용 Supabase anon key | 예 |
 | `SUPABASE_SERVICE_ROLE_KEY` | API route의 서버 전용 관리자 key | 아니요 |
 

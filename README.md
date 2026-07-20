@@ -69,6 +69,8 @@ SUPABASE_SERVICE_ROLE_KEY=
 
 브라우저에서 사용하는 값은 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`뿐입니다. 이메일 회원가입은 Supabase Dashboard의 Site URL 기본값으로 인증 링크를 처리합니다. `SUPABASE_SERVICE_ROLE_KEY`는 서버 전용이며 client component에서 import하지 않도록 `lib/supabase/admin.ts`에 분리되어 있습니다.
 
+`NEXT_PUBLIC_SUPABASE_URL`에는 `https://<project-ref>.supabase.co` 형식의 **프로젝트 root URL**을 사용합니다. `/rest/v1/`, `/auth/v1/` 같은 API 경로를 붙이지 마세요. 앱은 잘못 붙은 경로를 root URL로 정규화하지만, Vercel 환경변수도 root URL로 수정해야 합니다.
+
 ### 개발 서버 실행
 
 ```bash

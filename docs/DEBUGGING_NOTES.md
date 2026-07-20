@@ -69,3 +69,9 @@
 - 증상: origin 검증과 Vercel 배포 후에도 `Invalid path specified in request URL` 기반의 가입 인증 링크 오류가 계속 발생했다.
 - 원인: 선택값인 `emailRedirectTo`가 Auth `signUp` 호출에 남아 있어 앱 코드가 인증 리디렉션 주소 처리 경로에 계속 개입했다.
 - 조치: `emailRedirectTo`와 origin helper를 제거하고 Supabase Dashboard Site URL 기본 동작만 사용하도록 변경했다.
+
+## 2026-07-21 Supabase 프로젝트 URL 경로 오류
+
+- 증상: 한글 아이디 가입에서 인증 링크 오류 메시지가 반복됐다.
+- 원인: `NEXT_PUBLIC_SUPABASE_URL`이 프로젝트 root가 아닌 `.../rest/v1/` endpoint였다. 한글 아이디 가입은 server-only admin Auth 요청을 사용하므로 SDK가 잘못된 경로를 조합했다.
+- 조치: Supabase browser/admin client 생성 전에 URL을 HTTPS origin으로 정규화했다. Vercel 환경변수도 `/rest/v1/` 없는 프로젝트 root URL로 수정해야 한다.

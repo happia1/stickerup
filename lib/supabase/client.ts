@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { getSupabaseBrowserConfigError } from "./config";
+import { getSupabaseBrowserConfigError, getSupabaseProjectUrl } from "./config";
 
 const rememberLoginKey = "stickerup:remember-login";
 
@@ -19,7 +19,7 @@ function getAuthStorage(): Storage | undefined {
 }
 
 export function createSupabaseBrowserClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseUrl = getSupabaseProjectUrl();
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const configError = getSupabaseBrowserConfigError();
 

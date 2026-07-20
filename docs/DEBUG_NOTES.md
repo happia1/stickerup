@@ -1,5 +1,11 @@
 # DEBUG NOTES
 
+## [2026-07-21] Supabase REST endpoint used as project URL
+
+- Symptom: Korean identifier signup kept failing with `Invalid path specified in request URL` even after redirect handling changes.
+- Cause: `NEXT_PUBLIC_SUPABASE_URL` was configured as `https://<project-ref>.supabase.co/rest/v1/`. Korean identifier signup bypasses browser email signup and calls the server admin client, which requires the Supabase project root URL rather than a REST endpoint path.
+- Resolution: both browser and server admin clients now normalize the configured value to its HTTPS origin before creating a Supabase client. Vercel should still store `https://<project-ref>.supabase.co` without `/rest/v1/` or `/auth/v1/`.
+
 ## [2026-07-21] Signup confirmation redirect fallback
 
 - Symptom: signup continued to return `Invalid path specified in request URL` after validating the client-side origin and configuring the Vercel production URL.

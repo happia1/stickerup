@@ -1,9 +1,10 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
+import { getSupabaseProjectUrl } from "./config";
 import { getSupabaseServerConfigError } from "./server-config";
 
 export function createSupabaseAdminClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseUrl = getSupabaseProjectUrl();
   const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const configError = getSupabaseServerConfigError();
 
