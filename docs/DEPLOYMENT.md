@@ -19,7 +19,10 @@ Vercel Dashboard에서 프로젝트를 열고 **Settings > Environment Variables
 | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase 프로젝트 URL | 예 |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 브라우저용 Supabase anon key | 예 |
+| `NEXT_PUBLIC_SITE_URL` | 브라우저 origin 보조값 (`https://stickerup.vercel.app`) | 예 |
 | `SUPABASE_SERVICE_ROLE_KEY` | API route의 서버 전용 관리자 key | 아니요 |
+
+`NEXT_PUBLIC_SITE_URL`은 Production에 `https://stickerup.vercel.app`로 설정합니다. 회원가입 이메일 인증 URL은 현재 브라우저 origin을 우선 사용하므로 Preview 배포에서도 현재 Preview 주소로 생성됩니다. 환경변수를 추가하거나 수정한 뒤에는 새 배포를 실행해야 빌드 시점의 `NEXT_PUBLIC_` 값이 반영됩니다.
 
 `SUPABASE_SERVICE_ROLE_KEY`에는 절대 `NEXT_PUBLIC_` 접두사를 붙이지 않습니다. 이 프로젝트에서는 `lib/supabase/admin.ts`와 `lib/supabase/server-config.ts`가 `server-only`로 보호되고, 이를 사용하는 코드는 `app/api/**/route.ts` 및 서버 전용 repository에만 둡니다.
 

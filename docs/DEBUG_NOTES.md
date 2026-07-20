@@ -1,5 +1,11 @@
 # DEBUG NOTES
 
+## [2026-07-21] Vercel signup redirect origin
+
+- Symptom: email-based signup on `https://stickerup.vercel.app/signup` displayed `Invalid path specified in request URL`, which the app presented as a Supabase URL configuration error.
+- Cause: the signup page directly concatenated `window.location.origin` into `emailRedirectTo` and treated the low-level error as a dashboard configuration failure. It had no validated origin fallback and no way to omit the optional redirect value.
+- Resolution: the client now uses a validated current browser origin first, falls back to `NEXT_PUBLIC_SITE_URL` or `NEXT_PUBLIC_APP_URL`, and omits `emailRedirectTo` if no valid origin exists so Supabase uses its configured Site URL. The production fallback is documented as `https://stickerup.vercel.app`.
+
 ## [2026-07-21] Supabase Hosted Auth password minimum
 
 - Symptom: the app allowed passwords shorter than the Supabase Hosted Auth minimum, so signup attempts were rejected.

@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getSupabaseBrowserConfigError } from "@/lib/supabase/config";
 import { getAuthEmailForIdentifier, isUsernameLoginIdentifier, normalizeLoginIdentifier } from "@/lib/auth/identifier";
+import { getEmailRedirectUrl } from "@/lib/supabase/redirect";
 
 type SignupType = "student" | "teacher";
 
@@ -129,11 +130,12 @@ function SignupForm() {
       const sessionResult = await supabase.auth.getSession();
       let accessToken = sessionResult.data.session?.access_token;
       if (!accessToken && !isUsernameSignup) {
+        const emailRedirectTo = getEmailRedirectUrl();
         const signUpResult = await supabase.auth.signUp({
           email: authEmail,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/login`,
+            ...(emailRedirectTo ? { emailRedirectTo } : {}),
             data: {
               signup_role: signupType,
               display_name: name,
@@ -190,7 +192,7 @@ function SignupForm() {
         errorMessage.includes("Password should be at least")
           ? "Supabase Auth 비밀번호는 최소 6자 이상이어야 합니다."
           : errorMessage.includes("Invalid path specified in request URL")
-          ? "회원가입 인증 경로를 확인하지 못했습니다. Supabase Auth의 Site URL과 Redirect URLs에 현재 앱 주소를 등록해 주세요."
+          ? "회원가입 인증 링크를 만들지 못했습니다. 잠시 후 다시 시도해 주세요."
           : errorMessage
       );
     } finally {

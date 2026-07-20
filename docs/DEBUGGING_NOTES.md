@@ -51,3 +51,9 @@
 - 증상: 한글 아이디를 입력하면 브라우저가 이메일 형식 오류를 먼저 표시할 수 있었다.
 - 원인: `type=email` 입력은 앱의 한글 아이디 변환 전 브라우저 기본 검증을 실행한다.
 - 조치: 로그인·회원가입 식별자 입력을 `type=text`로 유지하고, 자동 로그인 체크 상태에 따라 Supabase 세션 저장소를 localStorage 또는 sessionStorage로 분리했다.
+
+## 2026-07-21 Vercel 회원가입 리디렉션 URL
+
+- 증상: `https://stickerup.vercel.app/signup` 이메일 가입에서 `Invalid path specified in request URL`가 발생했고, 앱이 Supabase URL 설정 오류로 잘못 안내했다.
+- 원인: `window.location.origin`을 직접 조합한 `emailRedirectTo`에 유효성 검증·환경변수 보조값·생략 처리 경로가 없었다.
+- 조치: 현재 브라우저 origin을 검증해 우선 사용하고 `NEXT_PUBLIC_SITE_URL`/`NEXT_PUBLIC_APP_URL`을 보조값으로 사용한다. 유효한 URL을 만들 수 없으면 `emailRedirectTo`를 보내지 않아 Supabase Site URL 기본값을 사용한다.
