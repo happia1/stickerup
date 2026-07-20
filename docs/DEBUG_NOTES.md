@@ -1,5 +1,11 @@
 # DEBUG NOTES
 
+## [2026-07-21] Signup invalid request-path message
+
+- Symptom: signup displayed `Invalid path specified in request URL` below the password input.
+- Investigation: the configured Supabase URL parses correctly, and a server-only read using the configured service key succeeds.
+- Resolution: signup now explicitly sends users back to `${window.location.origin}/login` after email confirmation and replaces the low-level Auth path error with an actionable Supabase Site URL/Redirect URLs message. The dashboard must allow the current app origin for the confirmation redirect.
+
 ## [2026-07-21] Signup query parameter build failure
 
 - Symptom: the first production build after adding `/signup?invite=...` ended before generating `prerender-manifest.json`.

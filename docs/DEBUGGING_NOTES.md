@@ -33,3 +33,9 @@
 - 증상: `/signup?invite=...` 통합 후 production build에서 `prerender-manifest.json`이 생성되지 않았습니다.
 - 원인: client page의 `useSearchParams` 호출에 Suspense 경계가 없어 Next.js 정적 prerender가 완료되지 않았습니다.
 - 조치: 회원가입 폼을 `Suspense`로 감싸고 typecheck 및 production manifest 생성을 다시 확인했습니다.
+
+## [2026-07-21] Signup invalid request-path message
+
+- 증상: 회원가입 시 비밀번호 입력 아래에 `Invalid path specified in request URL`이 표시되었습니다.
+- 확인: Supabase URL 형식과 server-only service key 읽기 연결은 정상입니다.
+- 조치: 이메일 확인 복귀 주소를 현재 앱의 `/login`으로 명시하고, 같은 Auth 오류는 Supabase Site URL 및 Redirect URLs 설정을 안내하는 문구로 교체했습니다.

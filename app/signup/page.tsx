@@ -29,7 +29,7 @@ function SignupForm() {
   const [signupType, setSignupType] = useState<SignupType>(typeParam === "teacher" ? "teacher" : "student");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
   const [academyName, setAcademyName] = useState("");
@@ -102,10 +102,6 @@ function SignupForm() {
       setMessage("Supabase 환경변수를 설정한 뒤 다시 시도해 주세요.");
       return;
     }
-    if (!existingSession && password !== passwordConfirmation) {
-      setMessage("비밀번호 확인이 일치하지 않습니다.");
-      return;
-    }
     if (signupType === "student" && (!Number.isInteger(Number(age)) || Number(age) < 1 || Number(age) > 100)) {
       setMessage("학생 나이는 1부터 100 사이로 입력해 주세요.");
       return;
@@ -125,6 +121,7 @@ function SignupForm() {
           email,
           password,
           options: {
+            emailRedirectTo: `${window.location.origin}/login`,
             data: {
               signup_role: signupType,
               display_name: name,
@@ -168,7 +165,12 @@ function SignupForm() {
       }
       router.push(redirectTo);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "회원가입을 완료하지 못했습니다.");
+      const errorMessage = error instanceof Error ? error.message : "회원가입을 완료하지 못했습니다.";
+      setMessage(
+        errorMessage.includes("Invalid path specified in request URL")
+          ? "회원가입 인증 경로를 확인하지 못했습니다. Supabase Auth의 Site URL과 Redirect URLs에 현재 앱 주소를 등록해 주세요."
+          : errorMessage
+      );
     } finally {
       setSubmitting(false);
     }
@@ -178,7 +180,7 @@ function SignupForm() {
 
   return (
     <main className="mx-auto min-h-screen max-w-app px-6 py-10">
-      <Link href="/" className="text-caption text-text-secondary underline">StickerUp으로 돌아가기</Link>
+      <Link href="/" className="text-caption text-text-secondary">&lt; 이전</Link>
       <div className="mt-8 rounded-card bg-surface-card p-5">
         <p className="text-display">회원가입</p>
         <p className="mt-2 text-body text-text-secondary">계정 유형과 기본 정보를 입력해 주세요.</p>
@@ -208,15 +210,16 @@ function SignupForm() {
           <label className="block text-caption text-text-secondary">학원 이름
             <input required value={academyName} readOnly={Boolean(invite)} onChange={(event) => setAcademyName(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none read-only:text-text-secondary" />
           </label>
-          {signupType === "student" && !invite && <p className="text-caption text-text-muted">가입 후 선생님의 승인 또는 반 신청이 필요할 수 있어요.</p>}
           <label className="block text-caption text-text-secondary">아이디 또는 이메일
             <input required={!existingSession} disabled={existingSession} type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="이메일 주소" className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none disabled:opacity-60" />
           </label>
           <label className="block text-caption text-text-secondary">비밀번호
-            <input required={!existingSession} disabled={existingSession} minLength={6} type="password" value={password} onChange={(event) => setPassword(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none disabled:opacity-60" />
-          </label>
-          <label className="block text-caption text-text-secondary">비밀번호 확인
-            <input required={!existingSession} disabled={existingSession} minLength={6} type="password" value={passwordConfirmation} onChange={(event) => setPasswordConfirmation(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none disabled:opacity-60" />
+            <div className="relative mt-1">
+              <input required={!existingSession} disabled={existingSession} minLength={6} type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-xl bg-surface-raised py-2.5 pl-3 pr-11 text-text-primary outline-none disabled:opacity-60" />
+              <button type="button" disabled={existingSession} onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"} className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-text-secondary disabled:opacity-60">
+                <PasswordVisibilityIcon hidden={!showPassword} />
+              </button>
+            </div>
           </label>
           {existingSession && <p className="text-caption text-text-secondary">인증된 계정입니다. 가입 정보를 확인한 뒤 완료해 주세요.</p>}
           {message && <p className="text-caption text-text-secondary">{message}</p>}
@@ -224,8 +227,18 @@ function SignupForm() {
             {redirecting ? "이동 중..." : submitting ? "가입 처리 중..." : "회원가입"}
           </button>
         </form>
-        <Link href="/login" className="mt-4 block text-center text-caption text-text-secondary underline">이미 계정이 있나요? 로그인</Link>
+        <Link href="/login" className="mt-4 block text-center text-caption text-text-secondary">이미 계정이 있나요? 로그인</Link>
       </div>
     </main>
+  );
+}
+
+function PasswordVisibilityIcon({ hidden }: { hidden: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-none stroke-current stroke-2">
+      <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+      <circle cx="12" cy="12" r="2.5" />
+      {hidden && <path d="M4 4 20 20" />}
+    </svg>
   );
 }
