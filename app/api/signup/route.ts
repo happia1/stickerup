@@ -5,6 +5,7 @@ import { getRequestUser } from "@/lib/supabase/server-auth";
 import { getAuthEmailForIdentifier, isUsernameLoginIdentifier, normalizeLoginIdentifier } from "@/lib/auth/identifier";
 import {
   getSupabaseServerConfigError,
+  getSupabaseServerConfigMessage,
   invalidServiceRoleKeyMessage,
   isSupabaseServiceRoleKeyError,
   missingServiceRoleKeyMessage,
@@ -32,7 +33,7 @@ export async function POST(request: Request) {
   }
 
   if (getSupabaseServerConfigError()) {
-    return NextResponse.json({ error: missingServiceRoleKeyMessage, code: "SUPABASE_SERVICE_ROLE_KEY_MISSING" }, { status: 503 });
+    return NextResponse.json({ error: getSupabaseServerConfigMessage(), code: "SUPABASE_SERVER_CONFIG_MISSING" }, { status: 503 });
   }
 
   let admin: ReturnType<typeof createSupabaseAdminClient> | null = null;
@@ -97,7 +98,9 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ redirectTo: "/student/home", enrollmentStatus: result.enrollmentStatus });
   } catch (error) {
-    if (createdUserId && admin) await admin.auth.admin.deleteUser(createdUserId);
+    if (createdUserId && admin) {
+      await admin.auth.admin.deleteUser(createdUserId).catch(() => undefined);
+    }
     if (isSupabaseServiceRoleKeyError(error)) {
       return NextResponse.json({ error: invalidServiceRoleKeyMessage, code: "SUPABASE_SERVICE_ROLE_KEY_INVALID" }, { status: 503 });
     }

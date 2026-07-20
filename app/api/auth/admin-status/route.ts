@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   getSupabaseServerConfigError,
+  getSupabaseServerConfigMessage,
   invalidServiceRoleKeyMessage,
   isSupabaseServiceRoleKeyError,
   missingServiceRoleKeyMessage,
@@ -9,7 +10,7 @@ import {
 
 export async function GET() {
   if (getSupabaseServerConfigError()) {
-    return NextResponse.json({ error: missingServiceRoleKeyMessage, code: "SUPABASE_SERVICE_ROLE_KEY_MISSING" }, { status: 503 });
+    return NextResponse.json({ error: getSupabaseServerConfigMessage(), code: "SUPABASE_SERVER_CONFIG_MISSING" }, { status: 503 });
   }
 
   try {

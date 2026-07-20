@@ -15,6 +15,14 @@ export function getSupabaseServerConfigError(): string | null {
   return null;
 }
 
+export function getSupabaseServerConfigMessage(): string {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return "서버의 Supabase 연결 환경변수가 설정되지 않았습니다. Vercel의 NEXT_PUBLIC_SUPABASE_URL과 NEXT_PUBLIC_SUPABASE_ANON_KEY를 확인한 뒤 재배포해 주세요.";
+  }
+
+  return missingServiceRoleKeyMessage;
+}
+
 export function isSupabaseServiceRoleKeyError(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
 
@@ -22,5 +30,6 @@ export function isSupabaseServiceRoleKeyError(error: unknown): boolean {
   return message.includes("invalid api key")
     || message.includes("invalid jwt")
     || message.includes("invalid token")
-    || message.includes("api key is invalid");
+    || message.includes("api key is invalid")
+    || message.includes("unauthorized");
 }

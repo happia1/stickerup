@@ -1,5 +1,11 @@
 # DEBUG NOTES
 
+## [2026-07-21] Supabase service-role configuration during signup
+
+- Symptom: a Vercel deployment can fail to complete signup when `SUPABASE_SERVICE_ROLE_KEY` is missing or does not belong to the configured Supabase project, without a clear user-facing explanation.
+- Cause: the admin client was created only after client-side Auth work and missing or invalid server credentials could surface as an unhandled route error or low-level Supabase response.
+- Resolution: email signup now checks a server-only admin status route before starting Auth signup. Missing public configuration, a missing service-role key, and an invalid service-role key return distinct safe messages with HTTP `503`; the signup route applies the same mapping.
+
 ## [2026-07-21] Vercel signup redirect origin
 
 - Symptom: email-based signup on `https://stickerup.vercel.app/signup` displayed `Invalid path specified in request URL`, which the app presented as a Supabase URL configuration error.

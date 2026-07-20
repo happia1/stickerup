@@ -57,3 +57,9 @@
 - 증상: `https://stickerup.vercel.app/signup` 이메일 가입에서 `Invalid path specified in request URL`가 발생했고, 앱이 Supabase URL 설정 오류로 잘못 안내했다.
 - 원인: `window.location.origin`을 직접 조합한 `emailRedirectTo`에 유효성 검증·환경변수 보조값·생략 처리 경로가 없었다.
 - 조치: 현재 브라우저 origin을 검증해 우선 사용하고 `NEXT_PUBLIC_SITE_URL`/`NEXT_PUBLIC_APP_URL`을 보조값으로 사용한다. 유효한 URL을 만들 수 없으면 `emailRedirectTo`를 보내지 않아 Supabase Site URL 기본값을 사용한다.
+
+## 2026-07-21 Supabase service-role 가입 진단
+
+- 증상: Vercel `SUPABASE_SERVICE_ROLE_KEY`가 없거나 잘못된 경우 가입 완료가 실패해도 원인을 명확히 알기 어려웠다.
+- 원인: 관리자 client가 서버 route에서 생성되지만, 이메일 인증 시작 전 서버 키 상태를 확인하는 경로와 잘못된 키의 사용자용 오류 매핑이 없었다.
+- 조치: server-only 관리자 상태 점검 route와 `/api/signup`에 누락·잘못된 키를 `503`과 안내 문구로 반환하는 처리를 추가했다. admin client import는 API route와 server-only auth helper에만 존재함을 확인했다.
