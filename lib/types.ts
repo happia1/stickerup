@@ -4,7 +4,7 @@
 
 export type Role = "owner" | "assistant" | "student";
 
-export type RankingUnit = "day" | "week" | "month" | "quarter";
+export type RankingUnit = "day" | "week" | "month" | "quarter" | "custom";
 
 export interface Tenant {
   id: string;
@@ -71,13 +71,8 @@ export interface Enrollment {
   approver_id: string | null;
 }
 
-export type AttendanceTier =
-  | "on_time"
-  | "within_10"
-  | "within_30"
-  | "within_60"
-  | "over_60"
-  | "absent";
+// 출석/숙제 구간은 관리자가 자유롭게 정의할 수 있는 동적 값이다 (id는 자유 문자열).
+export type AttendanceTier = string;
 
 export interface AttendanceRecord {
   id: string;
@@ -90,7 +85,7 @@ export interface AttendanceRecord {
   created_at: string;
 }
 
-export type HomeworkTier = "complete" | "half" | "none";
+export type HomeworkTier = string;
 export type ApprovalStatus = "pending" | "approved" | "rejected";
 
 export interface HomeworkSubmission {
@@ -143,6 +138,7 @@ export interface RankingPeriodConfig {
   tenant_id: string;
   class_id: string | null; // null = 전체(글로벌)
   unit: RankingUnit;
+  custom_days: number | null; // unit === "custom" 일 때 사용할 직접 입력 주기(일)
   updated_at: string;
 }
 
@@ -203,32 +199,74 @@ export interface RankingRow {
   medal: Medal;
 }
 
-// 5단계 출석 지급 기준 (전역 고정값, 정책 화면에서 읽기 전용으로만 노출)
-export const ATTENDANCE_TIERS: { tier: AttendanceTier; label: string; count: number }[] = [
-  { tier: "on_time", label: "정시 이전", count: 5 },
-  { tier: "within_10", label: "정시 후 10분 이내", count: 4 },
-  { tier: "within_30", label: "정시 후 30분 이내", count: 3 },
-  { tier: "within_60", label: "정시 후 1시간 이내", count: 2 },
-  { tier: "over_60", label: "정시 후 1시간 초과", count: 1 },
-  { tier: "absent", label: "결석", count: 0 },
-];
-
-// 숙제 완료율 3단계 (지급 수는 관리자가 조정 가능한 정책값)
-export interface HomeworkTierConfig {
-  tier: HomeworkTier;
-  label: string;
-  count: number;
+// =========================================================
+// 출석 / 숙제 구간 정책 — 관리자가 관리자 앱(스티커 정책 설정)에서
+// 구간 이름/범위 설명/지급 스티커 수를 자유롭게 추가·수정·삭제할 수 있다.
+// =========================================================
+export interface TierConfig {
+  tier: string; // 구간 고유 id (자유 문자열)
+  label: string; // 구간 이름
+  rangeText: string; // 구간 범위 설명 (자유 텍스트: "정시 후 0~10분", "80~100%", "1분위" 등)
+  count: number; // 지급 스티커 수
 }
 
-export const DEFAULT_HOMEWORK_TIERS: HomeworkTierConfig[] = [
-  { tier: "complete", label: "완료", count: 5 },
-  { tier: "half", label: "절반 완료", count: 3 },
-  { tier: "none", label: "미완료", count: 0 },
+// 5단계 출석 지급 기준 초기값 (관리자가 스티커 정책 설정에서 자유롭게 수정 가능)
+export const DEFAULT_ATTENDANCE_TIERS: TierConfig[] = [
+  { tier: "on_time", label: "정시 이전", rangeText: "지각 없음", count: 5 },
+  { tier: "within_10", label: "10분 이내", rangeText: "정시 후 0~10분", count: 4 },
+  { tier: "within_30", label: "30분 이내", rangeText: "정시 후 10~30분", count: 3 },
+  { tier: "within_60", label: "1시간 이내", rangeText: "정시 후 30~60분", count: 2 },
+  { tier: "over_60", label: "1시간 초과", rangeText: "정시 후 60분 초과", count: 1 },
+  { tier: "absent", label: "결석", rangeText: "미출석", count: 0 },
 ];
+
+// 숙제 완료율 구간을 정의하는 방식 — 선생님이 상황에 맞게 선택할 수 있다.
+export type GradingMode = "manual" | "percent" | "quantile";
+
+export const HOMEWORK_MODE_LABEL: Record<GradingMode, string> = {
+  manual: "수동 지정(현재처럼)",
+  percent: "완료율 퍼센트(%) 구간",
+  quantile: "분위(순위 비율) 구간",
+};
+
+// 모드를 바꿀 때 불러올 수 있는 기본 구성 — 불러온 뒤에도 자유롭게 추가/수정/삭제 가능하다.
+export const HOMEWORK_MODE_PRESETS: Record<GradingMode, TierConfig[]> = {
+  manual: [
+    { tier: "complete", label: "완료", rangeText: "100%", count: 5 },
+    { tier: "half", label: "절반 완료", rangeText: "50%", count: 3 },
+    { tier: "none", label: "미완료", rangeText: "0%", count: 0 },
+  ],
+  percent: [
+    { tier: "p90", label: "90% 이상", rangeText: "90~100%", count: 5 },
+    { tier: "p70", label: "70~89%", rangeText: "70~89%", count: 4 },
+    { tier: "p40", label: "40~69%", rangeText: "40~69%", count: 2 },
+    { tier: "p0", label: "40% 미만", rangeText: "0~39%", count: 0 },
+  ],
+  quantile: [
+    { tier: "q1", label: "1분위 (상위 25%)", rangeText: "상위 0~25%", count: 5 },
+    { tier: "q2", label: "2분위", rangeText: "상위 25~50%", count: 3 },
+    { tier: "q3", label: "3분위", rangeText: "상위 50~75%", count: 2 },
+    { tier: "q4", label: "4분위 (하위 25%)", rangeText: "상위 75~100%", count: 0 },
+  ],
+};
+
+export const DEFAULT_HOMEWORK_TIERS: TierConfig[] = HOMEWORK_MODE_PRESETS.manual;
 
 export const RANKING_UNIT_LABEL: Record<RankingUnit, string> = {
   day: "일 단위",
   week: "주 단위",
   month: "월 단위",
   quarter: "분기 단위",
+  custom: "사용자 설정 기간",
 };
+
+// 스티커 보유량이 세 자릿수로 넘어갈 때 보기 좋게 치환할 단위 아이콘 기준.
+// 100장부터 동색, 200장부터 은색, 300장부터 금색 스티커 아이콘을 함께 보여준다.
+export type StickerDenomination = "gold" | "silver" | "bronze" | null;
+
+export function stickerDenomination(count: number): StickerDenomination {
+  if (count >= 300) return "gold";
+  if (count >= 200) return "silver";
+  if (count >= 100) return "bronze";
+  return null;
+}

@@ -9,7 +9,7 @@ import {
   seedRankingPeriodConfigs, seedRewardCampaigns, seedRewardItems, seedRewardClaims,
   seedNotices, STUDENT_IDS,
 } from "@/lib/mock/data";
-import { DEFAULT_HOMEWORK_TIERS } from "@/lib/types";
+import { DEFAULT_HOMEWORK_TIERS, DEFAULT_ATTENDANCE_TIERS } from "@/lib/types";
 
 function buildInitialState(): AppState {
   return {
@@ -29,7 +29,9 @@ function buildInitialState(): AppState {
     rewardItems: seedRewardItems,
     rewardClaims: seedRewardClaims,
     notices: seedNotices,
+    attendancePolicy: DEFAULT_ATTENDANCE_TIERS.map((t) => ({ ...t })),
     homeworkPolicy: DEFAULT_HOMEWORK_TIERS.map((t) => ({ ...t })),
+    homeworkGradingMode: "manual",
   };
 }
 

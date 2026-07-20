@@ -24,7 +24,7 @@ export default function AdminLogsPage() {
 
   return (
     <div>
-      <h2 className="text-title mb-1">스티커 로그 · 감사</h2>
+      <h2 className="text-title mb-1">스티커 로그</h2>
       <p className="text-caption text-text-secondary mb-5">
         모든 지급 내역을 확인하고, 부정 지급이 확인되면 롤백(취소)할 수 있어요.
       </p>

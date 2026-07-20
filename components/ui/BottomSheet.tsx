@@ -1,5 +1,6 @@
 "use client";
 import clsx from "@/lib/clsx";
+import { X } from "lucide-react";
 
 export function BottomSheet({
   open,
@@ -30,7 +31,7 @@ export function BottomSheet({
           className="absolute top-3 right-3 w-7 h-7 rounded-full bg-surface-card text-text-secondary text-caption flex items-center justify-center"
           aria-label="닫기"
         >
-          ✕
+          <X size={14} />
         </button>
         {title && <h3 className="text-subtitle pr-6 mb-3">{title}</h3>}
         {children}

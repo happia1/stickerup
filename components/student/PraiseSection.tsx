@@ -8,6 +8,7 @@ import { Accordion } from "@/components/ui/Accordion";
 import { Pill } from "@/components/ui/Pill";
 import { fmtDate } from "@/lib/format";
 import { useToast } from "@/lib/toast/provider";
+import { ThumbsUp } from "lucide-react";
 
 export function PraiseSection() {
   const state = useAppState();
@@ -45,7 +46,10 @@ export function PraiseSection() {
             showToast("칭찬 스티커 요청을 보냈어요.");
           }}
         >
-          스티커 주세요 🙌
+          <span className="inline-flex items-center gap-1.5">
+            <ThumbsUp size={15} />
+            스티커 주세요
+          </span>
         </Button>
       </Card>
 

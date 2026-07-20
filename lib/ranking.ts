@@ -24,8 +24,14 @@ function startOfWeekMonday(d: Date): Date {
   return monday;
 }
 
-/** SQL compute_period_bounds(unit, ref_date) 포팅 */
-export function computePeriodBounds(unit: RankingUnit, refDate: Date = DEMO_NOW): PeriodBounds {
+/** SQL compute_period_bounds(unit, ref_date) 포팅.
+ *  unit === "custom" 인 경우 customDays(관리자가 직접 입력한 일수)만큼의
+ *  최근 기간(오늘 포함, 거슬러 올라가는 구간)을 사용한다. */
+export function computePeriodBounds(
+  unit: RankingUnit,
+  refDate: Date = DEMO_NOW,
+  customDays: number | null = null
+): PeriodBounds {
   const ref = new Date(refDate);
   ref.setHours(0, 0, 0, 0);
 
@@ -45,6 +51,12 @@ export function computePeriodBounds(unit: RankingUnit, refDate: Date = DEMO_NOW)
       const start = new Date(ref.getFullYear(), quarterStartMonth, 1);
       const end = new Date(ref.getFullYear(), quarterStartMonth + 3, 0);
       return { period_start: toDateOnly(start), period_end: toDateOnly(end) };
+    }
+    case "custom": {
+      const days = customDays && customDays > 0 ? customDays : 7;
+      const start = new Date(ref);
+      start.setDate(ref.getDate() - (days - 1));
+      return { period_start: toDateOnly(start), period_end: toDateOnly(ref) };
     }
     case "month":
     default: {

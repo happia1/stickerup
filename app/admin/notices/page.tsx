@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { useAppState, useAppDispatch } from "@/lib/store/provider";
 import { Button } from "@/components/ui/Button";
-import { Pill } from "@/components/ui/Pill";
 import { fmtDate } from "@/lib/format";
 import { useToast } from "@/lib/toast/provider";
 
@@ -42,14 +41,17 @@ export default function AdminNoticesPage() {
                 <td className="p-2.5">{n.title}</td>
                 <td className="p-2.5 max-w-[280px] truncate">{n.content}</td>
                 <td className="p-2.5">{fmtDate(n.created_at)}</td>
-                <td className="p-2.5">{n.pinned ? <Pill tone="wait">고정</Pill> : "-"}</td>
+                <td className="p-2.5">
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={n.pinned}
+                      onChange={(e) => dispatch({ type: "SET_NOTICE_PIN", noticeId: n.id, pinned: e.target.checked })}
+                    />
+                    <span className="text-caption text-text-secondary">고정</span>
+                  </label>
+                </td>
                 <td className="p-2.5 flex gap-1.5">
-                  <button
-                    className="border border-border rounded-lg px-2 py-1 text-caption"
-                    onClick={() => dispatch({ type: "TOGGLE_NOTICE_PIN", noticeId: n.id })}
-                  >
-                    {n.pinned ? "고정 해제" : "고정"}
-                  </button>
                   <button
                     className="border border-border rounded-lg px-2 py-1 text-caption text-state-danger"
                     onClick={() => {

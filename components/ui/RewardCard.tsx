@@ -1,4 +1,5 @@
 import { Button } from "./Button";
+import { Gift } from "lucide-react";
 
 export function RewardCard({
   title,
@@ -17,7 +18,7 @@ export function RewardCard({
 }) {
   return (
     <div className="min-w-[140px] max-w-[140px] border border-border rounded-card p-2.5 flex-shrink-0 bg-surface-card">
-      <div className="text-2xl text-center mb-1.5">🎁</div>
+      <div className="flex justify-center mb-1.5 text-brand-amber"><Gift size={26} /></div>
       <p className="text-micro font-bold text-center leading-tight mb-1">{title}</p>
       <p className="text-micro text-text-muted text-center mb-2">
         잔여 {qty - claimed}/{qty}

@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { useAppState, useAppDispatch } from "@/lib/store/provider";
 import { computePeriodBounds } from "@/lib/ranking";
 import { RANKING_UNIT_LABEL } from "@/lib/types";
@@ -20,13 +21,29 @@ function UnitSelect({ value, onChange }: { value: RankingUnit; onChange: (u: Ran
   );
 }
 
+function CustomDaysInput({ value, onChange }: { value: number | null; onChange: (n: number) => void }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <input
+        type="number"
+        min={1}
+        className="w-16 border border-border rounded-lg px-2 py-1.5 text-body"
+        value={value ?? 7}
+        onChange={(e) => onChange(Math.max(1, Number(e.target.value) || 1))}
+      />
+      <span className="text-caption text-text-secondary">일 주기로 직접 입력</span>
+    </div>
+  );
+}
+
 export default function AdminRankingSettingsPage() {
   const state = useAppState();
   const dispatch = useAppDispatch();
 
   const globalConfig = state.rankingPeriodConfigs.find((c) => c.class_id === null);
   const globalUnit = globalConfig?.unit ?? "month";
-  const globalBounds = computePeriodBounds(globalUnit);
+  const globalCustomDays = globalConfig?.custom_days ?? null;
+  const globalBounds = computePeriodBounds(globalUnit, undefined, globalCustomDays);
 
   const groupClasses = state.classes.filter((c) => !c.is_default && c.status === "active");
 
@@ -39,8 +56,17 @@ export default function AdminRankingSettingsPage() {
 
       <div className="bg-surface-page rounded-card p-5 max-w-lg mb-6">
         <h4 className="text-body font-bold mb-3">전체(글로벌) 랭킹 기본 단위기간</h4>
-        <div className="flex items-center gap-3 mb-2">
-          <UnitSelect value={globalUnit} onChange={(u) => dispatch({ type: "SET_RANKING_UNIT", classId: null, unit: u })} />
+        <div className="flex items-center gap-3 mb-2 flex-wrap">
+          <UnitSelect
+            value={globalUnit}
+            onChange={(u) => dispatch({ type: "SET_RANKING_UNIT", classId: null, unit: u, customDays: u === "custom" ? globalCustomDays ?? 7 : null })}
+          />
+          {globalUnit === "custom" && (
+            <CustomDaysInput
+              value={globalCustomDays}
+              onChange={(n) => dispatch({ type: "SET_RANKING_UNIT", classId: null, unit: "custom", customDays: n })}
+            />
+          )}
           <span className="text-caption text-text-secondary">
             현재 주기: {globalBounds.period_start} ~ {globalBounds.period_end}
           </span>
@@ -59,6 +85,7 @@ export default function AdminRankingSettingsPage() {
             <tr className="text-caption text-text-secondary text-left border-b border-border">
               <th className="p-2.5">반(그룹)</th>
               <th className="p-2.5">단위기간</th>
+              <th className="p-2.5">직접 입력(일)</th>
               <th className="p-2.5">현재 주기</th>
             </tr>
           </thead>
@@ -66,12 +93,26 @@ export default function AdminRankingSettingsPage() {
             {groupClasses.map((c) => {
               const config = state.rankingPeriodConfigs.find((r) => r.class_id === c.id);
               const unit = config?.unit ?? c.ranking_unit;
-              const bounds = computePeriodBounds(unit);
+              const customDays = config?.custom_days ?? null;
+              const bounds = computePeriodBounds(unit, undefined, customDays);
               return (
                 <tr key={c.id} className="border-b last:border-0 border-border">
                   <td className="p-2.5 font-semibold">{c.name}</td>
                   <td className="p-2.5">
-                    <UnitSelect value={unit} onChange={(u) => dispatch({ type: "SET_RANKING_UNIT", classId: c.id, unit: u })} />
+                    <UnitSelect
+                      value={unit}
+                      onChange={(u) => dispatch({ type: "SET_RANKING_UNIT", classId: c.id, unit: u, customDays: u === "custom" ? customDays ?? 7 : null })}
+                    />
+                  </td>
+                  <td className="p-2.5">
+                    {unit === "custom" ? (
+                      <CustomDaysInput
+                        value={customDays}
+                        onChange={(n) => dispatch({ type: "SET_RANKING_UNIT", classId: c.id, unit: "custom", customDays: n })}
+                      />
+                    ) : (
+                      <span className="text-caption text-text-muted">사용자 설정 기간 선택 시 입력</span>
+                    )}
                   </td>
                   <td className="p-2.5 text-caption text-text-secondary">
                     {bounds.period_start} ~ {bounds.period_end}

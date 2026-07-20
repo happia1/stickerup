@@ -5,6 +5,7 @@ import { BottomSheet } from "@/components/ui/BottomSheet";
 import { useAppState } from "@/lib/store/provider";
 import { getTeacherById, pendingCounts } from "@/lib/store/selectors";
 import { fmtDate } from "@/lib/format";
+import { Trophy, Bell, Settings, Wrench } from "lucide-react";
 
 export function StudentTopBar() {
   const state = useAppState();
@@ -24,10 +25,17 @@ export function StudentTopBar() {
 
   return (
     <div className="bg-surface-card border-b border-border px-4 py-3 flex items-center justify-between">
-      <span className="font-extrabold text-subtitle">🏅 StickerUp</span>
+      <span className="font-extrabold text-subtitle flex items-center gap-1.5">
+        <Trophy size={16} className="text-brand-amber" />
+        StickerUp
+      </span>
       <div className="flex gap-3.5 items-center">
-        <button aria-label="알림" className="text-lg" onClick={() => setNotifOpen(true)}>🔔</button>
-        <Link href="/student/settings" aria-label="설정" className="text-lg">⚙️</Link>
+        <button aria-label="알림" className="text-text-secondary" onClick={() => setNotifOpen(true)}>
+          <Bell size={19} />
+        </button>
+        <Link href="/student/settings" aria-label="설정" className="text-text-secondary">
+          <Settings size={19} />
+        </Link>
       </div>
 
       <BottomSheet open={notifOpen} onClose={() => setNotifOpen(false)} title="알림">
@@ -52,7 +60,10 @@ export function AdminTopBar() {
   const me = getTeacherById(state, state.currentUserId);
   return (
     <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-surface-card">
-      <span className="font-extrabold text-subtitle">🛠 StickerUp Admin</span>
+      <span className="font-extrabold text-subtitle flex items-center gap-1.5">
+        <Wrench size={16} />
+        StickerUp Admin
+      </span>
       <div className="flex items-center gap-4 text-caption text-text-secondary">
         <span>승인 대기 {counts.homework + counts.praise + counts.enrollment}건</span>
         <span className="font-bold text-text-primary">{me?.name ?? "관리자"}</span>

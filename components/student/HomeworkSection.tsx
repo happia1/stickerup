@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { useAppState, useAppDispatch } from "@/lib/store/provider";
 import { approvedClassesForStudent } from "@/lib/store/selectors";
-import type { HomeworkTier } from "@/lib/types";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Pill } from "@/components/ui/Pill";
@@ -16,7 +15,7 @@ export function HomeworkSection() {
   const showToast = useToast();
   const myClasses = approvedClassesForStudent(state, state.currentUserId);
   const [classId, setClassId] = useState(myClasses[0]?.id ?? "");
-  const [tier, setTier] = useState<HomeworkTier>("complete");
+  const [tier, setTier] = useState<string>(state.homeworkPolicy[0]?.tier ?? "");
 
   const myHomeworks = state.homeworkSubmissions.filter((h) => h.student_id === state.currentUserId);
 
@@ -52,6 +51,8 @@ export function HomeworkSection() {
               )}
             >
               {t.label}
+              <br />
+              <span className="text-micro text-text-muted">{t.rangeText}</span>
               <br />({t.count}장)
             </button>
           ))}

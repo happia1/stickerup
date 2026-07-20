@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Home, Tag, User } from "lucide-react";
 import clsx from "@/lib/clsx";
 
 const TABS = [
-  { href: "/student/home", icon: "🏠", label: "홈" },
-  { href: "/student/sticker", icon: "🏷️", label: "스티커" },
-  { href: "/student/mypage", icon: "👤", label: "마이" },
+  { href: "/student/home", Icon: Home, label: "홈" },
+  { href: "/student/sticker", Icon: Tag, label: "스티커" },
+  { href: "/student/mypage", Icon: User, label: "마이" },
 ];
 
 export function BottomNav() {
@@ -15,6 +16,7 @@ export function BottomNav() {
     <div className="flex bg-surface-card border-t border-border">
       {TABS.map((tab) => {
         const active = pathname?.startsWith(tab.href);
+        const Icon = tab.Icon;
         return (
           <Link
             key={tab.href}
@@ -24,7 +26,7 @@ export function BottomNav() {
               active ? "text-brand-amber font-bold" : "text-text-muted"
             )}
           >
-            <span className="text-lg">{tab.icon}</span>
+            <Icon size={19} />
             {tab.label}
           </Link>
         );

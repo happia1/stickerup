@@ -1,5 +1,7 @@
 import clsx from "@/lib/clsx";
+import { Trophy } from "lucide-react";
 import { Avatar } from "./Avatar";
+import { StickerCount } from "./StickerCount";
 import type { RankingRow } from "@/lib/types";
 
 interface PodiumStudent {
@@ -7,11 +9,10 @@ interface PodiumStudent {
   name: string;
 }
 
-const MEDAL_LABEL: Record<string, string> = { gold: "1", silver: "2", bronze: "3" };
-const MEDAL_BG: Record<string, string> = {
-  gold: "bg-medal-gold",
-  silver: "bg-medal-silver",
-  bronze: "bg-medal-bronze",
+const MEDAL_ICON_CLASS: Record<string, string> = {
+  gold: "text-medal-gold",
+  silver: "text-medal-silver",
+  bronze: "text-medal-bronze",
 };
 
 export function Podium({
@@ -44,22 +45,20 @@ export function Podium({
         )}
       >
         {row.medal && (
-          <div
-            className={clsx(
-              "rounded-full text-white font-extrabold flex items-center justify-center mb-1.5",
-              MEDAL_BG[row.medal],
-              size === "lg" ? "w-7 h-7 text-caption" : "w-6 h-6 text-micro"
-            )}
-          >
-            {MEDAL_LABEL[row.medal]}
-          </div>
+          <Trophy
+            aria-label={row.medal === "gold" ? "1등" : row.medal === "silver" ? "2등" : "3등"}
+            className={clsx("mb-1.5", MEDAL_ICON_CLASS[row.medal])}
+            size={size === "lg" ? 26 : 20}
+            fill="currentColor"
+            strokeWidth={1.5}
+          />
         )}
         <Avatar name={findName(row.student_id)} size={size === "lg" ? 56 : 44} />
-        <p className="text-subtitle text-text-primary mt-2 truncate max-w-full">
+        <p className="text-subtitle font-normal text-text-primary mt-2 truncate max-w-full">
           {findName(row.student_id)}
           {isMe ? " (나)" : ""}
         </p>
-        <p className="text-body font-extrabold text-brand-amber">{row.total_count}장</p>
+        <StickerCount value={row.total_count} className="text-body font-normal text-brand-amber" />
       </div>
     );
   };
@@ -85,15 +84,15 @@ export function Podium({
                   isMe && "bg-surface-card rounded-lg px-2"
                 )}
               >
-                <div className="w-6 h-6 rounded-full bg-surface-card text-text-secondary text-micro flex items-center justify-center flex-shrink-0">
+                <div className="w-6 h-6 rounded-full bg-surface-card text-text-primary text-micro flex items-center justify-center flex-shrink-0">
                   {row.rank}
                 </div>
                 <Avatar name={findName(row.student_id)} size={32} />
-                <p className="flex-1 text-body text-text-primary truncate">
+                <p className="flex-1 text-body font-normal text-text-primary truncate">
                   {findName(row.student_id)}
                   {isMe ? " (나)" : ""}
                 </p>
-                <p className="text-body font-extrabold text-text-primary">{row.total_count}장</p>
+                <StickerCount value={row.total_count} className="text-body font-normal text-text-primary" />
               </div>
             );
           })}
