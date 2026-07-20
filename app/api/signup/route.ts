@@ -6,7 +6,9 @@ import { getAuthEmailForIdentifier, isUsernameLoginIdentifier, normalizeLoginIde
 import {
   getSupabaseServerConfigError,
   getSupabaseServerConfigMessage,
+  databasePermissionMessage,
   invalidServiceRoleKeyMessage,
+  isSupabaseDatabasePermissionError,
   isSupabaseServiceRoleKeyError,
   missingServiceRoleKeyMessage,
 } from "@/lib/supabase/server-config";
@@ -103,6 +105,9 @@ export async function POST(request: Request) {
     }
     if (isSupabaseServiceRoleKeyError(error)) {
       return NextResponse.json({ error: invalidServiceRoleKeyMessage, code: "SUPABASE_SERVICE_ROLE_KEY_INVALID" }, { status: 503 });
+    }
+    if (isSupabaseDatabasePermissionError(error)) {
+      return NextResponse.json({ error: databasePermissionMessage, code: "SUPABASE_DATABASE_PERMISSION_DENIED" }, { status: 503 });
     }
     const message = error instanceof Error ? error.message : "Unable to complete signup.";
     return NextResponse.json({ error: message }, { status: 400 });

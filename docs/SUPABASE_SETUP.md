@@ -28,6 +28,10 @@ Vercel에는 Project Settings > Environment Variables에 같은 값을 등록한
 
 `NEXT_PUBLIC_SUPABASE_URL`은 `https://<project-ref>.supabase.co` 형식의 프로젝트 root URL이어야 한다. `/rest/v1/` 또는 `/auth/v1/` 경로를 포함하면 Auth 관리자 요청 경로가 잘못 조합될 수 있다.
 
+## Service-role database permissions
+
+After migration 03, run `supabase/migrations/20260719_05_service_role_permissions.sql` in the Supabase Dashboard SQL Editor. It grants the server-only `service_role` database privileges while keeping browser RLS enabled. Without it, signup can fail with `permission denied for table students`.
+
 ## Client 분리
 
 - `lib/supabase/client.ts`: 브라우저용 anon key client factory
