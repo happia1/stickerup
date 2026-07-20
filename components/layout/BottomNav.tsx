@@ -13,7 +13,7 @@ const TABS = [
 export function BottomNav() {
   const pathname = usePathname();
   return (
-    <div className="flex bg-surface-card border-t border-border">
+    <div className="flex bg-surface-page">
       {TABS.map((tab) => {
         const active = pathname?.startsWith(tab.href);
         const Icon = tab.Icon;

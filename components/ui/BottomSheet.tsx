@@ -74,7 +74,7 @@ export function CelebrationModal({
         <button
           type="button"
           onClick={onCta}
-          className="w-full rounded-xl bg-brand-amber text-white font-bold py-3"
+          className="w-full rounded-xl bg-brand-amber text-surface-page font-bold py-3"
         >
           {ctaLabel}
         </button>

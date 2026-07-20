@@ -32,10 +32,10 @@ export function FlapBanner() {
       <div
         role="button"
         onClick={() => setOpen(true)}
-        className="bg-surface-raised text-text-primary rounded-2xl px-3.5 py-3 mb-3.5 flex items-center gap-2 cursor-pointer"
+        className="bg-surface-raised text-text-primary rounded-2xl px-3.5 py-3.5 mb-3.5 flex items-center gap-2 cursor-pointer min-h-[44px]"
       >
-        <span className="bg-brand-amber text-white text-micro font-extrabold px-1.5 py-0.5 rounded-md flex-shrink-0">공지</span>
-        <div className="flex-1 overflow-hidden h-4">
+        <span className="bg-brand-amber text-surface-page text-micro font-extrabold px-1.5 py-0.5 rounded-md flex-shrink-0">공지</span>
+        <div className="flex-1 overflow-hidden leading-[1.5] py-0.5">
           <span key={animKey} className="animate-flap block text-body font-normal whitespace-nowrap overflow-hidden text-ellipsis">
             {notices[index % notices.length].title}
           </span>
@@ -45,7 +45,7 @@ export function FlapBanner() {
 
       <BottomSheet open={open} onClose={() => setOpen(false)} title="공지사항">
         {sorted.map((n) => (
-          <div key={n.id} className="bg-surface-card border border-border rounded-card p-3 mb-2">
+          <div key={n.id} className="bg-surface-card rounded-card p-3 mb-2">
             <div className="flex justify-between gap-2">
               <p className="text-body font-normal">{n.title}</p>
               {n.pinned && <Pill tone="wait">고정</Pill>}

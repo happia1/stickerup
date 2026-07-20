@@ -24,7 +24,7 @@ export function StudentTopBar() {
   ].sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
 
   return (
-    <div className="bg-surface-card border-b border-border px-4 py-3 flex items-center justify-between">
+    <div className="bg-surface-page px-4 py-3 flex items-center justify-between">
       <span className="font-extrabold text-subtitle flex items-center gap-1.5">
         <Trophy size={16} className="text-brand-amber" />
         StickerUp
@@ -43,7 +43,7 @@ export function StudentTopBar() {
           <p className="text-caption text-text-muted">새로운 알림이 없어요.</p>
         ) : (
           notifItems.map((item, idx) => (
-            <div key={idx} className="bg-surface-card border border-border rounded-card p-3 mb-2">
+            <div key={idx} className="bg-surface-card rounded-card p-3 mb-2">
               <p className="text-body">{item.text}</p>
               <p className="text-caption text-text-muted mt-1">{fmtDate(item.date)}</p>
             </div>

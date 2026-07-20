@@ -175,3 +175,33 @@ export function pendingCounts(state: AppState) {
     enrollment: state.enrollments.filter((e) => e.status === "pending").length,
   };
 }
+
+/** 특정 날짜(YYYY-MM-DD)에 학생이 받은 스티커를 출처별로 집계한다 (스티커 탭 날짜별 보기용). */
+export interface DailyBreakdown {
+  date: string;
+  attendance: number;
+  homework: number;
+  praise: number;
+  total: number;
+}
+
+export function dailyBreakdown(state: AppState, studentId: string, date: string): DailyBreakdown {
+  const entries = state.ledger.filter(
+    (l) => l.student_id === studentId && l.status === "active" && l.created_at.slice(0, 10) === date
+  );
+  const sum = (type: "attendance" | "homework" | "praise") =>
+    entries.filter((l) => l.source_type === type).reduce((s, l) => s + l.count, 0);
+  const attendance = sum("attendance");
+  const homework = sum("homework");
+  const praise = sum("praise");
+  return { date, attendance, homework, praise, total: attendance + homework + praise };
+}
+
+/** 학생이 스티커를 받은 날짜 집합 (날짜 선택기의 활동 표시 점용). */
+export function activeDatesForStudent(state: AppState, studentId: string): Set<string> {
+  return new Set(
+    state.ledger
+      .filter((l) => l.student_id === studentId && l.status === "active")
+      .map((l) => l.created_at.slice(0, 10))
+  );
+}

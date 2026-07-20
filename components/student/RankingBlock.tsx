@@ -34,7 +34,7 @@ export function RankingBlock() {
   const period = rankingPeriodLabel(state, effectiveScope);
 
   return (
-    <div className="bg-surface-card border border-border rounded-card p-4 mb-3.5">
+    <div className="bg-surface-card rounded-card p-4 mb-3.5">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-subtitle">랭킹 TOP 5</h3>
         <Button variant="secondary" onClick={() => setSheetOpen(true)} className="!py-1.5 !px-2.5 !text-micro">
