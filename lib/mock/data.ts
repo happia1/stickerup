@@ -301,9 +301,9 @@ export const seedPraiseRequests: PraiseRequest[] = [
 ];
 
 export const seedRankingPeriodConfigs: RankingPeriodConfig[] = [
-  { id: "rpc-global", tenant_id: TENANT_ID, class_id: null, unit: "month", custom_days: null, updated_at: now() },
-  { id: "rpc-algebra", tenant_id: TENANT_ID, class_id: ALGEBRA_CLASS_ID, unit: "week", custom_days: null, updated_at: now() },
-  { id: "rpc-suneung", tenant_id: TENANT_ID, class_id: SUNEUNG_CLASS_ID, unit: "month", custom_days: null, updated_at: now() },
+  { id: "rpc-global", tenant_id: TENANT_ID, class_id: null, unit: "month", updated_at: now() },
+  { id: "rpc-algebra", tenant_id: TENANT_ID, class_id: ALGEBRA_CLASS_ID, unit: "week", updated_at: now() },
+  { id: "rpc-suneung", tenant_id: TENANT_ID, class_id: SUNEUNG_CLASS_ID, unit: "month", updated_at: now() },
 ];
 
 export const seedRewardCampaigns: RewardCampaign[] = [
@@ -330,7 +330,7 @@ export const seedNotices: Notice[] = [
   {
     id: "n1",
     tenant_id: TENANT_ID,
-    title: "7월 정기고사 대비 특강 안내",
+    title: "📢 7월 정기고사 대비 특강 안내",
     content: "7/22(월)부터 정기고사 대비 특강이 진행됩니다. 시간표는 반별 공지를 참고해주세요.",
     pinned: true,
     author_teacher_id: OWNER_ID,
@@ -339,7 +339,7 @@ export const seedNotices: Notice[] = [
   {
     id: "n2",
     tenant_id: TENANT_ID,
-    title: "7월 랭킹 보상 이벤트 진행중!",
+    title: "🎉 7월 랭킹 보상 이벤트 진행중!",
     content: "이번 주 대수반 랭킹 상위 3명에게 상품을 드려요.",
     pinned: true,
     author_teacher_id: OWNER_ID,
@@ -348,7 +348,7 @@ export const seedNotices: Notice[] = [
   {
     id: "n3",
     tenant_id: TENANT_ID,
-    title: "이번 주 목요일 휴원 안내",
+    title: "🕐 이번 주 목요일 휴원 안내",
     content: "시설 점검으로 7/23(목)은 휴원합니다.",
     pinned: false,
     author_teacher_id: ASSISTANT_ID,

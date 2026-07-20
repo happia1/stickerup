@@ -1,5 +1,6 @@
 import type { AppState, Action } from "./types";
-import type { ClassRoom, Enrollment, RewardCampaign, RewardItem } from "@/lib/types";
+import { ATTENDANCE_TIERS } from "@/lib/types";
+import type { ClassRoom, Enrollment, RewardCampaign } from "@/lib/types";
 
 function uid(prefix: string): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -19,7 +20,7 @@ export function appReducer(state: AppState, action: Action): AppState {
     }
 
     case "CHECK_IN": {
-      const tierDef = state.attendancePolicy.find((t) => t.tier === action.tier);
+      const tierDef = ATTENDANCE_TIERS.find((t) => t.tier === action.tier);
       const count = tierDef ? tierDef.count : 0;
       const entry = {
         id: uid("led"),
@@ -210,7 +211,6 @@ export function appReducer(state: AppState, action: Action): AppState {
         tenant_id: state.tenant.id,
         class_id: newClass.id,
         unit: action.rankingUnit,
-        custom_days: null,
         updated_at: nowISO(),
       };
       return {
@@ -229,12 +229,13 @@ export function appReducer(state: AppState, action: Action): AppState {
       };
     }
 
-    case "SET_ATTENDANCE_POLICY": {
-      return { ...state, attendancePolicy: action.tiers };
-    }
-
-    case "SET_HOMEWORK_POLICY": {
-      return { ...state, homeworkPolicy: action.tiers, homeworkGradingMode: action.mode };
+    case "UPDATE_HOMEWORK_POLICY": {
+      return {
+        ...state,
+        homeworkPolicy: state.homeworkPolicy.map((t) =>
+          t.tier === action.tier ? { ...t, count: action.count } : t
+        ),
+      };
     }
 
     case "ADD_NOTICE": {
@@ -255,10 +256,10 @@ export function appReducer(state: AppState, action: Action): AppState {
       };
     }
 
-    case "SET_NOTICE_PIN": {
+    case "TOGGLE_NOTICE_PIN": {
       return {
         ...state,
-        notices: state.notices.map((n) => (n.id === action.noticeId ? { ...n, pinned: action.pinned } : n)),
+        notices: state.notices.map((n) => (n.id === action.noticeId ? { ...n, pinned: !n.pinned } : n)),
       };
     }
 
@@ -267,13 +268,12 @@ export function appReducer(state: AppState, action: Action): AppState {
     }
 
     case "SET_RANKING_UNIT": {
-      const customDays = action.customDays ?? null;
       const exists = state.rankingPeriodConfigs.some((c) => c.class_id === action.classId);
       if (exists) {
         return {
           ...state,
           rankingPeriodConfigs: state.rankingPeriodConfigs.map((c) =>
-            c.class_id === action.classId ? { ...c, unit: action.unit, custom_days: customDays, updated_at: nowISO() } : c
+            c.class_id === action.classId ? { ...c, unit: action.unit, updated_at: nowISO() } : c
           ),
         };
       }
@@ -281,7 +281,7 @@ export function appReducer(state: AppState, action: Action): AppState {
         ...state,
         rankingPeriodConfigs: [
           ...state.rankingPeriodConfigs,
-          { id: uid("rpc"), tenant_id: state.tenant.id, class_id: action.classId, unit: action.unit, custom_days: customDays, updated_at: nowISO() },
+          { id: uid("rpc"), tenant_id: state.tenant.id, class_id: action.classId, unit: action.unit, updated_at: nowISO() },
         ],
       };
     }
@@ -297,12 +297,12 @@ export function appReducer(state: AppState, action: Action): AppState {
         status: "active",
         created_at: nowISO(),
       };
-      const item: RewardItem = {
+      const item = {
         id: uid("item"),
         tenant_id: state.tenant.id,
         campaign_id: campaign.id,
         title: action.itemTitle,
-        image_url: action.itemImageUrl,
+        image_url: null,
         link_url: null,
         qty: action.itemQty,
       };
@@ -310,31 +310,6 @@ export function appReducer(state: AppState, action: Action): AppState {
         ...state,
         rewardCampaigns: [...state.rewardCampaigns, campaign],
         rewardItems: [...state.rewardItems, item],
-      };
-    }
-
-    case "UPDATE_REWARD_CAMPAIGN": {
-      return {
-        ...state,
-        rewardCampaigns: state.rewardCampaigns.map((c) =>
-          c.id === action.campaignId
-            ? {
-                ...c,
-                target_distribution: { type: action.distributionType, value: action.distributionValue },
-                period_start: action.periodStart,
-                period_end: action.periodEnd,
-              }
-            : c
-        ),
-      };
-    }
-
-    case "UPDATE_REWARD_ITEM": {
-      return {
-        ...state,
-        rewardItems: state.rewardItems.map((i) =>
-          i.id === action.itemId ? { ...i, title: action.title, qty: action.qty, image_url: action.imageUrl } : i
-        ),
       };
     }
 

@@ -11,7 +11,7 @@ export function Button({ variant = "primary", fullWidth, className, children, ..
   const base = "inline-flex items-center justify-center rounded-xl font-bold transition active:scale-[0.98] disabled:cursor-not-allowed";
   const sizing = "px-4 py-2.5 text-body";
   const variants = {
-    primary: "bg-brand-amber text-surface-page disabled:bg-border disabled:text-text-muted",
+    primary: "bg-brand-amber text-white disabled:bg-border disabled:text-text-muted",
     secondary: "bg-surface-card border border-border text-text-primary disabled:text-text-muted",
   };
   return (

@@ -2,11 +2,21 @@
 import { useState } from "react";
 import { useAppState, useAppDispatch } from "@/lib/store/provider";
 import { approvedClassesForStudent, getClassById } from "@/lib/store/selectors";
+import { ATTENDANCE_TIERS } from "@/lib/types";
+import type { AttendanceTier } from "@/lib/types";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Accordion } from "@/components/ui/Accordion";
 import { useToast } from "@/lib/toast/provider";
 import clsx from "@/lib/clsx";
+
+const DEMO_SCENARIOS: { tier: AttendanceTier; label: string }[] = [
+  { tier: "on_time", label: "정시 이전" },
+  { tier: "within_10", label: "10분 이내" },
+  { tier: "within_30", label: "30분 이내" },
+  { tier: "within_60", label: "1시간 이내" },
+  { tier: "over_60", label: "1시간 초과" },
+];
 
 export function AttendanceSection() {
   const state = useAppState();
@@ -14,8 +24,7 @@ export function AttendanceSection() {
   const showToast = useToast();
   const myClasses = approvedClassesForStudent(state, state.currentUserId);
   const [classId, setClassId] = useState(myClasses[0]?.id ?? "");
-  const scenarios = state.attendancePolicy;
-  const [scenario, setScenario] = useState<string>(scenarios[0]?.tier ?? "");
+  const [scenario, setScenario] = useState<AttendanceTier>("on_time");
 
   const selectedClass = getClassById(state, classId);
 
@@ -40,7 +49,7 @@ export function AttendanceSection() {
         </select>
         <label className="block text-caption font-semibold text-text-secondary mb-1">데모: 접속 시각 시나리오</label>
         <div className="grid grid-cols-3 gap-2 mb-3.5">
-          {scenarios.map((s) => (
+          {DEMO_SCENARIOS.map((s) => (
             <button
               key={s.tier}
               type="button"
@@ -59,7 +68,7 @@ export function AttendanceSection() {
           disabled={!classId}
           onClick={() => {
             dispatch({ type: "CHECK_IN", studentId: state.currentUserId, classId, tier: scenario });
-            const tierDef = state.attendancePolicy.find((t) => t.tier === scenario);
+            const tierDef = ATTENDANCE_TIERS.find((t) => t.tier === scenario);
             showToast(`${selectedClass?.name} 출석 완료 — ${tierDef?.label}, ${tierDef?.count}장 지급!`);
           }}
         >
@@ -69,9 +78,9 @@ export function AttendanceSection() {
 
       <Card>
         <Accordion label="출석 기준 안내">
-          {state.attendancePolicy.map((t) => (
+          {ATTENDANCE_TIERS.map((t) => (
             <p key={t.tier} className="text-caption text-text-secondary mb-1">
-              {t.label} ({t.rangeText}) → <b>{t.count}장</b>
+              {t.label} → <b>{t.count}장</b>
             </p>
           ))}
         </Accordion>
