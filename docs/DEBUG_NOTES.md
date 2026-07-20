@@ -1,5 +1,11 @@
 # DEBUG NOTES
 
+## [2026-07-21] Onboarding trigger result-data error
+
+- Symptom: student signup failed with `query has no destination for result data` after reaching the database insert stage.
+- Cause: the deployed tenant or student onboarding trigger function differs from the current migration definition and contains a `SELECT` whose result is not assigned or returned.
+- Resolution: added `20260719_06_repair_onboarding_triggers.sql` to reapply both trigger functions with `SELECT ... INTO`. Run it after migration 05 in the Supabase SQL Editor.
+
 ## [2026-07-21] Academy not found during general student signup
 
 - Symptom: a student without an invite link received `Academy was not found` after entering an academy name.
@@ -112,3 +118,9 @@
 - Symptom: signup could show a browser email-format warning when a user entered a Korean identifier.
 - Cause: an email input type triggers native browser validation before the identifier-to-internal-Auth-email conversion can run.
 - Resolution: keep all login and signup identifier controls as `type="text"`; the app validates the identifier and converts valid Korean IDs on the server path.
+
+## [2026-07-21] Onboarding trigger repair handoff
+
+- Symptom: student signup can return `query has no destination for result data`.
+- Cause: an already-deployed database trigger function emits a `SELECT` result without assigning or discarding it.
+- Resolution: the repository contains `supabase/migrations/20260719_06_repair_onboarding_triggers.sql`, which replaces the affected functions with `SELECT ... INTO` logic. This is a database-side action: run migration 05 followed by migration 06 in the Supabase SQL Editor if the deployed project has not received them yet.

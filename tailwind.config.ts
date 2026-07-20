@@ -9,7 +9,7 @@ const config: Config = {
     extend: {
       colors: {
         surface: {
-          page: "#0A0B0E",
+          page: "#000000",
           card: "#17191F",
           raised: "#20232B",
         },

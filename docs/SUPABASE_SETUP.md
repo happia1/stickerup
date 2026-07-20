@@ -30,7 +30,7 @@ Vercel에는 Project Settings > Environment Variables에 같은 값을 등록한
 
 ## Service-role database permissions
 
-After migration 03, run `supabase/migrations/20260719_05_service_role_permissions.sql` in the Supabase Dashboard SQL Editor. It grants the server-only `service_role` database privileges while keeping browser RLS enabled. Without it, signup can fail with `permission denied for table students`.
+After migration 03, run `supabase/migrations/20260719_05_service_role_permissions.sql` and `supabase/migrations/20260719_06_repair_onboarding_triggers.sql` in the Supabase Dashboard SQL Editor. The first grants the server-only `service_role` database privileges while keeping browser RLS enabled; the second reapplies the tenant and student onboarding trigger functions. Without them, signup can fail with `permission denied for table students` or `query has no destination for result data`.
 
 ## Client 분리
 

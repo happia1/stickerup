@@ -87,3 +87,13 @@
 - 증상: 초대 링크 없이 학원명을 입력한 학생이 `Academy was not found` 오류를 받았다.
 - 원인: 가입 로직이 기존 tenant만 허용해 pending 또는 미연결 학생 가입 요구사항과 맞지 않았다.
 - 조치: 미등록 학원명에는 ownerless pending tenant와 pending enrollment를 생성하고, 동일 학원명 선생님 가입 시 그 tenant를 이어받도록 변경했다.
+
+## 2026-07-21 가입 트리거 결과 미수신 오류
+
+- 증상: 학생 가입 중 `query has no destination for result data`가 발생했다.
+- 원인: 실제 Supabase DB의 기본반 생성 또는 학생 자동 배정 트리거 함수가 최신 정의와 달라 SELECT 결과가 처리되지 않았다.
+- 조치: `20260719_06_repair_onboarding_triggers.sql`로 두 트리거 함수를 재적용하고, API에서 SQL Editor 실행 안내를 반환하도록 변경했다.
+
+## [2026-07-21] End-of-day onboarding database handoff
+
+- The repository-side signup error mapping and trigger repair migration are prepared. Production signup still requires the Supabase project to run `20260719_05_service_role_permissions.sql` and then `20260719_06_repair_onboarding_triggers.sql` when those migrations have not yet been applied.

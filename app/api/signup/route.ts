@@ -9,6 +9,8 @@ import {
   databasePermissionMessage,
   invalidServiceRoleKeyMessage,
   isSupabaseDatabasePermissionError,
+  isSupabaseOnboardingTriggerError,
+  onboardingTriggerMessage,
   isSupabaseServiceRoleKeyError,
   missingServiceRoleKeyMessage,
 } from "@/lib/supabase/server-config";
@@ -108,6 +110,9 @@ export async function POST(request: Request) {
     }
     if (isSupabaseDatabasePermissionError(error)) {
       return NextResponse.json({ error: databasePermissionMessage, code: "SUPABASE_DATABASE_PERMISSION_DENIED" }, { status: 503 });
+    }
+    if (isSupabaseOnboardingTriggerError(error)) {
+      return NextResponse.json({ error: onboardingTriggerMessage, code: "SUPABASE_ONBOARDING_TRIGGER_ERROR" }, { status: 503 });
     }
     const message = error instanceof Error ? error.message : "Unable to complete signup.";
     return NextResponse.json({ error: message }, { status: 400 });
