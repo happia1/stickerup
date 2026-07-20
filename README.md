@@ -4,10 +4,11 @@
 
 ## 가입 및 로그인
 
-- `/onboarding`에서 선생님 또는 학생 가입 방식을 선택합니다.
-- 선생님은 `/onboarding/teacher`에서 이메일/비밀번호로 가입합니다. 가입 완료 시 학원, owner 선생님, 기본반, 기본 랭킹 주기, 기본 초대 링크가 생성됩니다.
-- 학생은 선생님에게 받은 `/join/[inviteCode]` 링크에서 가입합니다. 링크가 유효하면 학원과 초대한 선생님 정보를 확인한 뒤 학생 프로필과 기본반 승인 등록이 생성됩니다.
-- `/login`은 `teachers`와 `students` 테이블을 기준으로 역할을 판별해 선생님은 `/admin/dashboard`, 학생은 `/student/home`으로 이동시킵니다.
+- `/login`은 역할 선택 없이 이메일/비밀번호로 로그인합니다. `students` 테이블에 있으면 `/student/home`, `teachers` 테이블에 있으면 `/admin/dashboard`로 이동합니다.
+- `/signup`은 학생/선생님 유형을 선택하는 단일 회원가입 화면입니다. 선생님 가입은 학원, owner 선생님, 기본반, 기본 랭킹 주기, 기본 초대 링크를 생성합니다.
+- 학생 초대 링크는 `/join/[inviteCode]`에서 `/signup?invite=[inviteCode]`로 연결됩니다. 유효한 링크는 학생 유형과 학원명을 자동으로 설정하고 기본반 승인 등록을 생성합니다.
+- 초대 링크가 없는 학생은 기존 학원명을 입력해 가입할 수 있으며, 기본반 등록은 `pending` 상태로 생성되어 선생님의 승인 또는 반 신청이 필요할 수 있습니다.
+- `/onboarding`, `/onboarding/teacher`, `/onboarding/student`은 이전 링크 호환을 위해 `/signup`으로 이동합니다.
 - Supabase 환경변수가 비어 있으면 기존 mock UI가 계속 표시됩니다. 실제 가입을 사용하려면 `.env.example`을 `.env.local`로 복사해 값을 설정하고 개발 서버를 재시작하세요.
 학원 출석/숙제/칭찬 스티커 랭킹 앱
 

@@ -27,7 +27,7 @@ export function AuthEntryNotice() {
       <span>로그인하면 내 계정의 Supabase 데이터를 불러옵니다. </span>
       <Link href="/login" className="font-semibold text-brand-amber underline">로그인</Link>
       <span> 또는 </span>
-      <Link href="/onboarding" className="font-semibold text-brand-amber underline">가입 시작</Link>
+      <Link href="/signup" className="font-semibold text-brand-amber underline">회원가입</Link>
     </div>
   );
 }

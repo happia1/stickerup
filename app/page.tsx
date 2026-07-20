@@ -19,7 +19,7 @@ export default function Home() {
           로그인
         </Link>
         <Link
-          href="/onboarding"
+          href="/signup"
           className="w-full py-3.5 rounded-xl bg-surface-card text-text-primary font-bold text-center"
         >
           회원가입

@@ -27,3 +27,9 @@
 - 증상: `npx.cmd tsc --noEmit --noUnusedLocals --noUnusedParameters` 실행 시 unused 변수/import/상수 6건이 `TS6133`으로 실패.
 - 원인: 이전 UI 복원 과정에서 `todayAttendance`, `useState`, `Pill`, `useRef`, `computePeriodBounds`, `MEDAL_LABEL`이 남아 있었지만 실제 렌더링 경로에서 사용되지 않음.
 - 조치: 사용하지 않는 선언을 제거하고 `npm.cmd run typecheck`, `npm.cmd run build`, 엄격 unused 체크를 모두 통과시킴.
+
+## [2026-07-21] `/signup` query parameter build failure
+
+- 증상: `/signup?invite=...` 통합 후 production build에서 `prerender-manifest.json`이 생성되지 않았습니다.
+- 원인: client page의 `useSearchParams` 호출에 Suspense 경계가 없어 Next.js 정적 prerender가 완료되지 않았습니다.
+- 조치: 회원가입 폼을 `Suspense`로 감싸고 typecheck 및 production manifest 생성을 다시 확인했습니다.

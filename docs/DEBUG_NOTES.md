@@ -1,5 +1,11 @@
 # DEBUG NOTES
 
+## [2026-07-21] Signup query parameter build failure
+
+- Symptom: the first production build after adding `/signup?invite=...` ended before generating `prerender-manifest.json`.
+- Cause: the client page called `useSearchParams` without a Suspense boundary, so Next.js could not complete static prerendering.
+- Resolution: wrapped the signup form in a `Suspense` boundary. `npm.cmd run typecheck` passed and the rebuilt `.next` output includes `BUILD_ID`, `app-paths-manifest.json`, and `prerender-manifest.json`.
+
 ## [2026-07-20] Auth entry flow build lock prevention
 
 - Symptom: port 3001 was occupied by an existing Next.js development server before the production build.

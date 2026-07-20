@@ -35,9 +35,9 @@ Vercel에는 Project Settings > Environment Variables에 같은 값을 등록한
 
 ## Auth and onboarding
 
-- `/login` uses the browser anon-key client for email/password sign-in. It checks `teachers` and `students` through a server route and redirects by the stored application role.
-- `/onboarding` is the public entry screen. `/onboarding/teacher` signs up a teacher and initializes the academy. `/onboarding/student` intentionally directs students to their teacher-provided `/join/[inviteCode]` link.
-- `/join/[inviteCode]` signs up a student only after the public server handler confirms that the invite token is active. The token and selected role are stored in Supabase Auth user metadata so email-confirmation flows can resume onboarding after login.
+- `/login` uses the browser anon-key client for email/password sign-in without a role selector. It checks `teachers` and `students` through a server route and redirects by the stored application role.
+- `/signup` is the single public signup screen. Teacher signup initializes the academy; student signup uses either an invite link or an existing academy name. The legacy `/onboarding` routes redirect to `/signup`.
+- `/join/[inviteCode]` redirects to `/signup?invite=[inviteCode]`. The public server handler confirms the invite token, then the signup screen fixes the student type and academy name. The invite token and selected role are stored in Supabase Auth user metadata so email-confirmation flows can resume signup after login.
 - Profile creation, invite resolution, and student-home reads run through server route handlers. They validate the browser access token first, then use `lib/supabase/admin.ts` only on the server. Never expose `SUPABASE_SERVICE_ROLE_KEY` to a browser bundle.
 
 If `.env.local` is missing or its public values are empty, the login, onboarding, and student home screens display a clear demo-mode notice and the existing mock store remains active. Copy `.env.example` to `.env.local`, fill the values, and restart the dev server to enable Supabase.

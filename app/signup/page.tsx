@@ -1,0 +1,231 @@
+"use client";
+
+import Link from "next/link";
+import { FormEvent, Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getSupabaseBrowserConfigError } from "@/lib/supabase/config";
+
+type SignupType = "student" | "teacher";
+
+interface InvitePreview {
+  academyName: string;
+  teacherName: string;
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<main className="mx-auto flex min-h-screen max-w-app items-center justify-center px-6 text-body text-text-secondary">회원가입 화면을 준비하고 있습니다.</main>}>
+      <SignupForm />
+    </Suspense>
+  );
+}
+
+function SignupForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const inviteCode = searchParams.get("invite")?.trim() || null;
+  const typeParam = searchParams.get("type");
+  const [signupType, setSignupType] = useState<SignupType>(typeParam === "teacher" ? "teacher" : "student");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [name, setName] = useState("");
+  const [age, setAge] = useState("");
+  const [academyName, setAcademyName] = useState("");
+  const [invite, setInvite] = useState<InvitePreview | null>(null);
+  const [loadingInvite, setLoadingInvite] = useState(Boolean(inviteCode));
+  const [existingSession, setExistingSession] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
+  const configError = getSupabaseBrowserConfigError();
+
+  useEffect(() => {
+    if (typeParam === "student" || typeParam === "teacher") setSignupType(typeParam);
+  }, [typeParam]);
+
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+
+    let active = true;
+    void supabase.auth.getSession().then(({ data }) => {
+      if (!active || !data.session) return;
+      const metadata = data.session.user.user_metadata;
+      setExistingSession(true);
+      setEmail(data.session.user.email ?? "");
+      if (metadata.signup_role === "student" || metadata.signup_role === "teacher") setSignupType(metadata.signup_role);
+      if (typeof metadata.display_name === "string") setName(metadata.display_name);
+      if (typeof metadata.academy_name === "string") setAcademyName(metadata.academy_name);
+      if (typeof metadata.age === "number") setAge(String(metadata.age));
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!inviteCode) {
+      setLoadingInvite(false);
+      return;
+    }
+
+    let active = true;
+    setLoadingInvite(true);
+    void fetch(`/api/invites/${encodeURIComponent(inviteCode)}`)
+      .then(async (response) => {
+        const payload = (await response.json()) as { invite?: InvitePreview; error?: string };
+        if (!response.ok || !payload.invite) throw new Error(payload.error ?? "초대 링크를 확인하지 못했습니다.");
+        if (active) {
+          setInvite(payload.invite);
+          setSignupType("student");
+          setAcademyName(payload.invite.academyName);
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) setMessage(error instanceof Error ? error.message : "유효하지 않은 초대 링크입니다.");
+      })
+      .finally(() => {
+        if (active) setLoadingInvite(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [inviteCode]);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) {
+      setMessage("Supabase 환경변수를 설정한 뒤 다시 시도해 주세요.");
+      return;
+    }
+    if (!existingSession && password !== passwordConfirmation) {
+      setMessage("비밀번호 확인이 일치하지 않습니다.");
+      return;
+    }
+    if (signupType === "student" && (!Number.isInteger(Number(age)) || Number(age) < 1 || Number(age) > 100)) {
+      setMessage("학생 나이는 1부터 100 사이로 입력해 주세요.");
+      return;
+    }
+    if (inviteCode && !invite) {
+      setMessage("유효한 초대 링크를 확인한 뒤 가입해 주세요.");
+      return;
+    }
+
+    setSubmitting(true);
+    setMessage(null);
+    try {
+      const sessionResult = await supabase.auth.getSession();
+      let accessToken = sessionResult.data.session?.access_token;
+      if (!accessToken) {
+        const signUpResult = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              signup_role: signupType,
+              display_name: name,
+              academy_name: academyName,
+              age: signupType === "student" ? Number(age) : null,
+              invite_code: inviteCode,
+            },
+          },
+        });
+        if (signUpResult.error) throw signUpResult.error;
+        if (!signUpResult.data.session) {
+          setMessage("가입 확인 메일을 보냈습니다. 메일 인증 후 로그인하면 회원가입 정보를 이어서 입력할 수 있습니다.");
+          return;
+        }
+        accessToken = signUpResult.data.session.access_token;
+      }
+
+      const response = await fetch("/api/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          signupType,
+          name,
+          age: signupType === "student" ? Number(age) : null,
+          academyName,
+          inviteCode,
+        }),
+      });
+      const payload = (await response.json()) as { redirectTo?: string; enrollmentStatus?: "approved" | "pending"; error?: string };
+      if (!response.ok || !payload.redirectTo) throw new Error(payload.error ?? "회원가입을 완료하지 못했습니다.");
+      const redirectTo = payload.redirectTo;
+
+      if (payload.enrollmentStatus === "pending") {
+        setMessage("회원가입이 완료되었습니다. 반 소속은 선생님의 승인 또는 반 신청이 필요할 수 있어요.");
+        setRedirecting(true);
+        window.setTimeout(() => router.push(redirectTo), 1200);
+        return;
+      }
+      router.push(redirectTo);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "회원가입을 완료하지 못했습니다.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const canSubmit = !submitting && !redirecting && !loadingInvite && (!inviteCode || Boolean(invite));
+
+  return (
+    <main className="mx-auto min-h-screen max-w-app px-6 py-10">
+      <Link href="/" className="text-caption text-text-secondary underline">StickerUp으로 돌아가기</Link>
+      <div className="mt-8 rounded-card bg-surface-card p-5">
+        <p className="text-display">회원가입</p>
+        <p className="mt-2 text-body text-text-secondary">계정 유형과 기본 정보를 입력해 주세요.</p>
+        {configError && <p className="mt-4 text-caption text-text-secondary">Supabase 환경변수를 설정한 뒤 회원가입을 진행해 주세요.</p>}
+        {inviteCode && loadingInvite && <p className="mt-4 text-caption text-text-secondary">초대 링크를 확인하고 있습니다.</p>}
+        {invite && <p className="mt-4 text-caption text-text-secondary">{invite.academyName} · {invite.teacherName} 선생님 초대</p>}
+        <form onSubmit={handleSubmit} className="mt-5 space-y-3">
+          <fieldset>
+            <legend className="text-caption text-text-secondary">가입 유형</legend>
+            <div className="mt-1 grid grid-cols-2 gap-2">
+              <label className={`rounded-xl px-3 py-2.5 text-center text-caption font-bold ${signupType === "student" ? "bg-brand-amber text-surface-page" : "bg-surface-raised text-text-secondary"}`}>
+                <input className="sr-only" type="radio" name="signupType" value="student" checked={signupType === "student"} onChange={() => setSignupType("student")} disabled={Boolean(inviteCode)} />
+                학생
+              </label>
+              <label className={`rounded-xl px-3 py-2.5 text-center text-caption font-bold ${signupType === "teacher" ? "bg-brand-amber text-surface-page" : "bg-surface-raised text-text-secondary"}`}>
+                <input className="sr-only" type="radio" name="signupType" value="teacher" checked={signupType === "teacher"} onChange={() => setSignupType("teacher")} disabled={Boolean(inviteCode)} />
+                선생님
+              </label>
+            </div>
+          </fieldset>
+          <label className="block text-caption text-text-secondary">이름
+            <input required value={name} onChange={(event) => setName(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none" />
+          </label>
+          {signupType === "student" && <label className="block text-caption text-text-secondary">나이
+            <input required min="1" max="100" type="number" value={age} onChange={(event) => setAge(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none" />
+          </label>}
+          <label className="block text-caption text-text-secondary">학원 이름
+            <input required value={academyName} readOnly={Boolean(invite)} onChange={(event) => setAcademyName(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none read-only:text-text-secondary" />
+          </label>
+          {signupType === "student" && !invite && <p className="text-caption text-text-muted">가입 후 선생님의 승인 또는 반 신청이 필요할 수 있어요.</p>}
+          <label className="block text-caption text-text-secondary">아이디 또는 이메일
+            <input required={!existingSession} disabled={existingSession} type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="이메일 주소" className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none disabled:opacity-60" />
+          </label>
+          <label className="block text-caption text-text-secondary">비밀번호
+            <input required={!existingSession} disabled={existingSession} minLength={6} type="password" value={password} onChange={(event) => setPassword(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none disabled:opacity-60" />
+          </label>
+          <label className="block text-caption text-text-secondary">비밀번호 확인
+            <input required={!existingSession} disabled={existingSession} minLength={6} type="password" value={passwordConfirmation} onChange={(event) => setPasswordConfirmation(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none disabled:opacity-60" />
+          </label>
+          {existingSession && <p className="text-caption text-text-secondary">인증된 계정입니다. 가입 정보를 확인한 뒤 완료해 주세요.</p>}
+          {message && <p className="text-caption text-text-secondary">{message}</p>}
+          <button disabled={!canSubmit} className="w-full rounded-xl bg-brand-amber py-3 text-body font-bold text-surface-page disabled:opacity-60">
+            {redirecting ? "이동 중..." : submitting ? "가입 처리 중..." : "회원가입"}
+          </button>
+        </form>
+        <Link href="/login" className="mt-4 block text-center text-caption text-text-secondary underline">이미 계정이 있나요? 로그인</Link>
+      </div>
+    </main>
+  );
+}

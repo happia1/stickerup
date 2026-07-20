@@ -21,7 +21,8 @@ export interface StudentOnboardingInput {
   userId: string;
   studentName: string;
   age: number | null;
-  inviteCode: string;
+  academyName: string;
+  inviteCode?: string | null;
 }
 
 function fail(error: { message: string } | null, fallback: string): never {
@@ -146,32 +147,56 @@ export async function completeStudentOnboarding(
   input: StudentOnboardingInput
 ) {
   await ensureProfileIsNew(supabase, input.userId);
-  const invite = await getActiveInvitePreview(supabase, input.inviteCode);
-  if (!invite) throw new Error("This invite link is invalid or expired.");
+  const inviteCode = input.inviteCode?.trim();
+  const invite = inviteCode ? await getActiveInvitePreview(supabase, inviteCode) : null;
+  if (inviteCode && !invite) throw new Error("This invite link is invalid or expired.");
+
+  let tenantId: string;
+  let teacherId: string | null = null;
+  let inviteId: string | null = null;
+
+  if (invite) {
+    tenantId = invite.tenantId;
+    teacherId = invite.teacherId;
+    inviteId = invite.inviteId;
+  } else {
+    const academyName = input.academyName.trim();
+    if (!academyName) throw new Error("Academy name is required for student signup.");
+
+    const tenantResult = await supabase
+      .from("tenants")
+      .select("id")
+      .eq("name", academyName)
+      .limit(1)
+      .maybeSingle();
+    if (tenantResult.error) fail(tenantResult.error, "Unable to find academy.");
+    if (!tenantResult.data) throw new Error("Academy was not found. Please check the academy name or ask your teacher for an invite link.");
+    tenantId = tenantResult.data.id;
+  }
 
   const studentResult = await supabase.from("students").insert({
     id: input.userId,
-    tenant_id: invite.tenantId,
-    invited_by_teacher_id: invite.teacherId,
-    invite_link_id: invite.inviteId,
+    tenant_id: tenantId,
+    invited_by_teacher_id: teacherId,
+    invite_link_id: inviteId,
     name: input.studentName,
     age: input.age,
   });
   if (studentResult.error) fail(studentResult.error, "Unable to create student profile.");
 
-  const defaultClassId = await getDefaultClassId(supabase, invite.tenantId);
+  const defaultClassId = await getDefaultClassId(supabase, tenantId);
   const enrollmentResult = await supabase.from("enrollments").upsert(
     {
-      tenant_id: invite.tenantId,
+      tenant_id: tenantId,
       student_id: input.userId,
       class_id: defaultClassId,
-      status: "approved",
-      approved_at: new Date().toISOString(),
-      approver_id: invite.teacherId,
+      status: invite ? "approved" : "pending",
+      approved_at: invite ? new Date().toISOString() : null,
+      approver_id: teacherId,
     },
     { onConflict: "student_id,class_id" }
   );
   if (enrollmentResult.error) fail(enrollmentResult.error, "Unable to enroll the student in the default class.");
 
-  return { tenantId: invite.tenantId, classId: defaultClassId };
+  return { tenantId, classId: defaultClassId, enrollmentStatus: invite ? "approved" : "pending" };
 }
