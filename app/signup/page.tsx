@@ -130,6 +130,9 @@ function SignupForm() {
       const sessionResult = await supabase.auth.getSession();
       let accessToken = sessionResult.data.session?.access_token;
       if (!accessToken && !isUsernameSignup) {
+        const adminStatusResponse = await fetch("/api/auth/admin-status", { cache: "no-store" });
+        const adminStatus = (await adminStatusResponse.json()) as { error?: string };
+        if (!adminStatusResponse.ok) throw new Error(adminStatus.error ?? "Supabase 관리자 연결을 확인하지 못했습니다.");
         const emailRedirectTo = getEmailRedirectUrl();
         const signUpResult = await supabase.auth.signUp({
           email: authEmail,

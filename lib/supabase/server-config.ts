@@ -1,6 +1,9 @@
 import "server-only";
 import { getSupabaseBrowserConfigError } from "./config";
 
+export const missingServiceRoleKeyMessage = "서버 환경변수 SUPABASE_SERVICE_ROLE_KEY가 설정되지 않았습니다. Vercel 환경변수를 추가한 뒤 재배포해 주세요.";
+export const invalidServiceRoleKeyMessage = "서버 환경변수 SUPABASE_SERVICE_ROLE_KEY가 올바르지 않거나 현재 Supabase 프로젝트와 일치하지 않습니다. Vercel 환경변수를 확인한 뒤 재배포해 주세요.";
+
 export function getSupabaseServerConfigError(): string | null {
   const browserError = getSupabaseBrowserConfigError();
   if (browserError) return browserError;
@@ -10,4 +13,14 @@ export function getSupabaseServerConfigError(): string | null {
   }
 
   return null;
+}
+
+export function isSupabaseServiceRoleKeyError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+
+  const message = error.message.toLowerCase();
+  return message.includes("invalid api key")
+    || message.includes("invalid jwt")
+    || message.includes("invalid token")
+    || message.includes("api key is invalid");
 }
