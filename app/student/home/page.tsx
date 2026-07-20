@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAppState } from "@/lib/store/provider";
 import { approvedClassesForStudent, getStudentById } from "@/lib/store/selectors";
@@ -6,17 +7,61 @@ import { Avatar } from "@/components/ui/Avatar";
 import { FlapBanner } from "@/components/student/FlapBanner";
 import { RankingBlock } from "@/components/student/RankingBlock";
 import { RewardBlock } from "@/components/student/RewardBlock";
+import { SupabaseModeNotice } from "@/components/supabase/SupabaseModeNotice";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import type { StudentHomeData } from "@/lib/data/student-home.types";
 
 export default function StudentHomePage() {
   const state = useAppState();
-  const me = getStudentById(state, state.currentUserId);
+  const [remoteData, setRemoteData] = useState<StudentHomeData | null>(null);
+  const [connectionMessage, setConnectionMessage] = useState<string | null>(null);
+  const mockStudent = getStudentById(state, state.currentUserId);
+
+  useEffect(() => {
+    const client = getSupabaseBrowserClient();
+    if (!client) return;
+
+    let active = true;
+    async function loadStudentHome(supabase: NonNullable<ReturnType<typeof getSupabaseBrowserClient>>) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) {
+        if (active) setConnectionMessage("Supabase 로그인 전에는 데모 데이터를 표시합니다.");
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/student/home", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        const payload = (await response.json()) as { data?: StudentHomeData; error?: string };
+        if (!response.ok || !payload.data) {
+          throw new Error(payload.error ?? "학생 홈 데이터를 불러오지 못했습니다.");
+        }
+        if (active) setRemoteData(payload.data);
+      } catch (error) {
+        if (active) {
+          setConnectionMessage(error instanceof Error ? `${error.message} 데모 데이터를 계속 표시합니다.` : "데모 데이터를 계속 표시합니다.");
+        }
+      }
+    }
+
+    void loadStudentHome(client);
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const me = remoteData?.student ?? mockStudent;
   if (!me) return null;
 
-  const classes = approvedClassesForStudent(state, me.id);
+  const classes = remoteData?.classes ?? approvedClassesForStudent(state, me.id);
 
   return (
     <div>
-      <FlapBanner />
+      <SupabaseModeNotice />
+      {connectionMessage && <p className="mb-3 text-caption text-text-muted">{connectionMessage}</p>}
+      <FlapBanner notices={remoteData?.notices} />
       <div className="bg-surface-card rounded-card p-4 mb-3.5 flex items-center gap-3">
         <Avatar name={me.name} size={44} />
         <div className="flex-1 min-w-0">
@@ -30,8 +75,8 @@ export default function StudentHomePage() {
           스티커 받기
         </Link>
       </div>
-      <RankingBlock />
-      <RewardBlock />
+      <RankingBlock data={remoteData ?? undefined} />
+      <RewardBlock data={remoteData ?? undefined} />
     </div>
   );
 }

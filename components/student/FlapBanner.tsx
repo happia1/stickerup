@@ -4,13 +4,14 @@ import { useAppState } from "@/lib/store/provider";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Pill } from "@/components/ui/Pill";
 import { fmtDate } from "@/lib/format";
+import type { Notice } from "@/lib/types";
 
-export function FlapBanner() {
+export function FlapBanner({ notices: noticesFromData }: { notices?: Notice[] }) {
   const state = useAppState();
   const [index, setIndex] = useState(0);
   const [animKey, setAnimKey] = useState(0);
   const [open, setOpen] = useState(false);
-  const notices = state.notices;
+  const notices = noticesFromData ?? state.notices;
 
   useEffect(() => {
     if (notices.length <= 1) return;

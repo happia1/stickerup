@@ -13,14 +13,28 @@ import { Podium } from "@/components/ui/Podium";
 import { ChipTabs } from "@/components/ui/Tabs";
 import { Button } from "@/components/ui/Button";
 import { BottomSheet } from "@/components/ui/BottomSheet";
+import type { StudentHomeData } from "@/lib/data/student-home.types";
+import type { AppState } from "@/lib/store/types";
 
 const ALL_TIME_START = "2000-01-01";
 const ALL_TIME_END = "2999-12-31";
 
-export function RankingBlock() {
-  const state = useAppState();
-  const myClasses = approvedClassesForStudent(state, state.currentUserId).filter((c) => !c.is_default);
-  const defaultScope = defaultRankingScopeForStudent(state, state.currentUserId);
+export function RankingBlock({ data }: { data?: StudentHomeData }) {
+  const mockState = useAppState();
+  const state: AppState = data
+    ? {
+        ...mockState,
+        currentUserId: data.student.id,
+        students: data.students,
+        classes: data.classes,
+        enrollments: data.enrollments,
+        ledger: data.stickerLedger,
+        rankingPeriodConfigs: data.rankingPeriodConfigs,
+      }
+    : mockState;
+  const studentId = state.currentUserId;
+  const myClasses = approvedClassesForStudent(state, studentId).filter((c) => !c.is_default);
+  const defaultScope = defaultRankingScopeForStudent(state, studentId);
   const [scope, setScope] = useState<string | null>(defaultScope);
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -51,13 +65,14 @@ export function RankingBlock() {
       <p className="text-micro text-text-muted mb-2">
         {RANKING_UNIT_LABEL[period.unit]} · {period.start} ~ {period.end}
       </p>
-      <Podium rows={rows} students={state.students} highlightStudentId={state.currentUserId} maxRows={5} />
+      <Podium rows={rows} students={state.students} highlightStudentId={studentId} maxRows={5} />
 
       <FullRankingSheet
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}
         initialScope={effectiveScope}
         scopeOptions={scopeOptions}
+        state={state}
       />
     </div>
   );
@@ -68,13 +83,14 @@ function FullRankingSheet({
   onClose,
   initialScope,
   scopeOptions,
+  state,
 }: {
   open: boolean;
   onClose: () => void;
   initialScope: string | null;
   scopeOptions: { value: string; label: string }[];
+  state: AppState;
 }) {
-  const state = useAppState();
   const [scope, setScope] = useState<string | null>(initialScope);
   const [periodMode, setPeriodMode] = useState<"exposure" | "all" | "custom">("exposure");
   const [customStart, setCustomStart] = useState("2026-07-01");

@@ -1,5 +1,11 @@
 # DEBUG NOTES
 
+## [2026-07-20] Student home Supabase fallback type check
+
+- Symptom: the first typecheck reported that the optional browser Supabase client could be null inside the asynchronous student-home loader.
+- Cause: TypeScript does not retain a nullable client narrowing across the nested async function boundary.
+- Resolution: pass the checked client as a non-null loader parameter. Missing configuration still exits before the request and keeps the mock store active.
+
 ## [2026-07-20] Supabase migration validation scope
 
 - Symptom: the local workspace does not include the Supabase CLI or a Postgres client, so SQL migrations cannot be applied to a local database in this environment.

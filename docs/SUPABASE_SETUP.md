@@ -33,6 +33,15 @@ Vercel에는 Project Settings > Environment Variables에 같은 값을 등록한
 
 `SUPABASE_SERVICE_ROLE_KEY`는 절대 client component에서 import하지 않는다. 관리자 권한 작업은 서버 액션, route handler, 또는 Edge Function에서 `lib/supabase/admin.ts`를 통해 수행한다.
 
+## Auth and onboarding
+
+- `/auth` uses the browser anon-key client for email/password sign-in and sign-up. Sign-up stores the selected `student` or `teacher` intent in Supabase Auth user metadata.
+- `/onboarding` creates the application profile only after a signed-in session is present. Teacher onboarding creates a tenant and owner teacher profile. Student onboarding validates an active `invite_links.token`; the same token is currently accepted as an academy code until a separate academy-code table is introduced.
+- Profile creation and student-home reads run through server route handlers. They validate the browser access token first, then use `lib/supabase/admin.ts` only on the server. Never expose `SUPABASE_SERVICE_ROLE_KEY` to a browser bundle.
+- A student can optionally send a `classId` during onboarding. It is validated against the invited tenant and stored as a pending enrollment; the schema trigger still assigns the default class automatically.
+
+If `.env.local` is missing or its public values are empty, the auth screen and student home display a clear demo-mode notice and the existing mock store remains active. Copy `.env.example` to `.env.local`, fill the values, and restart the dev server to enable Supabase.
+
 ## 현재 주의점
 
 - `lib/store` mock store는 유지한다.

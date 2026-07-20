@@ -16,6 +16,8 @@ import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Pill } from "@/components/ui/Pill";
 import { useToast } from "@/lib/toast/provider";
 import type { RewardCampaign } from "@/lib/types";
+import type { StudentHomeData } from "@/lib/data/student-home.types";
+import type { AppState } from "@/lib/store/types";
 
 function claimLabel(meta: ReturnType<typeof getCampaignMeta>): { label: string; disabled: boolean } {
   if (meta.iHaveClaimed) return { label: "다른 상품 수령함", disabled: true };
@@ -26,14 +28,31 @@ function claimLabel(meta: ReturnType<typeof getCampaignMeta>): { label: string; 
   return { label: "선택하기", disabled: false };
 }
 
-export function RewardBlock() {
-  const state = useAppState();
+export function RewardBlock({ data }: { data?: StudentHomeData }) {
+  const mockState = useAppState();
+  const state: AppState = data
+    ? {
+        ...mockState,
+        currentUserId: data.student.id,
+        classes: data.classes,
+        enrollments: data.enrollments,
+        ledger: data.stickerLedger,
+        rewardCampaigns: data.rewardCampaigns,
+        rewardItems: data.rewardItems,
+        rewardClaims: data.rewardClaims,
+      }
+    : mockState;
   const dispatch = useAppDispatch();
   const showToast = useToast();
   const [sheetOpen, setSheetOpen] = useState(false);
   const featured = featuredCampaignForStudent(state, state.currentUserId);
+  const isReadOnly = Boolean(data);
 
   const handleClaim = (campaign: RewardCampaign, itemId: string, itemTitle: string) => {
+    if (isReadOnly) {
+      showToast("보상 신청은 다음 Supabase 단계에서 연결됩니다.");
+      return;
+    }
     const meta = getCampaignMeta(state, campaign, state.currentUserId);
     dispatch({ type: "CLAIM_REWARD", itemId, studentId: state.currentUserId, rank: meta.myRank ?? 0 });
     showToast(`"${itemTitle}" 선택 완료!`);
@@ -86,6 +105,7 @@ export function RewardBlock() {
       ) : (
         <p className="text-caption text-text-muted">진행중이거나 예정된 상품 이벤트가 없어요.</p>
       )}
+      {isReadOnly && <p className="mt-2 text-micro text-text-muted">보상 신청 기능은 아직 데모 모드에서만 동작합니다.</p>}
 
       <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title="전체 상품 이벤트">
         {allVisible.map((c) => (
@@ -112,7 +132,7 @@ function campaignLabel(c: RewardCampaign) {
   return `${c.period_start} ~ ${c.period_end} 이벤트`;
 }
 
-function featured_name(c: RewardCampaign, state: ReturnType<typeof useAppState>) {
+function featured_name(c: RewardCampaign, state: AppState) {
   const cls = c.class_id ? state.classes.find((x) => x.id === c.class_id) : null;
   return cls ? `${cls.name} 랭킹 보상` : "전체 랭킹 보상";
 }

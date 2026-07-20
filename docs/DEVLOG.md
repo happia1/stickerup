@@ -66,3 +66,12 @@ pm run build는 기존 EISDIR/EPERM 환경 이슈로 실패
 - Next: apply migrations 01-03 to a disposable Supabase project, verify RLS with real Auth users, then introduce the mock-to-Supabase data adapter incrementally.
 - Correction: terminal output rendered existing Korean SQL text with an encoding mismatch during inspection. The original seed labels and trigger text were preserved; the applied SQL change is limited to the schema/type alignment documented above.
 - Final scope: the committed database changes are `custom` ranking-unit support, validated `custom_days`, dynamic tier identifiers, one global ranking configuration per tenant, and matching period-bound calculations; seed content is unchanged.
+
+## 2026-07-20 (connect student home to Supabase)
+
+- Added Supabase Auth sign-in/sign-up UI at `/auth` and role-aware onboarding at `/onboarding`. Teacher onboarding creates a tenant and owner profile; student onboarding validates an active invite token (also accepted as the current academy code) and can prepare a pending class enrollment.
+- Added server-only token validation, onboarding/profile route handlers, and `lib/data/student-home.ts`. Student home reads students, classes, enrollments, sticker ledger, notices, ranking configs, reward campaigns/items/claims through the server repository after validating the browser session.
+- Preserved the mock store as the fallback. With `.env.local` missing or blank, the landing/auth/student-home screens show a demo-mode message and continue to render mock data. Created the ignored `.env.local` template locally for project credentials.
+- Updated `docs/SUPABASE_SETUP.md` and `docs/DEBUG_NOTES.md` with the auth/onboarding boundary, academy-code mapping, environment behavior, and resolved nullable-client typecheck issue.
+- Verification: `npm.cmd run typecheck` passed. `npm.cmd run build` compiled successfully and generated the production `BUILD_ID` and manifests. Mock-mode `/`, `/auth`, `/onboarding`, and `/student/home` returned HTTP 200.
+- Next: apply migrations to a disposable Supabase project, add the generated database types, then connect student-home mutations and replace the temporary class-ID input with a tenant-scoped class picker.
