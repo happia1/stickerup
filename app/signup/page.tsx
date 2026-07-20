@@ -5,6 +5,7 @@ import { FormEvent, Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getSupabaseBrowserConfigError } from "@/lib/supabase/config";
+import { getAuthEmailForIdentifier, isUsernameLoginIdentifier, normalizeLoginIdentifier } from "@/lib/auth/identifier";
 
 type SignupType = "student" | "teacher";
 
@@ -27,7 +28,7 @@ function SignupForm() {
   const inviteCode = searchParams.get("invite")?.trim() || null;
   const typeParam = searchParams.get("type");
   const [signupType, setSignupType] = useState<SignupType>(typeParam === "teacher" ? "teacher" : "student");
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
@@ -54,7 +55,11 @@ function SignupForm() {
       if (!active || !data.session) return;
       const metadata = data.session.user.user_metadata;
       setExistingSession(true);
-      setEmail(data.session.user.email ?? "");
+      setIdentifier(
+        typeof metadata.login_identifier === "string"
+          ? metadata.login_identifier
+          : data.session.user.email ?? ""
+      );
       if (metadata.signup_role === "student" || metadata.signup_role === "teacher") setSignupType(metadata.signup_role);
       if (typeof metadata.display_name === "string") setName(metadata.display_name);
       if (typeof metadata.academy_name === "string") setAcademyName(metadata.academy_name);
@@ -114,11 +119,14 @@ function SignupForm() {
     setSubmitting(true);
     setMessage(null);
     try {
+      const normalizedIdentifier = normalizeLoginIdentifier(identifier);
+      const isUsernameSignup = isUsernameLoginIdentifier(normalizedIdentifier);
+      const authEmail = getAuthEmailForIdentifier(normalizedIdentifier);
       const sessionResult = await supabase.auth.getSession();
       let accessToken = sessionResult.data.session?.access_token;
-      if (!accessToken) {
+      if (!accessToken && !isUsernameSignup) {
         const signUpResult = await supabase.auth.signUp({
-          email,
+          email: authEmail,
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/login`,
@@ -128,6 +136,7 @@ function SignupForm() {
               academy_name: academyName,
               age: signupType === "student" ? Number(age) : null,
               invite_code: inviteCode,
+              login_identifier: normalizedIdentifier,
             },
           },
         });
@@ -141,21 +150,28 @@ function SignupForm() {
 
       const response = await fetch("/api/signup", {
         method: "POST",
-        headers: {
+        headers: accessToken ? {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
-        },
+        } : { "Content-Type": "application/json" },
         body: JSON.stringify({
           signupType,
           name,
           age: signupType === "student" ? Number(age) : null,
           academyName,
           inviteCode,
+          identifier: isUsernameSignup ? normalizedIdentifier : undefined,
+          password: isUsernameSignup ? password : undefined,
         }),
       });
       const payload = (await response.json()) as { redirectTo?: string; enrollmentStatus?: "approved" | "pending"; error?: string };
       if (!response.ok || !payload.redirectTo) throw new Error(payload.error ?? "회원가입을 완료하지 못했습니다.");
       const redirectTo = payload.redirectTo;
+
+      if (!accessToken && isUsernameSignup) {
+        const signInResult = await supabase.auth.signInWithPassword({ email: authEmail, password });
+        if (signInResult.error) throw signInResult.error;
+      }
 
       if (payload.enrollmentStatus === "pending") {
         setMessage("회원가입이 완료되었습니다. 반 소속은 선생님의 승인 또는 반 신청이 필요할 수 있어요.");
@@ -167,7 +183,9 @@ function SignupForm() {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "회원가입을 완료하지 못했습니다.";
       setMessage(
-        errorMessage.includes("Invalid path specified in request URL")
+        errorMessage.includes("Password should be at least")
+          ? "Supabase Auth 비밀번호 최소 길이를 4자로 설정해 주세요. 설정 전에는 6자 이상이 필요합니다."
+          : errorMessage.includes("Invalid path specified in request URL")
           ? "회원가입 인증 경로를 확인하지 못했습니다. Supabase Auth의 Site URL과 Redirect URLs에 현재 앱 주소를 등록해 주세요."
           : errorMessage
       );
@@ -211,16 +229,18 @@ function SignupForm() {
             <input required value={academyName} readOnly={Boolean(invite)} onChange={(event) => setAcademyName(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none read-only:text-text-secondary" />
           </label>
           <label className="block text-caption text-text-secondary">아이디 또는 이메일
-            <input required={!existingSession} disabled={existingSession} type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="이메일 주소" className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none disabled:opacity-60" />
+            <input required={!existingSession} disabled={existingSession} type="text" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="한글 아이디 또는 이메일" className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none disabled:opacity-60" />
           </label>
+          <p className="text-caption text-text-muted">한글 아이디는 2~10자로 만들 수 있어요.</p>
           <label className="block text-caption text-text-secondary">비밀번호
             <div className="relative mt-1">
-              <input required={!existingSession} disabled={existingSession} minLength={6} type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-xl bg-surface-raised py-2.5 pl-3 pr-11 text-text-primary outline-none disabled:opacity-60" />
+              <input required={!existingSession} disabled={existingSession} minLength={4} type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-xl bg-surface-raised py-2.5 pl-3 pr-11 text-text-primary outline-none disabled:opacity-60" />
               <button type="button" disabled={existingSession} onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"} className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-text-secondary disabled:opacity-60">
                 <PasswordVisibilityIcon hidden={!showPassword} />
               </button>
             </div>
           </label>
+          <p className="text-caption text-text-muted">비밀번호는 4자 이상 입력해 주세요.</p>
           {existingSession && <p className="text-caption text-text-secondary">인증된 계정입니다. 가입 정보를 확인한 뒤 완료해 주세요.</p>}
           {message && <p className="text-caption text-text-secondary">{message}</p>}
           <button disabled={!canSubmit} className="w-full rounded-xl bg-brand-amber py-3 text-body font-bold text-surface-page disabled:opacity-60">

@@ -5,12 +5,13 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getSupabaseBrowserConfigError } from "@/lib/supabase/config";
+import { getAuthEmailForIdentifier } from "@/lib/auth/identifier";
 
 type ProfileRole = "student" | "owner" | "assistant";
 
 export function LoginForm() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -29,7 +30,10 @@ export function LoginForm() {
     setSubmitting(true);
     setMessage(null);
     try {
-      const signInResult = await supabase.auth.signInWithPassword({ email, password });
+      const signInResult = await supabase.auth.signInWithPassword({
+        email: getAuthEmailForIdentifier(identifier),
+        password,
+      });
       if (signInResult.error) throw signInResult.error;
 
       const profileResponse = await fetch("/api/auth/profile", {
@@ -59,7 +63,7 @@ export function LoginForm() {
       {configError && <p className="mt-4 text-caption text-text-secondary">Supabase 환경변수를 설정한 뒤 로그인해 주세요.</p>}
       <form onSubmit={handleSubmit} className="mt-5 space-y-3">
         <label className="block text-caption text-text-secondary">아이디 또는 이메일
-          <input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none" />
+          <input required type="text" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="한글 아이디 또는 이메일" className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none" />
         </label>
         <label className="block text-caption text-text-secondary">비밀번호
           <div className="relative mt-1">
