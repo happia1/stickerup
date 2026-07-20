@@ -37,6 +37,7 @@ export interface Student {
   id: string;
   tenant_id: string;
   invited_by_teacher_id: string | null;
+  invite_link_id: string | null;
   name: string;
   age: number | null;
   profile_image_url: string | null;

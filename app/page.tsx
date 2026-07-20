@@ -13,7 +13,7 @@ export default function Home() {
       </div>
       <div className="flex flex-col gap-3 w-full">
         <Link
-          href="/auth"
+          href="/login"
           className="w-full py-3.5 rounded-xl bg-surface-card text-text-primary font-bold text-center"
         >
           로그인 / 회원가입

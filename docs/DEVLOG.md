@@ -75,3 +75,13 @@ pm run build는 기존 EISDIR/EPERM 환경 이슈로 실패
 - Updated `docs/SUPABASE_SETUP.md` and `docs/DEBUG_NOTES.md` with the auth/onboarding boundary, academy-code mapping, environment behavior, and resolved nullable-client typecheck issue.
 - Verification: `npm.cmd run typecheck` passed. `npm.cmd run build` compiled successfully and generated the production `BUILD_ID` and manifests. Mock-mode `/`, `/auth`, `/onboarding`, and `/student/home` returned HTTP 200.
 - Next: apply migrations to a disposable Supabase project, add the generated database types, then connect student-home mutations and replace the temporary class-ID input with a tenant-scoped class picker.
+
+## 2026-07-20 (implement Supabase onboarding flows)
+
+- Replaced the mixed onboarding form with `/onboarding` role selection, `/onboarding/teacher`, `/onboarding/student`, `/join/[inviteCode]`, and `/login` routes while preserving the existing dark mobile-first visual system.
+- Added server-only onboarding repository and APIs. Teacher setup creates a tenant, owner teacher, verified default class, global ranking period configuration, and active default invite link. Student invite signup validates the public invite preview, creates the student profile with `invite_link_id`, and upserts an approved default-class enrollment.
+- Added post-email-confirmation continuation via Supabase Auth user metadata: a login with no application profile returns to teacher onboarding or the original student invite link. Added minimal authenticated-entry notices to student and admin layouts without disabling mock fallback.
+- Aligned `Student` with the database `invite_link_id` column and updated mock seed rows. Kept service-role access server-only through route handlers and the onboarding repository.
+- Updated `README.md`, `docs/SUPABASE_SETUP.md`, and `docs/DEBUG_NOTES.md` with the real auth flow, RLS/server-admin boundaries, and stale Next route-type cache resolution.
+- Verification: `npm.cmd run typecheck` passed. `npm.cmd run build` compiled successfully and generated production manifests. Mock-mode `/`, `/login`, `/onboarding`, `/onboarding/teacher`, `/onboarding/student`, and `/join/demo-invite` returned HTTP 200.
+- Next: apply migrations to a disposable Supabase project, test real email confirmation and invite redemption, then add middleware-level route protection and a teacher UI for showing/copying generated invite links.

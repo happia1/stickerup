@@ -1,6 +1,14 @@
 # stickerup
 
 > **Seed safety:** `supabase/migrations/20260719_04_seed_dev.sql` creates fixed demo accounts and data. Run it only in a local development database; never run it in a production or shared Supabase project.
+
+## 가입 및 로그인
+
+- `/onboarding`에서 선생님 또는 학생 가입 방식을 선택합니다.
+- 선생님은 `/onboarding/teacher`에서 이메일/비밀번호로 가입합니다. 가입 완료 시 학원, owner 선생님, 기본반, 기본 랭킹 주기, 기본 초대 링크가 생성됩니다.
+- 학생은 선생님에게 받은 `/join/[inviteCode]` 링크에서 가입합니다. 링크가 유효하면 학원과 초대한 선생님 정보를 확인한 뒤 학생 프로필과 기본반 승인 등록이 생성됩니다.
+- `/login`은 `teachers`와 `students` 테이블을 기준으로 역할을 판별해 선생님은 `/admin/dashboard`, 학생은 `/student/home`으로 이동시킵니다.
+- Supabase 환경변수가 비어 있으면 기존 mock UI가 계속 표시됩니다. 실제 가입을 사용하려면 `.env.example`을 `.env.local`로 복사해 값을 설정하고 개발 서버를 재시작하세요.
 학원 출석/숙제/칭찬 스티커 랭킹 앱
 
 학원 출석 · 숙제 · 칭찬 스티커 랭킹 앱. 학생은 자기 계정으로 출석 체크, 숙제 인증, 칭찬 스티커를 요청해 스티커를 모으고, 반별/전체 랭킹과 랭킹 연동 보상을 확인합니다. 선생님(관리자)은 반 운영, 승인/롤백, 랭킹 주기, 보상을 관리합니다. 여러 학원이 독립적으로 사용하는 멀티테넌트 구조입니다.

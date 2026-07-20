@@ -35,12 +35,20 @@ Vercel에는 Project Settings > Environment Variables에 같은 값을 등록한
 
 ## Auth and onboarding
 
-- `/auth` uses the browser anon-key client for email/password sign-in and sign-up. Sign-up stores the selected `student` or `teacher` intent in Supabase Auth user metadata.
-- `/onboarding` creates the application profile only after a signed-in session is present. Teacher onboarding creates a tenant and owner teacher profile. Student onboarding validates an active `invite_links.token`; the same token is currently accepted as an academy code until a separate academy-code table is introduced.
-- Profile creation and student-home reads run through server route handlers. They validate the browser access token first, then use `lib/supabase/admin.ts` only on the server. Never expose `SUPABASE_SERVICE_ROLE_KEY` to a browser bundle.
-- A student can optionally send a `classId` during onboarding. It is validated against the invited tenant and stored as a pending enrollment; the schema trigger still assigns the default class automatically.
+- `/login` uses the browser anon-key client for email/password sign-in. It checks `teachers` and `students` through a server route and redirects by the stored application role.
+- `/onboarding` is the public entry screen. `/onboarding/teacher` signs up a teacher and initializes the academy. `/onboarding/student` intentionally directs students to their teacher-provided `/join/[inviteCode]` link.
+- `/join/[inviteCode]` signs up a student only after the public server handler confirms that the invite token is active. The token and selected role are stored in Supabase Auth user metadata so email-confirmation flows can resume onboarding after login.
+- Profile creation, invite resolution, and student-home reads run through server route handlers. They validate the browser access token first, then use `lib/supabase/admin.ts` only on the server. Never expose `SUPABASE_SERVICE_ROLE_KEY` to a browser bundle.
 
-If `.env.local` is missing or its public values are empty, the auth screen and student home display a clear demo-mode notice and the existing mock store remains active. Copy `.env.example` to `.env.local`, fill the values, and restart the dev server to enable Supabase.
+If `.env.local` is missing or its public values are empty, the login, onboarding, and student home screens display a clear demo-mode notice and the existing mock store remains active. Copy `.env.example` to `.env.local`, fill the values, and restart the dev server to enable Supabase.
+
+## Onboarding data and RLS notes
+
+- Teacher onboarding writes `tenants`, `teachers` with `role = 'owner'`, the default `classes` row, a global `ranking_period_config`, and one active `invite_links` row. The schema trigger creates the default class, while the server repository also verifies it exists before completing setup.
+- Student invite onboarding resolves `invite_links.token`, creates `students` with `invite_link_id`, then upserts an `approved` enrollment into the tenant default class.
+- `invite_links` is not publicly selectable under the current RLS policies. The public `/api/invites/[inviteCode]` handler validates a token with the server/admin client and returns only the academy and issuing teacher names needed by the join screen.
+- All profile and setup writes run through server route handlers that validate the browser bearer token using `lib/supabase/server-auth.ts`. `SUPABASE_SERVICE_ROLE_KEY` stays in `lib/supabase/server-config.ts` and must never be imported by a client component.
+- Before enabling production signups, apply migrations 01–03 and confirm the tenant default-class trigger, `students.invite_link_id`, and RLS policies exist in the target project.
 
 ## 현재 주의점
 

@@ -77,11 +77,11 @@ export const seedInviteLinks: InviteLink[] = [
 ];
 
 export const seedStudents: Student[] = [
-  { id: STUDENT_IDS.s1, tenant_id: TENANT_ID, invited_by_teacher_id: OWNER_ID, name: "김민준", age: 16, profile_image_url: null, account_status: "active", created_at: "2026-06-03T00:00:00Z" },
-  { id: STUDENT_IDS.s2, tenant_id: TENANT_ID, invited_by_teacher_id: OWNER_ID, name: "이서연", age: 17, profile_image_url: null, account_status: "active", created_at: "2026-06-03T00:00:00Z" },
-  { id: STUDENT_IDS.s3, tenant_id: TENANT_ID, invited_by_teacher_id: ASSISTANT_ID, name: "박도윤", age: 15, profile_image_url: null, account_status: "active", created_at: "2026-06-04T00:00:00Z" },
-  { id: STUDENT_IDS.s4, tenant_id: TENANT_ID, invited_by_teacher_id: ASSISTANT_ID, name: "최지우", age: 16, profile_image_url: null, account_status: "active", created_at: "2026-06-04T00:00:00Z" },
-  { id: STUDENT_IDS.s5, tenant_id: TENANT_ID, invited_by_teacher_id: ASSISTANT_ID, name: "정하은", age: 17, profile_image_url: null, account_status: "active", created_at: "2026-06-05T00:00:00Z" },
+  { id: STUDENT_IDS.s1, tenant_id: TENANT_ID, invited_by_teacher_id: OWNER_ID, invite_link_id: seedInviteLinks[0].id, name: "김민준", age: 16, profile_image_url: null, account_status: "active", created_at: "2026-06-03T00:00:00Z" },
+  { id: STUDENT_IDS.s2, tenant_id: TENANT_ID, invited_by_teacher_id: OWNER_ID, invite_link_id: seedInviteLinks[0].id, name: "이서연", age: 17, profile_image_url: null, account_status: "active", created_at: "2026-06-03T00:00:00Z" },
+  { id: STUDENT_IDS.s3, tenant_id: TENANT_ID, invited_by_teacher_id: ASSISTANT_ID, invite_link_id: seedInviteLinks[0].id, name: "박도윤", age: 15, profile_image_url: null, account_status: "active", created_at: "2026-06-04T00:00:00Z" },
+  { id: STUDENT_IDS.s4, tenant_id: TENANT_ID, invited_by_teacher_id: ASSISTANT_ID, invite_link_id: seedInviteLinks[0].id, name: "최지우", age: 16, profile_image_url: null, account_status: "active", created_at: "2026-06-04T00:00:00Z" },
+  { id: STUDENT_IDS.s5, tenant_id: TENANT_ID, invited_by_teacher_id: ASSISTANT_ID, invite_link_id: seedInviteLinks[0].id, name: "정하은", age: 17, profile_image_url: null, account_status: "active", created_at: "2026-06-05T00:00:00Z" },
 ];
 
 export const seedClasses: ClassRoom[] = [

@@ -1,5 +1,11 @@
 # DEBUG NOTES
 
+## [2026-07-20] Removed-route Next type cache
+
+- Symptom: `npm run typecheck` still referenced deleted `/auth` and `/api/onboarding` route modules.
+- Cause: `.next/types` retained generated declarations from the previous route structure.
+- Resolution: removed only the stale generated type files under `.next/types`, then reran typecheck successfully. A clean `next build` regenerates the current route declarations.
+
 ## [2026-07-20] Student home Supabase fallback type check
 
 - Symptom: the first typecheck reported that the optional browser Supabase client could be null inside the asynchronous student-home loader.
