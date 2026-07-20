@@ -32,7 +32,7 @@ export function FlapBanner() {
       <div
         role="button"
         onClick={() => setOpen(true)}
-        className="bg-text-primary text-white rounded-2xl px-3.5 py-3 mb-3.5 flex items-center gap-2 cursor-pointer"
+        className="bg-surface-raised text-text-primary rounded-2xl px-3.5 py-3 mb-3.5 flex items-center gap-2 cursor-pointer"
       >
         <span className="bg-brand-amber text-white text-micro font-extrabold px-1.5 py-0.5 rounded-md flex-shrink-0">공지</span>
         <div className="flex-1 overflow-hidden h-4">

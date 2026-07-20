@@ -26,7 +26,7 @@ export function ChipTabs({
           className={clsx(
             "px-3 py-1.5 rounded-full text-caption whitespace-nowrap border",
             value === opt.value
-              ? "bg-text-primary text-white border-text-primary"
+              ? "bg-brand-amber text-surface-page border-brand-amber font-bold"
               : "bg-surface-card text-text-secondary border-border"
           )}
         >
