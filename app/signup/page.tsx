@@ -232,19 +232,17 @@ function SignupForm() {
           <label className="block text-caption text-text-secondary">학원 이름
             <input required value={academyName} readOnly={Boolean(invite)} onChange={(event) => setAcademyName(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none read-only:text-text-secondary" />
           </label>
-          <label className="block text-caption text-text-secondary">아이디 또는 이메일
-            <input required={!existingSession} disabled={existingSession} type="text" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="한글 아이디 또는 이메일" className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none disabled:opacity-60" />
+          <label className="block text-caption text-text-secondary">한글 아이디 또는 이메일
+            <input required={!existingSession} disabled={existingSession} type="text" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="한글 아이디는 2~10자" className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none disabled:opacity-60" />
           </label>
-          <p className="text-caption text-text-muted">한글 아이디는 2~10자로 만들 수 있어요.</p>
           <label className="block text-caption text-text-secondary">비밀번호
             <div className="relative mt-1">
-              <input required={!existingSession} disabled={existingSession} minLength={6} type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-xl bg-surface-raised py-2.5 pl-3 pr-11 text-text-primary outline-none disabled:opacity-60" />
+              <input required={!existingSession} disabled={existingSession} minLength={6} type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="최소 6자 이상 입력" className="w-full rounded-xl bg-surface-raised py-2.5 pl-3 pr-11 text-text-primary outline-none disabled:opacity-60" />
               <button type="button" disabled={existingSession} onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"} className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-text-secondary disabled:opacity-60">
                 <PasswordVisibilityIcon hidden={!showPassword} />
               </button>
             </div>
           </label>
-          <p className="text-caption text-text-muted">비밀번호는 최소 6자 이상 입력해 주세요.</p>
           {existingSession && <p className="text-caption text-text-secondary">인증된 계정입니다. 가입 정보를 확인한 뒤 완료해 주세요.</p>}
           {message && <p className="text-caption text-text-secondary">{message}</p>}
           <button disabled={!canSubmit} className="w-full rounded-xl bg-brand-amber py-3 text-body font-bold text-surface-page disabled:opacity-60">

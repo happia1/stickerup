@@ -70,3 +70,9 @@
 - 증상: `npx.cmd tsc --noEmit --noUnusedLocals --noUnusedParameters` 실행 시 unused 변수/import/상수 6건이 `TS6133`으로 실패.
 - 원인: 이전 UI 복원 과정에서 `todayAttendance`, `useState`, `Pill`, `useRef`, `computePeriodBounds`, `MEDAL_LABEL`이 남아 있었지만 실제 렌더링 경로에서 사용되지 않음.
 - 조치: 사용하지 않는 선언을 제거하고 `npm.cmd run typecheck`, `npm.cmd run build`, 엄격 unused 체크를 모두 통과시킴.
+
+## [2026-07-21] Korean identifier browser validation
+
+- Symptom: signup could show a browser email-format warning when a user entered a Korean identifier.
+- Cause: an email input type triggers native browser validation before the identifier-to-internal-Auth-email conversion can run.
+- Resolution: keep all login and signup identifier controls as `type="text"`; the app validates the identifier and converts valid Korean IDs on the server path.

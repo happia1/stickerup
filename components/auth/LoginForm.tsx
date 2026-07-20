@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getRememberLoginPreference, getSupabaseBrowserClient, setRememberLoginPreference } from "@/lib/supabase/client";
 import { getSupabaseBrowserConfigError } from "@/lib/supabase/config";
 import { getAuthEmailForIdentifier } from "@/lib/auth/identifier";
 
@@ -14,10 +14,15 @@ export function LoginForm() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberLogin, setRememberLogin] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [resumeSignupHref, setResumeSignupHref] = useState("/signup?resume=1");
   const [submitting, setSubmitting] = useState(false);
   const configError = getSupabaseBrowserConfigError();
+
+  useEffect(() => {
+    setRememberLogin(getRememberLoginPreference());
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -25,6 +30,7 @@ export function LoginForm() {
       setMessage("비밀번호는 최소 6자 이상 입력해 주세요.");
       return;
     }
+    setRememberLoginPreference(rememberLogin);
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
       setMessage("Supabase 환경변수를 설정한 뒤 다시 시도해 주세요.");
@@ -66,8 +72,8 @@ export function LoginForm() {
     <>
       {configError && <p className="mt-4 text-caption text-text-secondary">Supabase 환경변수를 설정한 뒤 로그인해 주세요.</p>}
       <form onSubmit={handleSubmit} className="mt-5 space-y-3">
-        <label className="block text-caption text-text-secondary">아이디 또는 이메일
-          <input required type="text" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="한글 아이디 또는 이메일" className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none" />
+        <label className="block text-caption text-text-secondary">한글 아이디 또는 이메일
+          <input required type="text" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="입력해 주세요" className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none" />
         </label>
         <label className="block text-caption text-text-secondary">비밀번호
           <div className="relative mt-1">
@@ -77,7 +83,10 @@ export function LoginForm() {
             </button>
           </div>
         </label>
-        <p className="text-caption text-text-muted">비밀번호는 최소 6자 이상 입력해 주세요.</p>
+        <label className="flex cursor-pointer items-center gap-2 text-caption text-text-secondary">
+          <input type="checkbox" checked={rememberLogin} onChange={(event) => setRememberLogin(event.target.checked)} className="h-4 w-4 accent-brand-amber" />
+          자동 로그인
+        </label>
         {message && <p className="text-caption text-text-secondary">{message}</p>}
         <button disabled={submitting} className="w-full rounded-xl bg-brand-amber py-3 text-body font-bold text-surface-page disabled:opacity-60">
           {submitting ? "로그인 중..." : "로그인"}
