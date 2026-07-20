@@ -1,5 +1,17 @@
 # Supabase Setup
 
+## SQL Editor migration order
+
+Run the migration files in the Supabase Dashboard **SQL Editor** in this exact order. Run one file at a time and confirm it succeeds before proceeding.
+
+1. `supabase/migrations/20260719_01_init_schema.sql` — tables, constraints, and indexes.
+2. `supabase/migrations/20260719_02_functions_triggers.sql` — helper functions and triggers.
+3. `supabase/migrations/20260719_03_rls_policies.sql` — Row Level Security and access policies.
+
+`supabase/migrations/20260719_04_seed_dev.sql` is intentionally excluded from the production sequence. It writes fixed demo users directly to `auth.users`, so run it only against a disposable local development database. Do not run it in a production or shared Supabase project.
+
+After steps 1–3, verify that the expected tables, functions, and RLS policies appear in the Dashboard before connecting the application to the database.
+
 StickerUp은 현재 mock store 기반 UI를 유지하면서 Supabase 연동 구조만 준비한 상태다. 실제 데이터 연결은 2차 Supabase 마이그레이션 이후 점진적으로 진행한다.
 
 ## 환경 변수

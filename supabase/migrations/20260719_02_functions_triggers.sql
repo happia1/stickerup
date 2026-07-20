@@ -107,17 +107,28 @@ create trigger trg_auto_enroll_default
 -- 5. 랭킹 단위기간(일/주/월/분기) → 시작일/종료일 계산
 -- =========================================================
 
-create or replace function compute_period_bounds(p_unit text, p_ref_date date default current_date)
+create or replace function compute_period_bounds(
+  p_unit text,
+  p_ref_date date default current_date,
+  p_custom_days int default null
+)
 returns table (period_start date, period_end date)
-language sql
+language plpgsql
 immutable
 as $$
+begin
+  if p_unit = 'custom' and (p_custom_days is null or p_custom_days not between 1 and 365) then
+    raise exception 'custom ranking periods require p_custom_days between 1 and 365';
+  end if;
+
+  return query
   select
     case p_unit
       when 'day' then p_ref_date
       when 'week' then date_trunc('week', p_ref_date)::date
       when 'month' then date_trunc('month', p_ref_date)::date
       when 'quarter' then date_trunc('quarter', p_ref_date)::date
+      when 'custom' then p_ref_date - (p_custom_days - 1)
       else date_trunc('month', p_ref_date)::date
     end as period_start,
     case p_unit
@@ -125,8 +136,10 @@ as $$
       when 'week' then (date_trunc('week', p_ref_date) + interval '6 days')::date
       when 'month' then (date_trunc('month', p_ref_date) + interval '1 month' - interval '1 day')::date
       when 'quarter' then (date_trunc('quarter', p_ref_date) + interval '3 months' - interval '1 day')::date
+      when 'custom' then p_ref_date
       else (date_trunc('month', p_ref_date) + interval '1 month' - interval '1 day')::date
     end as period_end;
+end;
 $$;
 
 -- =========================================================

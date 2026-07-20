@@ -1,4 +1,6 @@
 # stickerup
+
+> **Seed safety:** `supabase/migrations/20260719_04_seed_dev.sql` creates fixed demo accounts and data. Run it only in a local development database; never run it in a production or shared Supabase project.
 학원 출석/숙제/칭찬 스티커 랭킹 앱
 
 학원 출석 · 숙제 · 칭찬 스티커 랭킹 앱. 학생은 자기 계정으로 출석 체크, 숙제 인증, 칭찬 스티커를 요청해 스티커를 모으고, 반별/전체 랭킹과 랭킹 연동 보상을 확인합니다. 선생님(관리자)은 반 운영, 승인/롤백, 랭킹 주기, 보상을 관리합니다. 여러 학원이 독립적으로 사용하는 멀티테넌트 구조입니다.

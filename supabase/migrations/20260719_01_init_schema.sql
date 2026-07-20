@@ -65,7 +65,7 @@ create table classes (
   is_default boolean not null default false, -- 기본반 여부 (테넌트당 1개)
   special_start date,
   special_end date,
-  ranking_unit text not null default 'month' check (ranking_unit in ('day', 'week', 'month', 'quarter')),
+  ranking_unit text not null default 'month' check (ranking_unit in ('day', 'week', 'month', 'quarter', 'custom')),
   status text not null default 'active' check (status in ('active', 'archived')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -97,7 +97,7 @@ create table attendance_records (
   student_id uuid not null references students (id) on delete cascade,
   class_id uuid not null references classes (id) on delete cascade,
   checked_at timestamptz not null default now(),
-  tier text not null check (tier in ('on_time', 'within_10', 'within_30', 'within_60', 'over_60', 'absent')),
+  tier text not null,
   sticker_count int not null,
   created_at timestamptz not null default now()
 );
@@ -107,7 +107,7 @@ create table homework_submissions (
   tenant_id uuid not null references tenants (id) on delete cascade,
   student_id uuid not null references students (id) on delete cascade,
   class_id uuid not null references classes (id) on delete cascade,
-  completion_tier text not null check (completion_tier in ('complete', 'half', 'none')),
+  completion_tier text not null,
   sticker_count int not null,
   approval_status text not null default 'pending' check (approval_status in ('pending', 'approved', 'rejected')),
   approver_id uuid references teachers (id),
@@ -159,10 +159,18 @@ create table ranking_period_config (
   id uuid primary key default gen_random_uuid(),
   tenant_id uuid not null references tenants (id) on delete cascade,
   class_id uuid references classes (id), -- null = 전체(글로벌) 랭킹 설정
-  unit text not null default 'month' check (unit in ('day', 'week', 'month', 'quarter')),
+  unit text not null default 'month' check (unit in ('day', 'week', 'month', 'quarter', 'custom')),
+  custom_days int check (
+    (unit = 'custom' and custom_days between 1 and 365)
+    or (unit <> 'custom' and custom_days is null)
+  ),
   updated_at timestamptz not null default now(),
   unique (tenant_id, class_id)
 );
+
+create unique index one_global_ranking_config_per_tenant
+  on ranking_period_config (tenant_id)
+  where class_id is null;
 
 -- =========================================================
 -- 6. 상품(리워드)

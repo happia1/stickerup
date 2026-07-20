@@ -17,6 +17,10 @@
 - **동적 반 구조**: `classes`가 더 이상 고정 5개가 아니라 테넌트별 자유 생성 목록이며, `is_default` 플래그로 기본반을 구분한다(테넌트당 정확히 1개, 부분 유니크 인덱스로 강제).
 - **랭킹 주기 ↔ 보상 캠페인 연동**: `ranking_period_config`(그룹별 단위기간)와 `reward_campaigns`(그룹별 period_start/end)는 별개 테이블이지만, 애플리케이션 레이어에서 캠페인 생성 시 `compute_period_bounds()` 함수로 현재 그룹의 주기를 미리 채워 넣도록 연결한다.
 
+## Seed safety
+
+`supabase/migrations/20260719_04_seed_dev.sql` is for local development only. It inserts fixed demo accounts and sample data, including direct writes to `auth.users`; never run it in a production or shared Supabase project.
+
 ## ERD
 
 ```mermaid
@@ -106,7 +110,7 @@ erDiagram
 |---|---|
 | `current_tenant_id()` | 현재 로그인한 사용자(teacher 또는 student)의 tenant_id 반환. 모든 RLS 정책의 기준 |
 | `is_teacher()` / `is_owner()` / `is_student()` | 역할 판별 |
-| `compute_period_bounds(unit, ref_date)` | day/week/month/quarter 단위의 현재 주기 시작일·종료일 계산 |
+| `compute_period_bounds(unit, ref_date, custom_days)` | day/week/month/quarter 또는 custom 일수의 현재 주기 시작일·종료일 계산 |
 | `get_ranking(tenant_id, class_id, start, end)` | 지정 범위·기간의 랭킹을 계산해 순위·등급(gold/silver/bronze)까지 반환 |
 
 ## 운영 하드닝 TODO (프로덕션 전 반드시 확인)

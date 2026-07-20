@@ -1,5 +1,17 @@
 # DEBUG NOTES
 
+## [2026-07-20] Supabase migration validation scope
+
+- Symptom: the local workspace does not include the Supabase CLI or a Postgres client, so SQL migrations cannot be applied to a local database in this environment.
+- Cause: this project is in application-side migration preparation; no disposable Supabase project or database connection is configured yet.
+- Resolution: verified the ordered migration files and their cross-file dependencies statically, documented the exact SQL Editor execution order, and made `custom` ranking periods consistent with the current TypeScript types. Apply migrations 01–03 to a disposable Supabase project before connecting the app.
+
+## [2026-07-20] Next.js build verification warnings
+
+- Symptom: `next build` emitted webpack cache snapshot warnings and an `outputFileTracing` deprecation warning.
+- Cause: local Windows cache snapshot limitations and the existing Next.js configuration. These warnings did not prevent the build.
+- Resolution: stopped the port 3001 dev server before building, then verified the generated production manifests and `BUILD_ID`. No `.next/trace` `EPERM` occurred in this run.
+
 이 파일은 사용자 요청 파일명에 맞춘 디버깅 기록이다. 기존 작업 지침용 기록은 `docs/DEBUGGING_NOTES.md`에도 유지한다.
 
 ---
