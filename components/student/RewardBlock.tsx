@@ -67,7 +67,7 @@ export function RewardBlock() {
   const allVisible = state.rewardCampaigns.filter((c) => c.class_id === null || myClassIds.has(c.class_id));
 
   return (
-    <div className="bg-surface-card border border-border rounded-card p-4 mb-3.5">
+    <div className="bg-surface-card rounded-card p-4 mb-3.5">
       <div className="flex items-center justify-between mb-2.5">
         <h3 className="text-subtitle">{featured ? featured_name(featured, state) : "진행중인 이벤트 없음"}</h3>
         <Button variant="secondary" onClick={() => setSheetOpen(true)} className="!py-1.5 !px-2.5 !text-micro">
@@ -89,7 +89,7 @@ export function RewardBlock() {
 
       <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title="전체 상품 이벤트">
         {allVisible.map((c) => (
-          <div key={c.id} className="bg-surface-card border border-border rounded-card p-3 mb-3">
+          <div key={c.id} className="bg-surface-card rounded-card p-3 mb-3">
             <div className="flex justify-between items-center mb-1.5">
               <p className="text-body font-bold">{campaignLabel(c)}</p>
               <Pill tone={campaignStatus(c) === "active" ? "ok" : campaignStatus(c) === "ended" ? "danger" : "wait"}>

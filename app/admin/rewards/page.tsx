@@ -6,7 +6,6 @@ import { computePeriodBounds } from "@/lib/ranking";
 import { Pill } from "@/components/ui/Pill";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/lib/toast/provider";
-import { ImagePlus, Pencil } from "lucide-react";
 import type { RewardCampaign, RewardItem } from "@/lib/types";
 
 const STATUS_LABEL = { scheduled: "예정", active: "진행중", ended: "종료" } as const;
@@ -28,7 +27,7 @@ function ImageUploadField({ value, onChange }: { value: string | null; onChange:
         <img src={value} alt="상품 이미지" className="w-10 h-10 rounded-lg object-cover border border-border" />
       ) : (
         <div className="w-10 h-10 rounded-lg border border-dashed border-border flex items-center justify-center text-text-muted">
-          <ImagePlus size={16} />
+          +
         </div>
       )}
       <label className="text-caption text-brand-amber cursor-pointer">
@@ -205,7 +204,7 @@ export default function AdminRewardsPage() {
                 className="ml-auto flex items-center gap-1 text-caption text-brand-amber border border-border rounded-lg px-2 py-1"
                 onClick={() => setEditingId(editingId === c.id ? null : c.id)}
               >
-                <Pencil size={12} />
+                ✎
                 수정
               </button>
             </div>

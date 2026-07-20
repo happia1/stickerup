@@ -25,7 +25,7 @@ export function HomeworkSection() {
       <Card>
         <h3 className="text-subtitle mb-1">숙제 인증 신청</h3>
         <p className="text-caption text-text-secondary mb-3">
-          완료율을 선택해 신청하면 관리자가 확인 후 승인해야 스티커가 지급돼요.
+          과제 완료율을 선택해 주세요.
         </p>
         <label className="block text-caption font-semibold text-text-secondary mb-1">신청할 반</label>
         <select

@@ -2,7 +2,6 @@
 import { useState } from "react";
 import type { TierConfig } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
-import { Minus, Plus, Trash2 } from "lucide-react";
 
 function uidLocal(): string {
   return `t-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
@@ -79,7 +78,7 @@ export function TierEditor({
                       className="w-7 h-7 flex items-center justify-center border border-border rounded-lg text-text-secondary"
                       onClick={() => step(idx, -1)}
                     >
-                      <Minus size={14} />
+                      -
                     </button>
                     <span className="w-8 text-center font-bold">{t.count}</span>
                     <button
@@ -88,7 +87,7 @@ export function TierEditor({
                       className="w-7 h-7 flex items-center justify-center border border-border rounded-lg text-text-secondary"
                       onClick={() => step(idx, 1)}
                     >
-                      <Plus size={14} />
+                      +
                     </button>
                     <span className="text-caption text-text-muted">장</span>
                   </div>
@@ -100,7 +99,7 @@ export function TierEditor({
                     className="w-7 h-7 flex items-center justify-center text-state-danger"
                     onClick={() => remove(idx)}
                   >
-                    <Trash2 size={16} />
+                    삭제
                   </button>
                 </td>
               </tr>

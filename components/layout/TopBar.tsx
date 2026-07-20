@@ -23,7 +23,7 @@ export function StudentTopBar() {
   ].sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
 
   return (
-    <div className="bg-surface-card border-b border-border px-4 py-3 flex items-center justify-between">
+    <div className="bg-surface-page px-4 py-3 flex items-center justify-between">
       <span className="font-extrabold text-subtitle">🏅 StickerUp</span>
       <div className="flex gap-3.5 items-center">
         <button aria-label="알림" className="text-lg" onClick={() => setNotifOpen(true)}>🔔</button>
@@ -51,7 +51,7 @@ export function AdminTopBar() {
   const counts = pendingCounts(state);
   const me = getTeacherById(state, state.currentUserId);
   return (
-    <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-surface-card">
+    <div className="flex items-center justify-between px-6 py-3 bg-surface-page">
       <span className="font-extrabold text-subtitle">🛠 StickerUp Admin</span>
       <div className="flex items-center gap-4 text-caption text-text-secondary">
         <span>승인 대기 {counts.homework + counts.praise + counts.enrollment}건</span>

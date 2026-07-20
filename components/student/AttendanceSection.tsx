@@ -33,7 +33,7 @@ export function AttendanceSection() {
       <Card>
         <h3 className="text-subtitle mb-1">출석 체크</h3>
         <p className="text-caption text-text-secondary mb-3">
-          반마다 정규 출석 인정 시각이 다르게 설정되어 있어요. 지급 기준은 모든 반 공통이에요.
+          오늘 출석한 시간을 입력해주세요.
         </p>
         <label className="block text-caption font-semibold text-text-secondary mb-1">체크할 반 선택</label>
         <select
@@ -47,7 +47,6 @@ export function AttendanceSection() {
             </option>
           ))}
         </select>
-        <label className="block text-caption font-semibold text-text-secondary mb-1">데모: 접속 시각 시나리오</label>
         <div className="grid grid-cols-3 gap-2 mb-3.5">
           {DEMO_SCENARIOS.map((s) => (
             <button

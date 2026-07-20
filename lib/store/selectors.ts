@@ -48,15 +48,15 @@ export function totalStickers(
     .reduce((sum, l) => sum + l.count, 0);
 }
 
-function rankingUnitFor(state: AppState, classId: string | null): RankingUnit {
+function rankingUnitFor(state: AppState, classId: string | null): { unit: RankingUnit; customDays: number | null } {
   const config = state.rankingPeriodConfigs.find((c) => c.class_id === classId);
-  return config?.unit ?? "month";
+  return { unit: config?.unit ?? "month", customDays: config?.custom_days ?? null };
 }
 
 /** 특정 스코프(전체=null 또는 classId)의 현재 주기 랭킹을 계산한다. */
 export function rankingForScope(state: AppState, classId: string | null): RankingRow[] {
-  const unit = rankingUnitFor(state, classId);
-  const { period_start, period_end } = computePeriodBounds(unit);
+  const { unit, customDays } = rankingUnitFor(state, classId);
+  const { period_start, period_end } = computePeriodBounds(unit, undefined, customDays);
   return getRanking({
     ledger: state.ledger,
     enrollments: state.enrollments,
@@ -68,8 +68,8 @@ export function rankingForScope(state: AppState, classId: string | null): Rankin
 }
 
 export function rankingPeriodLabel(state: AppState, classId: string | null): { unit: RankingUnit; start: string; end: string } {
-  const unit = rankingUnitFor(state, classId);
-  const { period_start, period_end } = computePeriodBounds(unit);
+  const { unit, customDays } = rankingUnitFor(state, classId);
+  const { period_start, period_end } = computePeriodBounds(unit, undefined, customDays);
   return { unit, start: period_start, end: period_end };
 }
 
@@ -174,4 +174,32 @@ export function pendingCounts(state: AppState) {
     praise: state.praiseRequests.filter((p) => p.approval_status === "pending").length,
     enrollment: state.enrollments.filter((e) => e.status === "pending").length,
   };
+}
+
+export interface DailyBreakdown {
+  date: string;
+  attendance: number;
+  homework: number;
+  praise: number;
+  total: number;
+}
+
+export function dailyBreakdown(state: AppState, studentId: string, date: string): DailyBreakdown {
+  const entries = state.ledger.filter(
+    (l) => l.student_id === studentId && l.status === "active" && l.created_at.slice(0, 10) === date
+  );
+  const sumByType = (type: "attendance" | "homework" | "praise") =>
+    entries.filter((l) => l.source_type === type).reduce((sum, l) => sum + l.count, 0);
+  const attendance = sumByType("attendance");
+  const homework = sumByType("homework");
+  const praise = sumByType("praise");
+  return { date, attendance, homework, praise, total: attendance + homework + praise };
+}
+
+export function activeDatesForStudent(state: AppState, studentId: string): Set<string> {
+  return new Set(
+    state.ledger
+      .filter((l) => l.student_id === studentId && l.status === "active")
+      .map((l) => l.created_at.slice(0, 10))
+  );
 }

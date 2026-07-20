@@ -23,7 +23,7 @@ export function PraiseSection() {
       <Card>
         <h3 className="text-subtitle mb-1">칭찬 스티커 요청</h3>
         <p className="text-caption text-text-secondary mb-3">
-          정형화되지 않은 칭찬받을 행동은 사유를 적어 요청하면, 관리자가 확인 후 스티커를 지급해요.
+          칭찬 받은 사유와 함께 스티커를 요청할 수 있어요.
         </p>
         <label className="block text-caption font-semibold text-text-secondary mb-1">사유</label>
         <textarea

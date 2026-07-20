@@ -220,6 +220,12 @@ export const DEFAULT_ATTENDANCE_TIERS: TierConfig[] = [
   { tier: "absent", label: "결석", rangeText: "미출석", count: 0 },
 ];
 
+export const ATTENDANCE_TIERS = DEFAULT_ATTENDANCE_TIERS.map(({ tier, label, count }) => ({
+  tier,
+  label,
+  count,
+}));
+
 // 숙제 완료율 구간을 정의하는 방식 — 선생님이 상황에 맞게 선택할 수 있다.
 export type GradingMode = "manual" | "percent" | "quantile";
 
