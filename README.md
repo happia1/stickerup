@@ -64,11 +64,10 @@ npm install
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-NEXT_PUBLIC_SITE_URL=https://stickerup.vercel.app
 SUPABASE_SERVICE_ROLE_KEY=
 ```
 
-브라우저에서 사용하는 값은 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL`입니다. 회원가입 이메일 인증 링크는 현재 브라우저 origin을 우선 사용하고, `NEXT_PUBLIC_SITE_URL`은 브라우저 origin을 읽을 수 없을 때의 보조값입니다. `SUPABASE_SERVICE_ROLE_KEY`는 서버 전용이며 client component에서 import하지 않도록 `lib/supabase/admin.ts`에 분리되어 있습니다.
+브라우저에서 사용하는 값은 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`뿐입니다. 이메일 회원가입은 Supabase Dashboard의 Site URL 기본값으로 인증 링크를 처리합니다. `SUPABASE_SERVICE_ROLE_KEY`는 서버 전용이며 client component에서 import하지 않도록 `lib/supabase/admin.ts`에 분리되어 있습니다.
 
 ### 개발 서버 실행
 
@@ -84,7 +83,6 @@ Vercel 프로젝트의 **Environment Variables**에 아래 값을 Development, P
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `NEXT_PUBLIC_SITE_URL` (`https://stickerup.vercel.app`)
 - `SUPABASE_SERVICE_ROLE_KEY`
 
 `NEXT_PUBLIC_` 접두사의 두 값만 브라우저에 노출됩니다. `SUPABASE_SERVICE_ROLE_KEY`는 서버 전용이며 절대 `NEXT_PUBLIC_` 접두사를 붙이지 마세요. GitHub 연동 프로젝트는 Production Branch를 `main`으로 설정하면 `main` 푸시마다 자동으로 프로덕션 배포됩니다. 자세한 절차는 [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md)를 참고하세요.

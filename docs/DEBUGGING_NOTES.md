@@ -63,3 +63,9 @@
 - 증상: Vercel `SUPABASE_SERVICE_ROLE_KEY`가 없거나 잘못된 경우 가입 완료가 실패해도 원인을 명확히 알기 어려웠다.
 - 원인: 관리자 client가 서버 route에서 생성되지만, 이메일 인증 시작 전 서버 키 상태를 확인하는 경로와 잘못된 키의 사용자용 오류 매핑이 없었다.
 - 조치: server-only 관리자 상태 점검 route와 `/api/signup`에 누락·잘못된 키를 `503`과 안내 문구로 반환하는 처리를 추가했다. admin client import는 API route와 server-only auth helper에만 존재함을 확인했다.
+
+## 2026-07-21 회원가입 인증 링크 재발
+
+- 증상: origin 검증과 Vercel 배포 후에도 `Invalid path specified in request URL` 기반의 가입 인증 링크 오류가 계속 발생했다.
+- 원인: 선택값인 `emailRedirectTo`가 Auth `signUp` 호출에 남아 있어 앱 코드가 인증 리디렉션 주소 처리 경로에 계속 개입했다.
+- 조치: `emailRedirectTo`와 origin helper를 제거하고 Supabase Dashboard Site URL 기본 동작만 사용하도록 변경했다.

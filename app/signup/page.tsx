@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getSupabaseBrowserConfigError } from "@/lib/supabase/config";
 import { getAuthEmailForIdentifier, isUsernameLoginIdentifier, normalizeLoginIdentifier } from "@/lib/auth/identifier";
-import { getEmailRedirectUrl } from "@/lib/supabase/redirect";
 
 type SignupType = "student" | "teacher";
 
@@ -133,12 +132,10 @@ function SignupForm() {
         const adminStatusResponse = await fetch("/api/auth/admin-status", { cache: "no-store" });
         const adminStatus = (await adminStatusResponse.json()) as { error?: string };
         if (!adminStatusResponse.ok) throw new Error(adminStatus.error ?? "Supabase 관리자 연결을 확인하지 못했습니다.");
-        const emailRedirectTo = getEmailRedirectUrl();
         const signUpResult = await supabase.auth.signUp({
           email: authEmail,
           password,
           options: {
-            ...(emailRedirectTo ? { emailRedirectTo } : {}),
             data: {
               signup_role: signupType,
               display_name: name,
@@ -195,7 +192,7 @@ function SignupForm() {
         errorMessage.includes("Password should be at least")
           ? "Supabase Auth 비밀번호는 최소 6자 이상이어야 합니다."
           : errorMessage.includes("Invalid path specified in request URL")
-          ? "회원가입 인증 링크를 만들지 못했습니다. 잠시 후 다시 시도해 주세요."
+          ? "Supabase 가입 요청을 시작하지 못했습니다. 잠시 후 다시 시도해 주세요."
           : errorMessage
       );
     } finally {

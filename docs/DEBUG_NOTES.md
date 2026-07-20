@@ -1,5 +1,11 @@
 # DEBUG NOTES
 
+## [2026-07-21] Signup confirmation redirect fallback
+
+- Symptom: signup continued to return `Invalid path specified in request URL` after validating the client-side origin and configuring the Vercel production URL.
+- Cause: the optional `emailRedirectTo` request value was still present in the client Auth signup call, leaving the flow dependent on application-side redirect URL handling.
+- Resolution: removed `emailRedirectTo` entirely. Email signup now relies only on the Supabase Dashboard Site URL, so the application does not construct or prevalidate a confirmation redirect URL.
+
 ## [2026-07-21] Supabase service-role configuration during signup
 
 - Symptom: a Vercel deployment can fail to complete signup when `SUPABASE_SERVICE_ROLE_KEY` is missing or does not belong to the configured Supabase project, without a clear user-facing explanation.
