@@ -403,3 +403,10 @@ pm run build는 기존 EISDIR/EPERM 환경 이슈로 실패
 - 이제 `DEVELOPER_EMAILS`와 `DEVELOPER_USER_IDS`만 개발자 접근 권한에 사용하며 인증 유틸리티 명칭도 개발자 기준으로 변경했다.
 - 상태: `npm.cmd run typecheck`, `git diff --check` 통과.
 - 다음 할 일: Vercel에서 남아 있는 `SELLER_EMAILS` 환경변수를 삭제하고 재배포한다.
+
+## 2026-07-21 (happia1 개발자 권한 인식 수정)
+
+- 비밀번호 인증 후 `happia1`이 개발자 허용 목록 검사에서 차단되는 문제를 수정했다.
+- `happia1`의 내부 Auth 이메일을 기본 개발자 계정으로 직접 인정하고 환경변수는 향후 추가 개발자 계정에만 사용하도록 변경했다.
+- 상태: `npm.cmd run typecheck`, `git diff --check` 통과.
+- 다음 할 일: 배포 후 기존에 설정한 Supabase 비밀번호로 `/developer/login` 진입을 확인한다.
