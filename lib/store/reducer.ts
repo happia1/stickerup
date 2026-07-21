@@ -381,6 +381,15 @@ export function appReducer(state: AppState, action: Action): AppState {
       return { ...state, teachers: state.teachers.map((t) => t.id === action.teacherId ? { ...t, permissions: { ...DEFAULT_TEACHER_PERMISSIONS, ...t.permissions, [action.permission]: action.enabled } } : t) };
     }
 
+    case "UPDATE_TEACHER_PROFILE": {
+      return {
+        ...state,
+        teachers: state.teachers.map((t) =>
+          t.id === action.teacherId ? { ...t, name: action.name, profile_image_url: action.profileImageUrl } : t
+        ),
+      };
+    }
+
     case "ADD_INVITE_LINK": {
       return {
         ...state,

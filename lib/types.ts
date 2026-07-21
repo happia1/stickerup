@@ -1,6 +1,6 @@
-// 타입 정의: docs/DB_SCHEMA.md 의 테이블 구조를 그대로 반영한다.
-// Supabase 연동 시 이 타입들을 supabase-js 쿼리 결과 타입으로 그대로 재사용할 수 있도록
-// snake_case 필드명을 DB와 동일하게 유지한다.
+// ?????類ㅼ벥: docs/DB_SCHEMA.md ?????뵠???닌듼쒐몴?域밸챶?嚥?獄쏆꼷???뺣뼄.
+// Supabase ?怨뺣짗 ????????낅굶??supabase-js ?묒눖??野껉퀗??????놁몵嚥?域밸챶?嚥???沅??븍막 ????덈즲嚥?
+// snake_case ?袁⑤굡筌뤿굞??DB?? ??덉뵬??띿쓺 ?醫???뺣뼄.
 
 export type Role = "owner" | "assistant" | "student";
 export type TeacherPermissionKey = "notices" | "sticker_policy" | "classes" | "students" | "approvals" | "sticker_audit" | "ranking" | "rewards";
@@ -22,6 +22,7 @@ export interface Teacher {
   role: "owner" | "assistant";
   name: string;
   email: string;
+  profile_image_url?: string | null;
   invited_by: string | null;
   created_at: string;
   permissions?: TeacherPermissions;
@@ -77,7 +78,7 @@ export interface Enrollment {
   approver_id: string | null;
 }
 
-// 출석/숙제 구간은 관리자가 자유롭게 정의할 수 있는 동적 값이다 (id는 자유 문자열).
+// ?곗뮇苑???덉젫 ?닌덉퍢?? ?온?귐딆쁽揶쎛 ?癒??嚥?苡??類ㅼ벥??????덈뮉 ??덉읅 揶쏅????(id???癒?? ?얜챷???.
 export type AttendanceTier = string;
 
 export interface AttendanceRecord {
@@ -142,9 +143,9 @@ export interface StickerLedgerEntry {
 export interface RankingPeriodConfig {
   id: string;
   tenant_id: string;
-  class_id: string | null; // null = 전체(글로벌)
+  class_id: string | null; // null = ?袁⑷퍥(疫꼲嚥≪뮆苡?
   unit: RankingUnit;
-  custom_days: number | null; // unit === "custom" 일 때 사용할 직접 입력 주기(일)
+  custom_days: number | null; // unit === "custom" ?????????筌욊낯????낆젾 雅뚯눊由???
   updated_at: string;
 }
 
@@ -158,7 +159,7 @@ export interface RewardTargetDistribution {
 export interface RewardCampaign {
   id: string;
   tenant_id: string;
-  class_id: string | null; // null = 전체 대상
+  class_id: string | null; // null = ?袁⑷퍥 ????
   period_start: string;
   period_end: string;
   target_distribution: RewardTargetDistribution;
@@ -206,74 +207,68 @@ export interface RankingRow {
 }
 
 // =========================================================
-// 출석 / 숙제 구간 정책 — 관리자가 관리자 앱(스티커 정책 설정)에서
-// 구간 이름/범위 설명/지급 스티커 수를 자유롭게 추가·수정·삭제할 수 있다.
+// ?곗뮇苑?/ ??덉젫 ?닌덉퍢 ?類ㅼ퐠 ???온?귐딆쁽揶쎛 ?온?귐딆쁽 ????쎈뼒???類ㅼ퐠 ??쇱젟)?癒?퐣
+// ?닌덉퍢 ??已?甕곕뗄????살구/筌왖疫???쎈뼒????? ?癒??嚥?苡??곕떽?夷??륁젟夷?????????덈뼄.
+// =========================================================
+// =========================================================
+// Attendance / homework tier configuration
 // =========================================================
 export interface TierConfig {
-  tier: string; // 구간 고유 id (자유 문자열)
-  label: string; // 구간 이름
-  rangeText: string; // 구간 범위 설명 (자유 텍스트: "정시 후 0~10분", "80~100%", "1분위" 등)
-  count: number; // 지급 스티커 수
+  tier: string;
+  label: string;
+  rangeText: string;
+  count: number;
 }
 
-// 5단계 출석 지급 기준 초기값 (관리자가 스티커 정책 설정에서 자유롭게 수정 가능)
 export const DEFAULT_ATTENDANCE_TIERS: TierConfig[] = [
-  { tier: "on_time", label: "정시 이전", rangeText: "지각 없음", count: 5 },
-  { tier: "within_10", label: "10분 이내", rangeText: "정시 후 0~10분", count: 4 },
-  { tier: "within_30", label: "30분 이내", rangeText: "정시 후 10~30분", count: 3 },
-  { tier: "within_60", label: "1시간 이내", rangeText: "정시 후 30~60분", count: 2 },
-  { tier: "over_60", label: "1시간 초과", rangeText: "정시 후 60분 초과", count: 1 },
-  { tier: "absent", label: "결석", rangeText: "미출석", count: 0 },
+  { tier: "on_time", label: "On time", rangeText: "Before class time", count: 5 },
+  { tier: "within_10", label: "Within 10 min", rangeText: "0~10 min late", count: 4 },
+  { tier: "within_30", label: "Within 30 min", rangeText: "10~30 min late", count: 3 },
+  { tier: "within_60", label: "Within 1 hour", rangeText: "30~60 min late", count: 2 },
+  { tier: "over_60", label: "Over 1 hour", rangeText: "Over 60 min late", count: 1 },
+  { tier: "absent", label: "Absent", rangeText: "No check-in", count: 0 },
 ];
 
-export const ATTENDANCE_TIERS = DEFAULT_ATTENDANCE_TIERS.map(({ tier, label, count }) => ({
-  tier,
-  label,
-  count,
-}));
+export const ATTENDANCE_TIERS = DEFAULT_ATTENDANCE_TIERS.map(({ tier, label, count }) => ({ tier, label, count }));
 
-// 숙제 완료율 구간을 정의하는 방식 — 선생님이 상황에 맞게 선택할 수 있다.
 export type GradingMode = "manual" | "percent" | "quantile";
 
 export const HOMEWORK_MODE_LABEL: Record<GradingMode, string> = {
-  manual: "수동 지정(현재처럼)",
-  percent: "완료율 퍼센트(%) 구간",
-  quantile: "분위(순위 비율) 구간",
+  manual: "Manual",
+  percent: "Percent",
+  quantile: "Quantile",
 };
 
-// 모드를 바꿀 때 불러올 수 있는 기본 구성 — 불러온 뒤에도 자유롭게 추가/수정/삭제 가능하다.
 export const HOMEWORK_MODE_PRESETS: Record<GradingMode, TierConfig[]> = {
   manual: [
-    { tier: "complete", label: "완료", rangeText: "100%", count: 5 },
-    { tier: "half", label: "절반 완료", rangeText: "50%", count: 3 },
-    { tier: "none", label: "미완료", rangeText: "0%", count: 0 },
+    { tier: "complete", label: "Complete", rangeText: "100%", count: 5 },
+    { tier: "half", label: "Half complete", rangeText: "50%", count: 3 },
+    { tier: "none", label: "Incomplete", rangeText: "0%", count: 0 },
   ],
   percent: [
-    { tier: "p90", label: "90% 이상", rangeText: "90~100%", count: 5 },
+    { tier: "p90", label: "90%+", rangeText: "90~100%", count: 5 },
     { tier: "p70", label: "70~89%", rangeText: "70~89%", count: 4 },
     { tier: "p40", label: "40~69%", rangeText: "40~69%", count: 2 },
-    { tier: "p0", label: "40% 미만", rangeText: "0~39%", count: 0 },
+    { tier: "p0", label: "Under 40%", rangeText: "0~39%", count: 0 },
   ],
   quantile: [
-    { tier: "q1", label: "1분위 (상위 25%)", rangeText: "상위 0~25%", count: 5 },
-    { tier: "q2", label: "2분위", rangeText: "상위 25~50%", count: 3 },
-    { tier: "q3", label: "3분위", rangeText: "상위 50~75%", count: 2 },
-    { tier: "q4", label: "4분위 (하위 25%)", rangeText: "상위 75~100%", count: 0 },
+    { tier: "q1", label: "Q1", rangeText: "Top 0~25%", count: 5 },
+    { tier: "q2", label: "Q2", rangeText: "Top 25~50%", count: 3 },
+    { tier: "q3", label: "Q3", rangeText: "Top 50~75%", count: 2 },
+    { tier: "q4", label: "Q4", rangeText: "Top 75~100%", count: 0 },
   ],
 };
 
 export const DEFAULT_HOMEWORK_TIERS: TierConfig[] = HOMEWORK_MODE_PRESETS.manual;
 
 export const RANKING_UNIT_LABEL: Record<RankingUnit, string> = {
-  day: "일 단위",
-  week: "주 단위",
-  month: "월 단위",
-  quarter: "분기 단위",
-  custom: "사용자 설정 기간",
+  day: "Daily",
+  week: "Weekly",
+  month: "Monthly",
+  quarter: "Quarterly",
+  custom: "Custom",
 };
 
-// 스티커 보유량이 세 자릿수로 넘어갈 때 보기 좋게 치환할 단위 아이콘 기준.
-// 100장부터 동색, 200장부터 은색, 300장부터 금색 스티커 아이콘을 함께 보여준다.
 export type StickerDenomination = "gold" | "silver" | "bronze" | null;
 
 export function stickerDenomination(count: number): StickerDenomination {

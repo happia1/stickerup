@@ -56,5 +56,6 @@ export type Action =
   | { type: "ADD_TEACHER"; name: string; email: string; invitedBy: string }
   | { type: "REMOVE_TEACHER"; teacherId: string }
   | { type: "SET_TEACHER_PERMISSION"; teacherId: string; permission: TeacherPermissionKey; enabled: boolean }
+  | { type: "UPDATE_TEACHER_PROFILE"; teacherId: string; name: string; profileImageUrl: string | null }
   | { type: "ADD_INVITE_LINK"; issuerTeacherId: string; token: string; inviteeRole: "student" | "teacher" }
   | { type: "UPDATE_STUDENT_PROFILE"; studentId: string; name: string; age: number; profileImageUrl: string | null };

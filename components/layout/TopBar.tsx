@@ -1,12 +1,29 @@
-"use client";
+﻿"use client";
+
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { useAppState } from "@/lib/store/provider";
 import { getTeacherById, pendingCounts } from "@/lib/store/selectors";
 import { fmtDate } from "@/lib/format";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+
+function BellIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-none stroke-current stroke-2">
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+      <path d="M10 21h4" />
+    </svg>
+  );
+}
+
+function SettingsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-none stroke-current stroke-2">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2 2-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V20h-3v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1-2-2 .1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H4v-3h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 2-2 .1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5V4h3v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 2 2-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.1v3h-.1a1.7 1.7 0 0 0-1.5 1Z" />
+    </svg>
+  );
+}
 
 export function StudentTopBar() {
   const state = useAppState();
@@ -21,52 +38,61 @@ export function StudentTopBar() {
       .map((p) => ({ text: `칭찬 스티커 요청이 ${p.approval_status === "approved" ? "승인" : "반려"}되었어요.`, date: p.requested_at })),
     ...state.ledger
       .filter((l) => l.student_id === state.currentUserId && l.status === "rolled_back")
-      .map((l) => ({ text: `스티커 지급이 취소(롤백)되었어요: ${l.rollback_reason ?? ""}`, date: l.rollback_at ?? l.created_at })),
+      .map((l) => ({ text: `스티커 지급이 취소되었어요: ${l.rollback_reason ?? ""}`, date: l.rollback_at ?? l.created_at })),
   ].sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
 
   return (
-    <div className="bg-surface-page px-4 py-3 flex items-center justify-between">
-      <span className="font-extrabold text-subtitle">🏅 StickerUp</span>
-      <div className="flex gap-3.5 items-center">
-        <button aria-label="알림" className="text-lg" onClick={() => setNotifOpen(true)}>🔔</button>
-        <Link href="/student/settings" aria-label="설정" className="text-lg">⚙️</Link>
+    <div className="flex items-center justify-between bg-surface-page px-4 py-3">
+      <span className="text-subtitle font-extrabold">StickerUp</span>
+      <div className="flex items-center gap-3.5">
+        <button aria-label="알림" className="text-text-primary" onClick={() => setNotifOpen(true)}><BellIcon /></button>
+        <Link href="/student/settings" aria-label="설정" className="text-text-primary"><SettingsIcon /></Link>
       </div>
-
       <BottomSheet open={notifOpen} onClose={() => setNotifOpen(false)} title="알림">
-        {notifItems.length === 0 ? (
-          <p className="text-caption text-text-muted">새로운 알림이 없어요.</p>
-        ) : (
-          notifItems.map((item, idx) => (
-            <div key={idx} className="bg-surface-card border border-border rounded-card p-3 mb-2">
-              <p className="text-body">{item.text}</p>
-              <p className="text-caption text-text-muted mt-1">{fmtDate(item.date)}</p>
-            </div>
-          ))
-        )}
+        {notifItems.length === 0 ? <p className="text-caption text-text-muted">새로운 알림이 없습니다.</p> : notifItems.map((item, idx) => (
+          <div key={idx} className="mb-2 rounded-card border border-border bg-surface-card p-3">
+            <p className="text-body">{item.text}</p>
+            <p className="mt-1 text-caption text-text-muted">{fmtDate(item.date)}</p>
+          </div>
+        ))}
       </BottomSheet>
     </div>
   );
 }
 
 export function AdminTopBar() {
-  const router = useRouter();
   const state = useAppState();
+  const [notifOpen, setNotifOpen] = useState(false);
   const counts = pendingCounts(state);
   const me = getTeacherById(state, state.currentUserId);
-  async function handleLogout() {
-    const supabase = getSupabaseBrowserClient();
-    if (supabase) await supabase.auth.signOut();
-    router.replace("/");
-  }
+  const totalPending = counts.homework + counts.praise + counts.enrollment;
+  const notifItems = [
+    { label: "숙제 승인 대기", count: counts.homework, href: "/admin/approvals" },
+    { label: "칭찬 승인 대기", count: counts.praise, href: "/admin/approvals" },
+    { label: "반 승인 대기", count: counts.enrollment, href: "/admin/students" },
+  ];
 
   return (
-    <div className="flex items-center justify-between px-6 py-3 bg-surface-page">
-      <span className="font-extrabold text-subtitle">🛠 StickerUp Admin</span>
+    <div className="flex items-center justify-between bg-surface-page px-6 py-3">
+      <span className="text-subtitle font-extrabold">StickerUp Admin</span>
       <div className="flex items-center gap-4 text-caption text-text-secondary">
-        <span>승인 대기 {counts.homework + counts.praise + counts.enrollment}건</span>
+        <span>승인 대기 {totalPending}건</span>
         <span className="font-bold text-text-primary">{me?.name ?? "관리자"}</span>
-        <button type="button" onClick={handleLogout} className="rounded-lg bg-surface-raised px-3 py-1.5 text-caption text-text-primary">로그아웃</button>
+        <button aria-label="관리자 알림" className="relative text-text-primary" onClick={() => setNotifOpen(true)}>
+          <BellIcon />
+          {totalPending > 0 && <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-brand-amber" />}
+        </button>
+        <Link href="/admin/settings" aria-label="관리자 설정" className="text-text-primary"><SettingsIcon /></Link>
       </div>
+
+      <BottomSheet open={notifOpen} onClose={() => setNotifOpen(false)} title="관리자 알림">
+        {totalPending === 0 ? <p className="text-caption text-text-muted">확인할 승인 대기 항목이 없습니다.</p> : notifItems.map((item) => (
+          <Link key={item.label} href={item.href} onClick={() => setNotifOpen(false)} className="mb-2 flex items-center justify-between rounded-card border border-border bg-surface-card p-3">
+            <span className="text-body">{item.label}</span>
+            <span className="text-body font-bold text-brand-amber">{item.count}건</span>
+          </Link>
+        ))}
+      </BottomSheet>
     </div>
   );
 }
