@@ -267,6 +267,7 @@ export default function AdminRewardsPage() {
   const [distValue, setDistValue] = useState(3);
   const [prizes, setPrizes] = useState<Array<{ rank: number; productId: string; qty: number }>>([{rank:1,productId:"",qty:1},{rank:2,productId:"",qty:1},{rank:3,productId:"",qty:1}]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const eventsByStatus = useMemo(() => {
     const grouped: Record<EventStatusFilter, RewardCampaign[]> = { scheduled: [], active: [], ended: [] };
@@ -335,8 +336,14 @@ export default function AdminRewardsPage() {
 
       {selectedEvent && <EventDetail campaign={selectedEvent} editingId={editingId} setEditingId={setEditingId} />}
 
-      <section className="mt-6 max-w-lg rounded-card bg-surface-page p-5">
-        <h4 className="mb-3 text-body font-bold">이벤트 생성</h4>
+      <section className="mt-6 rounded-card bg-surface-page p-5">
+        <div className={createOpen ? "mb-4 flex items-center justify-between gap-3" : "flex items-center justify-between gap-3"}>
+          <h4 className="text-subtitle">이벤트 생성</h4>
+          <button type="button" aria-expanded={createOpen} onClick={() => setCreateOpen((open) => !open)} className="rounded-lg border border-border px-3 py-2 text-caption font-bold text-text-secondary">
+            {createOpen ? "접기 ▲" : "펼치기 ▼"}
+          </button>
+        </div>
+        {createOpen && <>
         <label className="mb-1 block text-caption font-semibold text-text-secondary">적용 그룹</label>
         <select className="mb-3 w-full rounded-lg border border-border px-2.5 py-2 text-body" value={scopeId} onChange={(event) => setScopeId(event.target.value)}>
           <option value="__all__">전체</option>
@@ -358,6 +365,7 @@ export default function AdminRewardsPage() {
           </label>
           <div className="col-span-2"><div className="mb-2 flex items-center justify-between gap-3"><p className="text-caption font-semibold text-text-secondary">순위별 상품</p><Link href="/admin/products" className="rounded-lg border border-border px-3 py-1.5 text-caption font-bold">상품 카탈로그 관리 →</Link></div>{prizes.map((prize,index)=><div key={prize.rank} className="mb-2 grid grid-cols-[64px_1fr_80px_32px] items-center gap-2"><b className="text-caption">{prize.rank}등</b><select value={prize.productId} onChange={e=>setPrizes(current=>current.map((item,i)=>i===index?{...item,productId:e.target.value}:item))} className="rounded-lg border border-border px-2.5 py-2 text-body"><option value="">상품 선택</option>{state.productCatalog.map(product=><option key={product.id} value={product.id}>{product.title}</option>)}</select><input aria-label={`${prize.rank}등 수량`} type="number" min="1" value={prize.qty} onChange={e=>setPrizes(current=>current.map((item,i)=>i===index?{...item,qty:Math.max(1,Number(e.target.value)||1)}:item))} className="rounded-lg border border-border px-2 py-2"/><button type="button" className="text-state-danger" onClick={()=>setPrizes(current=>current.filter((_,i)=>i!==index).map((item,i)=>({...item,rank:i+1})))}>×</button></div>)}<button type="button" className="text-caption text-brand-amber" onClick={()=>setPrizes(current=>[...current,{rank:current.length+1,productId:"",qty:1}])}>+ 다음 순위 상품 추가</button></div>
         </div>
+        <div className="flex justify-end">
         <Button
           onClick={() => {
             const selectedPrizes = prizes.filter((prize) => prize.productId);
@@ -369,10 +377,13 @@ export default function AdminRewardsPage() {
             showToast("이벤트가 생성되었어요.");
             setStatusFilter("active");
             setPrizes([{rank:1,productId:"",qty:1},{rank:2,productId:"",qty:1},{rank:3,productId:"",qty:1}]);
+            setCreateOpen(false);
           }}
         >
           이벤트 등록하기
         </Button>
+        </div>
+        </>}
       </section>
     </div>
   );

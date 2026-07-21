@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     return result.error ? NextResponse.json({ error: result.error.message }, { status: 400 }) : NextResponse.json({ favorite: !existing.data });
   }
   if (body.action === "save") {
-    const result = await ctx.db.from("product_catalog").upsert({ tenant_id: ctx.teacher.tenant_id, source_marketplace_product_id: product.data.id, title: product.data.title, image_url: product.data.prize_image_url ?? product.data.image_url, purchase_url: product.data.purchase_url, description: product.data.description, updated_at: new Date().toISOString() }, { onConflict: "tenant_id,source_marketplace_product_id" }).select("*").single();
+    const result = await ctx.db.from("product_catalog").upsert({ tenant_id: ctx.teacher.tenant_id, source_marketplace_product_id: product.data.id, title: product.data.title, price_label: product.data.price_label, category: product.data.category, image_url: product.data.prize_image_url ?? product.data.image_url, purchase_url: product.data.purchase_url, description: product.data.description, updated_at: new Date().toISOString() }, { onConflict: "tenant_id,source_marketplace_product_id" }).select("*").single();
     return result.error ? NextResponse.json({ error: result.error.message }, { status: 400 }) : NextResponse.json({ product: result.data });
   }
   return NextResponse.json({ error: "지원하지 않는 요청입니다." }, { status: 400 });

@@ -36,9 +36,13 @@ export async function POST(request: Request) {
     const html = (await response.text()).slice(0, 2_000_000);
     const title = decode(meta(html, "og:title") ?? html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1] ?? null);
     const description = decode(meta(html, "og:description") ?? meta(html, "description"));
+    const priceAmount = decode(meta(html, "product:price:amount") ?? meta(html, "og:price:amount"));
+    const priceCurrency = decode(meta(html, "product:price:currency") ?? meta(html, "og:price:currency"));
     const rawImage = decode(meta(html, "og:image") ?? meta(html, "twitter:image"));
     const imageUrl = rawImage ? new URL(rawImage, finalUrl).toString() : null;
-    return NextResponse.json({ title, description, imageUrl });
+    const numericPrice = priceAmount ? Number(priceAmount.replace(/[^0-9.]/g, "")) : NaN;
+    const priceLabel = Number.isFinite(numericPrice) ? `${numericPrice.toLocaleString("ko-KR")}${priceCurrency === "KRW" || !priceCurrency ? "원" : ` ${priceCurrency}`}` : priceAmount;
+    return NextResponse.json({ title, description, imageUrl, priceLabel });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "상품 정보를 불러오지 못했습니다. 이미지를 직접 등록해 주세요." }, { status: 400 });
   }
