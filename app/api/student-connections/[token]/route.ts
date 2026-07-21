@@ -4,7 +4,7 @@ import { getRequestUser } from "@/lib/supabase/server-auth";
 
 export async function GET(_: Request, { params }: { params: { token: string } }) {
   const db = createSupabaseAdminClient();
-  const connection = await db.from("student_connection_requests").select("status, expires_at, students(name)").eq("token", params.token).maybeSingle();
+  const connection = await db.from("student_connection_requests").select("student_id, status, expires_at, students(name)").eq("token", params.token).maybeSingle();
   if (connection.error || !connection.data) return NextResponse.json({ error: "유효하지 않은 연결 링크입니다." }, { status: 404 });
   return NextResponse.json({ request: connection.data });
 }

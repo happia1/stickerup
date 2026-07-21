@@ -10,10 +10,10 @@ import { getAuthEmailForIdentifier } from "@/lib/auth/identifier";
 type ProfileRole = "student" | "owner" | "assistant";
 type LoginAccountType = "student" | "teacher";
 
-export function LoginForm() {
+export function LoginForm({ initialAccountType = null, redirectTo }: { initialAccountType?: LoginAccountType | null; redirectTo?: string } = {}) {
   const router = useRouter();
   const [identifier, setIdentifier] = useState("");
-  const [accountType, setAccountType] = useState<LoginAccountType | null>(null);
+  const [accountType, setAccountType] = useState<LoginAccountType | null>(initialAccountType);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberLogin, setRememberLogin] = useState(true);
@@ -41,7 +41,7 @@ export function LoginForm() {
         });
         const profile = (await profileResponse.json()) as { role?: ProfileRole; onboarded?: boolean };
         if (!active || !profile.onboarded || !profile.role) return;
-        router.replace(profile.role === "student" ? "/student/home" : "/admin/dashboard");
+        router.replace(profile.role === "student" ? "/student/home" : redirectTo ?? "/admin/dashboard");
       } catch {
         // 로그인 화면은 그대로 유지한다. 수동 로그인 시 상세 오류를 표시한다.
       }
@@ -51,7 +51,7 @@ export function LoginForm() {
     return () => {
       active = false;
     };
-  }, [router]);
+  }, [router, redirectTo]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -100,7 +100,7 @@ export function LoginForm() {
         return;
       }
 
-      router.push(profile.role === "student" ? "/student/home" : "/admin/dashboard");
+      router.push(profile.role === "student" ? "/student/home" : redirectTo ?? "/admin/dashboard");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "로그인을 완료하지 못했습니다.");
     } finally {

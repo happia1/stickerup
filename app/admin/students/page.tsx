@@ -12,6 +12,7 @@ export default function AdminStudentsPage() {
   const [students, setStudents] = useState<AdminStudentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [focusedStudentId, setFocusedStudentId] = useState("");
 
   async function token() {
     const client = getSupabaseBrowserClient();
@@ -33,6 +34,8 @@ export default function AdminStudentsPage() {
   }
 
   useEffect(() => { void load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setFocusedStudentId(new URLSearchParams(window.location.search).get("student") ?? ""); }, []);
+  useEffect(() => { if (focusedStudentId && students.length) document.getElementById(`student-${focusedStudentId}`)?.scrollIntoView({ behavior: "smooth", block: "center" }); }, [focusedStudentId, students]);
 
   async function updateConnection(student: AdminStudentRow, action: "approve" | "disconnect") {
     try {
@@ -60,7 +63,7 @@ export default function AdminStudentsPage() {
           <tbody>
             {loading && <tr><td colSpan={6} className="p-5 text-center text-text-secondary">불러오는 중...</td></tr>}
             {!loading && !students.length && <tr><td colSpan={6} className="p-5 text-center text-text-secondary">등록된 학생이 없습니다.</td></tr>}
-            {students.map((student) => <tr key={student.id} className={`border-b last:border-0 border-border ${student.connectionStatus === "pending" ? "bg-state-warningBg/40" : ""}`}>
+            {students.map((student) => <tr id={`student-${student.id}`} key={student.id} className={`border-b last:border-0 border-border ${student.connectionStatus === "pending" ? "bg-state-warningBg/40" : ""} ${focusedStudentId === student.id ? "outline outline-2 outline-brand-amber outline-offset-[-2px]" : ""}`}>
               <td className="p-2.5 font-semibold">{student.name}{student.connectionStatus === "pending" && <span className="ml-2 rounded-full bg-brand-amber px-2 py-0.5 text-caption text-surface-page">대기</span>}</td>
               <td className="p-2.5">{student.age ?? "-"}</td><td className="p-2.5">{student.classNames.join(", ") || "-"}</td><td className="p-2.5">{student.totalStickers}</td><td className="p-2.5">{STATUS_LABEL[student.connectionStatus]}</td>
               <td className="p-2.5">{student.connectionStatus === "connected" ? <button disabled={processingId === student.id} className="rounded-lg border border-state-danger px-2.5 py-1 text-caption text-state-danger disabled:opacity-50" onClick={() => updateConnection(student, "disconnect")}>해지</button> : student.connectionStatus === "pending" ? <button disabled={processingId === student.id} className="rounded-lg border border-state-success px-2.5 py-1 text-caption text-state-success disabled:opacity-50" onClick={() => updateConnection(student, "approve")}>연결 승인</button> : <span className="text-caption text-text-muted">요청 대기</span>}</td>
