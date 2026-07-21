@@ -149,7 +149,9 @@ export default function AdminOrgPage() {
           {!loading && !links.length && <p className="p-5 text-caption text-text-secondary">아직 발급된 초대 링크가 없습니다.</p>}
           {links.map((link) => {
             const role = link.invitee_role ?? "student";
-            const url = `${origin}${role === "teacher" ? "/join/teacher/" : "/join/"}${link.token}`;
+            const url = role === "teacher"
+              ? `${origin}/signup?type=teacher&invite=${encodeURIComponent(link.token)}`
+              : `${origin}/signup?invite=${encodeURIComponent(link.token)}`;
             return (
               <div key={link.id} className="flex flex-wrap items-center gap-3 border-b border-border p-3 last:border-0">
                 <Pill tone={role === "teacher" ? "wait" : "neutral"}>{role === "teacher" ? "선생님" : "학생"}</Pill>

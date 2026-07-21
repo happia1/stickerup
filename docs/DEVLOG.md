@@ -241,6 +241,12 @@ pm run build는 기존 EISDIR/EPERM 환경 이슈로 실패
 - 상태: 타입 검사 통과. 기존 `student-f78657dc436a` 토큰은 데이터베이스에 존재하지 않아 새 배포 후 링크를 다시 발급해야 한다.
 - 다음 할 일: 새 배포 후 조직 관리에서 학생 초대 링크를 재발급하고 해당 URL 및 `/api/invites/{token}` 응답을 확인한다.
 
+## 2026-07-21 (bypass Vercel dynamic join 500)
+
+- 한 일: 최신 배포에서 `/join/foo`와 `/join/teacher/foo`는 모두 500, `/signup?invite=foo`는 200임을 확인했다. Next.js redirect 설정으로 기존 `/join` 링크를 렌더링 전에 `/signup`으로 전환하고, 조직 관리에서 새로 복사하는 링크도 `/signup?invite=...` 형식으로 변경했다.
+- 상태: 검증 진행 중.
+- 다음 할 일: 배포 후 기존 `/join/...` 주소의 307 응답과 신규 `/signup?invite=...` 주소의 200 응답을 확인한다.
+
 
 ## 2026-07-21 (auto-login and logout controls)
 
