@@ -220,3 +220,12 @@ pm run build´Â ±âÁ¸ EISDIR/EPERM È¯°æ ÀÌ½´·Î ½ÇÆÐ
 - Handoff status: the app code includes the onboarding trigger repair migration at `supabase/migrations/20260719_06_repair_onboarding_triggers.sql`. If it has not already been applied in Supabase SQL Editor, run migration 05 first and then migration 06 before retesting signup in production.
 - Final verification and Git push are recorded after the typecheck and production build complete.
 - Final verification: `npm.cmd run typecheck` passed. After stopping the port 3001 development server, `npm.cmd run build` completed and generated `.next/BUILD_ID`, `.next/server/app-paths-manifest.json`, and `.next/prerender-manifest.json`. The existing output-file-tracing and webpack cache-snapshot messages remain non-blocking Windows warnings.
+
+## 2026-07-21 (remove production mock data)
+
+- Removed seeded mock/demo records from `lib/mock/data.ts` so ê¹€ë¯¼ì¤€ and other sample students/classes/rewards/notices can no longer appear in normal app screens.
+- Reset the in-memory store default `currentUserId` to empty and removed the student settings demo account switcher.
+- Added a student-home empty state that sends users back to login instead of silently rendering a mock student when Supabase data is missing.
+- Added `NEXT_PUBLIC_ENABLE_MOCK_DATA=false` to `.env.example` as the documented default.
+- Verification: `npm.cmd run typecheck` passed. `npm.cmd run build` passed. Existing Next.js outputFileTracing / webpack cache warnings remain non-blocking.
+

@@ -7,13 +7,13 @@ import {
   seedTenant, seedTeachers, seedInviteLinks, seedStudents, seedClasses,
   seedEnrollments, seedLedger, seedHomeworkSubmissions, seedPraiseRequests,
   seedRankingPeriodConfigs, seedRewardCampaigns, seedRewardItems, seedRewardClaims,
-  seedNotices, STUDENT_IDS,
+  seedNotices,
 } from "@/lib/mock/data";
 import { DEFAULT_ATTENDANCE_TIERS, DEFAULT_HOMEWORK_TIERS } from "@/lib/types";
 
 function buildInitialState(): AppState {
   return {
-    currentUserId: STUDENT_IDS.s1,
+    currentUserId: "",
     currentUserRole: "student",
     tenant: seedTenant,
     teachers: seedTeachers,

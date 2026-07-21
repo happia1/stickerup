@@ -53,7 +53,21 @@ export default function StudentHomePage() {
   }, []);
 
   const me = remoteData?.student ?? mockStudent;
-  if (!me) return null;
+  if (!me) {
+    return (
+      <div>
+        <SupabaseModeNotice />
+        {connectionMessage && <p className="mb-3 text-caption text-text-muted">{connectionMessage}</p>}
+        <div className="bg-surface-card rounded-card p-5 text-center">
+          <p className="text-subtitle mb-2">학생 정보를 불러오지 못했습니다.</p>
+          <p className="text-caption text-text-secondary mb-4">다시 로그인하거나 가입 상태를 확인해 주세요.</p>
+          <Link href="/login" className="inline-flex rounded-xl bg-brand-amber px-4 py-2 text-caption font-bold text-surface-page">
+            로그인으로 이동
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const classes = remoteData?.classes ?? approvedClassesForStudent(state, me.id);
 

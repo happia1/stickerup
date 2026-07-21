@@ -1,15 +1,10 @@
 "use client";
 import { useState } from "react";
-import { useAppDispatch, useAppState } from "@/lib/store/provider";
-import { getStudentById } from "@/lib/store/selectors";
-import { STUDENT_IDS } from "@/lib/mock/data";
 import { Card } from "@/components/ui/Card";
 import { useToast } from "@/lib/toast/provider";
 import clsx from "@/lib/clsx";
 
 export default function StudentSettingsPage() {
-  const state = useAppState();
-  const dispatch = useAppDispatch();
   const showToast = useToast();
   const [notifications, setNotifications] = useState(true);
 
@@ -35,24 +30,6 @@ export default function StudentSettingsPage() {
             <span className={clsx("absolute top-0.5 w-5 h-5 rounded-full bg-surface-page transition-transform", notifications ? "translate-x-[22px]" : "translate-x-0.5")} />
           </span>
         </button>
-      </Card>
-
-      <Card>
-        <h2 className="text-subtitle mb-2">계정 전환</h2>
-        <select
-          className="w-full border border-border rounded-lg px-2.5 py-2 text-body"
-          value={state.currentUserId}
-          onChange={(event) => dispatch({ type: "SWITCH_USER", userId: event.target.value, role: "student" })}
-        >
-          {Object.values(STUDENT_IDS).map((id) => {
-            const student = getStudentById(state, id);
-            return (
-              <option key={id} value={id}>
-                {student?.name}
-              </option>
-            );
-          })}
-        </select>
       </Card>
     </div>
   );

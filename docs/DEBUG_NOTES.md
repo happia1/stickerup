@@ -124,3 +124,10 @@
 - Symptom: student signup can return `query has no destination for result data`.
 - Cause: an already-deployed database trigger function emits a `SELECT` result without assigning or discarding it.
 - Resolution: the repository contains `supabase/migrations/20260719_06_repair_onboarding_triggers.sql`, which replaces the affected functions with `SELECT ... INTO` logic. This is a database-side action: run migration 05 followed by migration 06 in the Supabase SQL Editor if the deployed project has not received them yet.
+
+## [2026-07-21] Mock student data overlapped real Supabase users
+
+- Symptom: after creating and logging in with a real student account, the student UI still displayed seeded mock data such as 김민준.
+- Cause: normal app routes still initialized the legacy React store with seeded mock students, classes, ledger entries, rewards, and notices as fallback data.
+- Resolution: emptied the mock seed exports, reset the default current user id, removed the settings demo account switcher, and added an explicit empty/login state when Supabase student data is unavailable.
+
