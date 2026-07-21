@@ -361,3 +361,10 @@ pm run build는 기존 EISDIR/EPERM 환경 이슈로 실패
 - 공유 링크에서 승인하는 흐름도 기본반 등록과 연결 요청 상태를 함께 갱신하도록 일치시켰다.
 - 상태: `npm.cmd run typecheck`, `npm.cmd run build`, `git diff --check` 통과. 기존 outputFileTracing 및 webpack 캐시 경고만 출력됨.
 - 다음 할 일: Supabase SQL Editor에서 migration 09를 적용하고 실제 앱 가입 학생으로 대기 알림, 승인, 해지, 재요청 흐름을 확인한다.
+
+## 2026-07-21 (Vercel 빌드 오류 수정 및 배포 확인)
+
+- 이벤트 상품 보관함 변경 배포 중 `computePeriodBounds` 호출 인자와 함수 정의가 달라 발생한 타입 오류를 수정했다.
+- 후속 커스텀 랭킹 기간 변경에 시작일·종료일 타입이 포함된 상태까지 원격 `main`에 반영되었는지 확인했다.
+- 상태: `npm.cmd run build` 통과. 배포된 `/admin/products`, `/admin/rewards` 모두 HTTP 200 확인.
+- 다음 할 일: 로그인 후 상품 보관함의 등록·수정·삭제와 이벤트 순위별 상품 선택 흐름을 실제 데이터로 점검한다.
