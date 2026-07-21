@@ -148,8 +148,8 @@ export function claimsForItem(state: AppState, itemId: string) {
   return state.rewardClaims.filter((c) => c.item_id === itemId);
 }
 
-/** 학생 홈에 노출할 대표 캠페인: 학생이 접근 가능한 스코프(소속 반 + 전체) 중
- *  진행중인 캠페인을 우선, 없으면 예정 캠페인을 반환한다. */
+/** 학생 홈에 노출할 대표 이벤트: 학생이 접근 가능한 스코프(소속 반 + 전체) 중
+ *  진행중인 이벤트을 우선, 없으면 예정 이벤트을 반환한다. */
 export function featuredCampaignForStudent(state: AppState, studentId: string): RewardCampaign | null {
   const myClassIds = new Set(approvedClassesForStudent(state, studentId).map((c) => c.id));
   const visible = state.rewardCampaigns.filter((c) => c.class_id === null || myClassIds.has(c.class_id));

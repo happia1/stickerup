@@ -68,7 +68,7 @@ function EditCampaignForm({ campaign, onClose }: { campaign: RewardCampaign; onC
 
   return (
     <div className="bg-surface-page rounded-card p-4 mt-3">
-      <p className="text-body font-bold mb-2.5">캠페인 수정</p>
+      <p className="text-body font-bold mb-2.5">이벤트 수정</p>
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div>
           <label className="block text-caption font-semibold text-text-secondary mb-1">대상 기준</label>
@@ -139,7 +139,7 @@ function EditCampaignForm({ campaign, onClose }: { campaign: RewardCampaign; onC
             Object.entries(itemDrafts).forEach(([itemId, d]) => {
               dispatch({ type: "UPDATE_REWARD_ITEM", itemId, title: d.title, qty: d.qty, imageUrl: d.imageUrl });
             });
-            showToast("캠페인이 수정되었어요.");
+            showToast("이벤트이 수정되었어요.");
             onClose();
           }}
         >
@@ -180,9 +180,9 @@ export default function AdminRewardsPage() {
 
   return (
     <div>
-      <h2 className="text-title mb-1">상품(리워드) 관리</h2>
+      <h2 className="text-title mb-1">이벤트/상품 관리</h2>
       <p className="text-caption text-text-secondary mb-5">
-        캠페인은 그룹의 랭킹 단위기간에 연동돼요. 주기가 끝나면 자동 종료되며, 다음 주기 보상은 다시 등록해야 해요.
+        이벤트은 그룹의 랭킹 단위기간에 연동돼요. 주기가 끝나면 자동 종료되며, 다음 주기 보상은 다시 등록해야 해요.
       </p>
 
       {state.rewardCampaigns.map((c: RewardCampaign) => {
@@ -248,7 +248,7 @@ export default function AdminRewardsPage() {
       })}
 
       <div className="bg-surface-page rounded-card p-5 max-w-lg">
-        <h4 className="text-body font-bold mb-3">새 상품 캠페인 등록</h4>
+        <h4 className="text-body font-bold mb-3">새 상품 이벤트 등록</h4>
         <label className="block text-caption font-semibold text-text-secondary mb-1">적용 그룹</label>
         <select className="w-full border border-border rounded-lg px-2.5 py-2 text-body mb-3" value={scopeId} onChange={(e) => setScopeId(e.target.value)}>
           <option value="__all__">전체(글로벌)</option>
@@ -311,12 +311,12 @@ export default function AdminRewardsPage() {
               itemQty,
               itemImageUrl,
             });
-            showToast("새 상품 캠페인이 등록되었어요.");
+            showToast("새 상품 이벤트이 등록되었어요.");
             setItemTitle("");
             setItemImageUrl(null);
           }}
         >
-          캠페인 등록하기
+          이벤트 등록하기
         </Button>
       </div>
     </div>

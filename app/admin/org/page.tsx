@@ -6,7 +6,7 @@ import { Pill } from "@/components/ui/Pill";
 import { useToast } from "@/lib/toast/provider";
 import { DEFAULT_TEACHER_PERMISSIONS, type TeacherPermissionKey } from "@/lib/types";
 
-const PERMISSIONS: Array<[TeacherPermissionKey, string]> = [["notices","공지사항"],["sticker_policy","스티커 정책"],["classes","반 관리"],["students","학생 관리"],["approvals","승인"],["sticker_audit","스티커 로그 감사"],["ranking","랭킹 노출"],["rewards","상품 관리"]];
+const PERMISSIONS: Array<[TeacherPermissionKey, string]> = [["notices","공지사항"],["sticker_policy","스티커 정책"],["classes","반 관리"],["students","학생 관리"],["approvals","승인"],["sticker_audit","스티커 로그 감사"],["ranking","랭킹 노출"],["rewards","이벤트/상품 관리"]];
 const CopyIcon = () => <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-2" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"/></svg>;
 
 export default function AdminOrgPage() {
