@@ -52,6 +52,15 @@ function SignupForm() {
     if (!supabase) return;
 
     let active = true;
+    if (inviteCode) {
+      setExistingSession(false);
+      setIdentifier("");
+      setPassword("");
+      void supabase.auth.signOut({ scope: "local" });
+      return () => {
+        active = false;
+      };
+    }
     void supabase.auth.getSession().then(({ data }) => {
       if (!active || !data.session) return;
       const metadata = data.session.user.user_metadata;
@@ -69,7 +78,7 @@ function SignupForm() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [inviteCode]);
 
   useEffect(() => {
     if (!inviteCode) {
@@ -86,7 +95,6 @@ function SignupForm() {
         if (active) {
           setInvite(payload.invite);
           setSignupType(payload.invite.inviteeRole);
-          setSignupType("student");
           setAcademyName(payload.invite.academyName);
         }
       })
@@ -234,10 +242,10 @@ function SignupForm() {
             <input required min="1" max="100" type="number" value={age} onChange={(event) => setAge(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none" />
           </label>}
           <label className="block text-caption text-text-secondary">학원 이름
-            <input required value={academyName} readOnly={Boolean(invite)} onChange={(event) => setAcademyName(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none read-only:text-text-secondary" />
+            <input required value={academyName} readOnly={Boolean(invite)} onChange={(event) => setAcademyName(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none read-only:cursor-not-allowed read-only:text-text-secondary" />
           </label>
-          <label className="block text-caption text-text-secondary">한글 아이디 또는 이메일
-            <input required={!existingSession} disabled={existingSession} type="text" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="한글 아이디는 2~10자" className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none disabled:opacity-60" />
+          <label className="block text-caption text-text-secondary">내 한글 아이디 또는 이메일
+            <input required={!existingSession} disabled={existingSession} type="text" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="사용할 아이디를 직접 입력하세요" autoComplete="username" className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none disabled:opacity-60" />
           </label>
           <label className="block text-caption text-text-secondary">비밀번호
             <div className="relative mt-1">
