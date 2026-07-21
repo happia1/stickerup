@@ -269,6 +269,12 @@ pm run build는 기존 EISDIR/EPERM 환경 이슈로 실패
 - 추가: 인증된 상품 보관함 GET/POST/PATCH/DELETE API를 연결했다. 원장 또는 `rewards` 권한이 열린 선생님만 같은 조직의 상품을 관리할 수 있다.
 - 다음 할 일: Supabase에 migration 08을 적용하고 배포 화면에서 상품 추가·수정·삭제·구매 링크를 확인한다.
 
+## 2026-07-21 (separate product catalog page)
+
+- 한 일: 이벤트/상품 관리 화면에서 상품 보관함 본문을 숨기고 `상품 보관함 관리` 버튼을 추가했다. `/admin/products` 전용 화면에서 상품 등록·수정·삭제·구매 바로가기를 관리하고 이벤트 화면으로 돌아갈 수 있게 했다.
+- 상태: 검증 진행 중.
+- 다음 할 일: 배포 후 이벤트 화면 → 상품 보관함 → 이벤트 화면 이동과 상품 CRUD를 확인한다.
+
 
 ## 2026-07-21 (auto-login and logout controls)
 

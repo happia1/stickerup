@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useAppDispatch, useAppState } from "@/lib/store/provider";
 import { campaignStatus, claimsForItem, itemsForCampaign } from "@/lib/store/selectors";
@@ -284,14 +285,18 @@ export default function AdminRewardsPage() {
 
   const classIdForForm = scopeId === "__all__" ? null : scopeId;
   const config = state.rankingPeriodConfigs.find((c) => c.class_id === classIdForForm);
-  const bounds = computePeriodBounds(config?.unit ?? "month", undefined, config?.custom_days ?? null);
+  const bounds = computePeriodBounds(config?.unit ?? "month", undefined, config?.custom_days ?? null, config?.custom_start ?? null, config?.custom_end ?? null);
 
   return (
     <div>
       <h2 className="mb-1 text-title">이벤트/상품 관리</h2>
       <p className="mb-5 text-caption text-text-secondary">이벤트는 그룹의 랭킹 단위기간과 연결돼요. 주기가 끝나면 완료로 분류되고, 다음 주기 보상은 새 이벤트로 등록해요.</p>
 
-      <ProductCatalog />
+      <div className="mb-6 flex justify-end">
+        <Link href="/admin/products" className="inline-flex items-center rounded-xl border border-border bg-surface-card px-4 py-2.5 text-body font-bold text-text-primary transition hover:border-brand-amber">
+          상품 보관함 관리 →
+        </Link>
+      </div>
 
       <section className="mb-6 rounded-card bg-surface-page p-5">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
