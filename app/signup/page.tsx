@@ -27,6 +27,7 @@ function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const inviteCode = searchParams.get("invite")?.trim() || null;
+  const resumeSignup = searchParams.get("resume") === "1";
   const typeParam = searchParams.get("type");
   const [signupType, setSignupType] = useState<SignupType>(typeParam === "teacher" ? "teacher" : "student");
   const [identifier, setIdentifier] = useState("");
@@ -52,10 +53,13 @@ function SignupForm() {
     if (!supabase) return;
 
     let active = true;
-    if (inviteCode) {
+    if (!resumeSignup) {
       setExistingSession(false);
       setIdentifier("");
       setPassword("");
+      setName("");
+      setAge("");
+      setAcademyName("");
       void supabase.auth.signOut({ scope: "local" });
       return () => {
         active = false;
@@ -78,7 +82,7 @@ function SignupForm() {
     return () => {
       active = false;
     };
-  }, [inviteCode]);
+  }, [inviteCode, resumeSignup]);
 
   useEffect(() => {
     if (!inviteCode) {
