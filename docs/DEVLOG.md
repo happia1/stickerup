@@ -368,3 +368,13 @@ pm run build는 기존 EISDIR/EPERM 환경 이슈로 실패
 - 후속 커스텀 랭킹 기간 변경에 시작일·종료일 타입이 포함된 상태까지 원격 `main`에 반영되었는지 확인했다.
 - 상태: `npm.cmd run build` 통과. 배포된 `/admin/products`, `/admin/rewards` 모두 HTTP 200 확인.
 - 다음 할 일: 로그인 후 상품 보관함의 등록·수정·삭제와 이벤트 순위별 상품 선택 흐름을 실제 데이터로 점검한다.
+
+## 2026-07-21 (판매자 추천 상품 마켓)
+
+- 개발자/판매자가 전체 학원에 노출할 소싱 상품과 구매·제휴 링크를 관리하는 `/seller/products` 화면과 판매자 전용 API를 추가했다.
+- 판매자 권한은 일반 학원 관리자 권한과 분리하고 `SELLER_USER_IDS` 또는 `SELLER_EMAILS` 환경변수에 등록된 Supabase Auth 계정만 허용한다.
+- 선생님용 `/admin/product-market` 화면에서 추천 상품 검색, 개인별 하트 찜, 학원 상품 보관함 저장을 지원한다.
+- 추천 상품을 저장할 때 학원별 `product_catalog`에 복사하므로 판매자가 원본 노출을 중단하거나 삭제해도 이미 저장된 경품은 유지된다.
+- `marketplace_products`, `marketplace_product_favorites`와 원본 상품 연결 컬럼을 만드는 migration 10을 추가했다.
+- 상태: `npm.cmd run typecheck`, `npm.cmd run build`, `git diff --check` 통과. 기존 webpack 캐시 경고와 신규 화면의 비차단 Hook 경고만 출력됨.
+- 다음 할 일: Supabase에 migration 10을 적용하고 Vercel에 판매자 계정 환경변수를 등록한 뒤 판매자 등록 → 선생님 찜/저장 → 이벤트 경품 선택 흐름을 확인한다.

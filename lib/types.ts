@@ -184,6 +184,7 @@ export interface RewardItem {
 export interface ProductCatalogItem {
   id: string;
   tenant_id: string;
+  source_marketplace_product_id?: string | null;
   title: string;
   image_url: string | null;
   purchase_url: string | null;
