@@ -1,0 +1,18 @@
+import { NextResponse } from "next/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getRequestUser } from "@/lib/supabase/server-auth";
+
+async function getContext(request: Request) {
+  const auth = await getRequestUser(request);
+  if (!auth.user) return { error: NextResponse.json({ error: auth.error }, { status: 401 }) };
+  const db = createSupabaseAdminClient();
+  const result = await db.from("teachers").select("id, tenant_id, role, permissions").eq("id", auth.user.id).maybeSingle();
+  if (!result.data) return { error: NextResponse.json({ error: "선생님 계정이 필요합니다." }, { status: 403 }) };
+  if (result.data.role !== "owner" && result.data.permissions?.rewards !== true) return { error: NextResponse.json({ error: "상품 관리 권한이 필요합니다." }, { status: 403 }) };
+  return { db, teacher: result.data };
+}
+
+export async function GET(request: Request) { const context=await getContext(request); if("error" in context)return context.error; const result=await context.db.from("product_catalog").select("*").eq("tenant_id",context.teacher.tenant_id).order("created_at",{ascending:false}); if(result.error)return NextResponse.json({error:result.error.message},{status:400}); return NextResponse.json({products:result.data}); }
+export async function POST(request: Request) { const context=await getContext(request); if("error" in context)return context.error; const body=await request.json(); if(!body.title?.trim())return NextResponse.json({error:"상품명이 필요합니다."},{status:400}); const result=await context.db.from("product_catalog").insert({tenant_id:context.teacher.tenant_id,title:body.title.trim(),image_url:body.imageUrl??null,purchase_url:body.purchaseUrl??null,description:body.description??null}).select("*").single(); if(result.error)return NextResponse.json({error:result.error.message},{status:400}); return NextResponse.json({product:result.data}); }
+export async function PATCH(request: Request) { const context=await getContext(request); if("error" in context)return context.error; const body=await request.json(); if(!body.productId||!body.title?.trim())return NextResponse.json({error:"상품 정보를 확인해주세요."},{status:400}); const result=await context.db.from("product_catalog").update({title:body.title.trim(),image_url:body.imageUrl??null,purchase_url:body.purchaseUrl??null,description:body.description??null,updated_at:new Date().toISOString()}).eq("id",body.productId).eq("tenant_id",context.teacher.tenant_id).select("*").single(); if(result.error)return NextResponse.json({error:result.error.message},{status:400}); return NextResponse.json({product:result.data}); }
+export async function DELETE(request: Request) { const context=await getContext(request); if("error" in context)return context.error; const body=await request.json(); if(!body.productId)return NextResponse.json({error:"상품을 확인해주세요."},{status:400}); const result=await context.db.from("product_catalog").delete().eq("id",body.productId).eq("tenant_id",context.teacher.tenant_id); if(result.error)return NextResponse.json({error:result.error.message},{status:400}); return NextResponse.json({deletedProductId:body.productId}); }

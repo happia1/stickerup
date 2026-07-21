@@ -321,6 +321,10 @@ export function appReducer(state: AppState, action: Action): AppState {
       return { ...state, productCatalog: state.productCatalog.filter((product) => product.id !== action.productId) };
     }
 
+    case "SET_PRODUCT_CATALOG": {
+      return { ...state, productCatalog: action.products };
+    }
+
     case "UPDATE_REWARD_CAMPAIGN": {
       return {
         ...state,

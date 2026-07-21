@@ -266,7 +266,8 @@ pm run build는 기존 EISDIR/EPERM 환경 이슈로 실패
 - 이벤트 등록에서는 상품 보관함의 상품을 1등, 2등, 3등 및 추가 순위별로 선택하고 수량을 지정하도록 변경했다. 이벤트 상세에도 순위와 구매 바로가기를 표시한다.
 - 데이터: `product_catalog` 테이블과 `reward_items.product_id`, `reward_items.rank_order`를 추가하는 migration 08을 작성했다. 이벤트에는 상품 정보를 스냅샷으로 복사해 이후 보관함 상품을 수정하거나 삭제해도 기존 이벤트 보상 기록이 유지된다.
 - 상태: 타입 검사 통과, 프로덕션 빌드 검증 진행 중.
-- 다음 할 일: Supabase에 migration 08을 적용하고 실제 상품 보관함 persistence API로 전환한다.
+- 추가: 인증된 상품 보관함 GET/POST/PATCH/DELETE API를 연결했다. 원장 또는 `rewards` 권한이 열린 선생님만 같은 조직의 상품을 관리할 수 있다.
+- 다음 할 일: Supabase에 migration 08을 적용하고 배포 화면에서 상품 추가·수정·삭제·구매 링크를 확인한다.
 
 
 ## 2026-07-21 (auto-login and logout controls)

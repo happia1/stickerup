@@ -56,6 +56,7 @@ export type Action =
   | { type: "ADD_CATALOG_PRODUCT"; title: string; imageUrl: string | null; purchaseUrl: string | null; description: string | null }
   | { type: "UPDATE_CATALOG_PRODUCT"; productId: string; title: string; imageUrl: string | null; purchaseUrl: string | null; description: string | null }
   | { type: "DELETE_CATALOG_PRODUCT"; productId: string }
+  | { type: "SET_PRODUCT_CATALOG"; products: ProductCatalogItem[] }
   | { type: "CLAIM_REWARD"; itemId: string; studentId: string; rank: number }
   | { type: "ADD_TEACHER"; name: string; email: string; invitedBy: string }
   | { type: "REMOVE_TEACHER"; teacherId: string }
