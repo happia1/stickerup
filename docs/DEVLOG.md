@@ -257,3 +257,11 @@ pm run build는 기존 EISDIR/EPERM 환경 이슈로 실패
 - 관리자 사이드바와 조직 권한의 `상품(리워드) 관리` 라벨을 `이벤트/상품 관리`로 변경했다.
 - 이벤트/상품 관리 화면의 사용자 노출 문구에서 `캠페인`을 `이벤트`로 변경했다. 예: `새 상품 캠페인 등록` → `새 상품 이벤트 등록`.
 - Verification: `npm.cmd run typecheck` 통과, `npm.cmd run build` 통과. 기존 outputFileTracing / webpack cache 경고는 non-blocking.
+
+## 2026-07-21 (event product management list/detail)
+
+- 이벤트/상품 관리 화면 상단에 이벤트 리스트를 추가했다.
+- 이벤트를 `다가오는 이벤트`, `진행중`, `완료` 세 상태로 필터링해서 볼 수 있게 했다.
+- 이벤트 리스트 항목을 클릭하면 아래 상세 영역에서 적용 그룹, 기간, 보상 대상, 상품 수량, 선택 완료/잔여 수량을 확인할 수 있게 구조화했다.
+- 기존 수정 폼은 선택된 이벤트 상세 안에서 열리도록 유지했다.
+- Verification: `npm.cmd run typecheck` 통과, `npm.cmd run build` 통과. 기존 outputFileTracing / webpack cache 경고는 non-blocking.
