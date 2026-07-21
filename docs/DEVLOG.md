@@ -388,3 +388,11 @@ pm run build는 기존 EISDIR/EPERM 환경 이슈로 실패
 - 추천 상품 카탈로그는 모든 선생님 관리자 계정이 조회·찜·저장할 수 있고, 저장 결과는 기존대로 학원별 상품 보관함에만 보관된다.
 - 상태: `npm.cmd run typecheck`, `npm.cmd run build`, `git diff --check` 통과. 기존 outputFileTracing 및 webpack 캐시 경고만 출력됨.
 - 다음 할 일: 배포 환경에서 학생/선생님 오선택 안내와 판매자 전용 로그인 권한 검증을 확인한다.
+
+## 2026-07-21 (개발자 로그인 명칭 및 계정 고정)
+
+- 사용자 화면의 `개발자·판매자` 명칭을 `개발자`로 통일하고 전용 진입 경로를 `/developer/login`, 관리 경로를 `/developer/products`로 추가했다.
+- 개발자 로그인 아이디를 `happia1`로 고정해 비밀번호만 입력하도록 변경했다.
+- `happia1`의 내부 Auth 이메일은 `id-68617070696131@auth.stickerup.invalid`이며 개발자 허용 환경변수를 `DEVELOPER_USER_IDS`, `DEVELOPER_EMAILS`로 정리했다. 기존 SELLER 변수는 배포 호환을 위해 계속 인식한다.
+- 상태: `npm.cmd run typecheck`, `npm.cmd run build`, `git diff --check` 통과. 기존 outputFileTracing 및 webpack 캐시 경고만 출력됨.
+- 다음 할 일: Supabase Auth에 내부 이메일 계정을 생성하고 Vercel `DEVELOPER_EMAILS`를 설정한 뒤 개발자 로그인을 확인한다.

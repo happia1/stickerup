@@ -141,7 +141,7 @@ export function LoginForm() {
       </form>
       {!message?.startsWith("가입 정보") && <Link href="/signup" className="mt-4 block text-center text-caption text-text-secondary">아직 계정이 없나요? 회원가입</Link>}
       {message?.startsWith("가입 정보") && <Link href={resumeSignupHref} className="mt-4 block text-center text-caption text-brand-amber">회원가입 정보 이어서 입력하기</Link>}
-      <div className="mt-4 border-t border-border pt-4 text-center"><Link href="/seller/login" className="text-caption text-text-muted">개발자·판매자 전용 로그인</Link></div>
+      <div className="mt-4 border-t border-border pt-4 text-center"><Link href="/developer/login" className="text-caption text-text-muted">개발자 로그인</Link></div>
     </>
   );
 }
