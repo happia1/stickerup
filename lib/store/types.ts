@@ -2,7 +2,7 @@ import type {
   Tenant, Teacher, InviteLink, Student, ClassRoom, Enrollment,
   StickerLedgerEntry, HomeworkSubmission, PraiseRequest,
   RankingPeriodConfig, RewardCampaign, RewardItem, RewardClaim, Notice,
-  TierConfig, GradingMode, RankingUnit, Role,
+  TierConfig, GradingMode, RankingUnit, Role, TeacherPermissionKey,
 } from "@/lib/types";
 
 export interface AppState {
@@ -55,5 +55,6 @@ export type Action =
   | { type: "CLAIM_REWARD"; itemId: string; studentId: string; rank: number }
   | { type: "ADD_TEACHER"; name: string; email: string; invitedBy: string }
   | { type: "REMOVE_TEACHER"; teacherId: string }
-  | { type: "ADD_INVITE_LINK"; issuerTeacherId: string; token: string }
+  | { type: "SET_TEACHER_PERMISSION"; teacherId: string; permission: TeacherPermissionKey; enabled: boolean }
+  | { type: "ADD_INVITE_LINK"; issuerTeacherId: string; token: string; inviteeRole: "student" | "teacher" }
   | { type: "UPDATE_STUDENT_PROFILE"; studentId: string; name: string; age: number; profileImageUrl: string | null };

@@ -3,6 +3,9 @@
 // snake_case 필드명을 DB와 동일하게 유지한다.
 
 export type Role = "owner" | "assistant" | "student";
+export type TeacherPermissionKey = "notices" | "sticker_policy" | "classes" | "students" | "approvals" | "sticker_audit" | "ranking" | "rewards";
+export type TeacherPermissions = Record<TeacherPermissionKey, boolean>;
+export const DEFAULT_TEACHER_PERMISSIONS: TeacherPermissions = { notices: true, sticker_policy: true, classes: true, students: true, approvals: true, sticker_audit: false, ranking: true, rewards: false };
 
 export type RankingUnit = "day" | "week" | "month" | "quarter" | "custom";
 
@@ -21,6 +24,7 @@ export interface Teacher {
   email: string;
   invited_by: string | null;
   created_at: string;
+  permissions?: TeacherPermissions;
 }
 
 export interface InviteLink {
@@ -31,6 +35,7 @@ export interface InviteLink {
   status: "active" | "expired" | "revoked";
   expires_at: string | null;
   created_at: string;
+  invitee_role?: "student" | "teacher";
 }
 
 export interface Student {

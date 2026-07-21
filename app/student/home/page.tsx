@@ -10,6 +10,7 @@ import { RewardBlock } from "@/components/student/RewardBlock";
 import { SupabaseModeNotice } from "@/components/supabase/SupabaseModeNotice";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { StudentHomeData } from "@/lib/data/student-home.types";
+import { TeacherConnectionCard } from "@/components/student/TeacherConnectionCard";
 
 export default function StudentHomePage() {
   const state = useAppState();
@@ -74,6 +75,7 @@ export default function StudentHomePage() {
   return (
     <div>
       <SupabaseModeNotice />
+      {!me.invited_by_teacher_id && <TeacherConnectionCard />}
       {connectionMessage && <p className="mb-3 text-caption text-text-muted">{connectionMessage}</p>}
       <FlapBanner notices={remoteData?.notices} />
       <div className="bg-surface-card rounded-card p-4 mb-3.5 flex items-center gap-3">

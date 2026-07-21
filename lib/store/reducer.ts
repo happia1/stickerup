@@ -1,5 +1,5 @@
 import type { AppState, Action } from "./types";
-import type { ClassRoom, Enrollment, RewardCampaign, RewardItem } from "@/lib/types";
+import { DEFAULT_TEACHER_PERMISSIONS, type ClassRoom, type Enrollment, type RewardCampaign, type RewardItem } from "@/lib/types";
 
 function uid(prefix: string): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -377,6 +377,10 @@ export function appReducer(state: AppState, action: Action): AppState {
       return { ...state, teachers: state.teachers.filter((t) => t.id !== action.teacherId) };
     }
 
+    case "SET_TEACHER_PERMISSION": {
+      return { ...state, teachers: state.teachers.map((t) => t.id === action.teacherId ? { ...t, permissions: { ...DEFAULT_TEACHER_PERMISSIONS, ...t.permissions, [action.permission]: action.enabled } } : t) };
+    }
+
     case "ADD_INVITE_LINK": {
       return {
         ...state,
@@ -390,6 +394,7 @@ export function appReducer(state: AppState, action: Action): AppState {
             status: "active",
             expires_at: null,
             created_at: nowISO(),
+            invitee_role: action.inviteeRole,
           },
         ],
       };
