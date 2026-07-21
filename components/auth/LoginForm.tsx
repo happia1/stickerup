@@ -8,10 +8,12 @@ import { getSupabaseBrowserConfigError } from "@/lib/supabase/config";
 import { getAuthEmailForIdentifier } from "@/lib/auth/identifier";
 
 type ProfileRole = "student" | "owner" | "assistant";
+type LoginAccountType = "student" | "teacher";
 
 export function LoginForm() {
   const router = useRouter();
   const [identifier, setIdentifier] = useState("");
+  const [accountType, setAccountType] = useState<LoginAccountType | null>(null);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberLogin, setRememberLogin] = useState(true);
@@ -53,6 +55,10 @@ export function LoginForm() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!accountType) {
+      setMessage("학생 또는 선생님을 먼저 선택해 주세요.");
+      return;
+    }
     if (password.length < 6) {
       setMessage("비밀번호는 최소 6자 이상 입력해 주세요.");
       return;
@@ -87,6 +93,13 @@ export function LoginForm() {
         return;
       }
 
+      const actualType: LoginAccountType = profile.role === "student" ? "student" : "teacher";
+      if (actualType !== accountType) {
+        await supabase.auth.signOut();
+        setMessage(accountType === "student" ? "선생님 계정입니다. 선생님을 선택해 주세요." : "학생 계정입니다. 학생을 선택해 주세요.");
+        return;
+      }
+
       router.push(profile.role === "student" ? "/student/home" : "/admin/dashboard");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "로그인을 완료하지 못했습니다.");
@@ -99,8 +112,15 @@ export function LoginForm() {
     <>
       {configError && <p className="mt-4 text-caption text-text-secondary">Supabase 환경변수를 설정한 뒤 로그인해 주세요.</p>}
       <form onSubmit={handleSubmit} className="mt-5 space-y-3">
+        <fieldset>
+          <legend className="mb-2 text-caption text-text-secondary">로그인 유형</legend>
+          <div className="grid grid-cols-2 gap-2">
+            <button type="button" onClick={()=>{setAccountType("student");setMessage(null);}} className={`rounded-xl border px-3 py-3 text-body font-bold ${accountType==="student"?"border-brand-amber bg-brand-amber text-surface-page":"border-border bg-surface-raised text-text-secondary"}`}>학생</button>
+            <button type="button" onClick={()=>{setAccountType("teacher");setMessage(null);}} className={`rounded-xl border px-3 py-3 text-body font-bold ${accountType==="teacher"?"border-brand-amber bg-brand-amber text-surface-page":"border-border bg-surface-raised text-text-secondary"}`}>선생님</button>
+          </div>
+        </fieldset>
         <label className="block text-caption text-text-secondary">한글 아이디 또는 이메일
-          <input required type="text" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="입력해 주세요" className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none" />
+          <input required type="text" value={identifier} onChange={(event) => setIdentifier(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none" />
         </label>
         <label className="block text-caption text-text-secondary">비밀번호
           <div className="relative mt-1">
@@ -121,6 +141,7 @@ export function LoginForm() {
       </form>
       {!message?.startsWith("가입 정보") && <Link href="/signup" className="mt-4 block text-center text-caption text-text-secondary">아직 계정이 없나요? 회원가입</Link>}
       {message?.startsWith("가입 정보") && <Link href={resumeSignupHref} className="mt-4 block text-center text-caption text-brand-amber">회원가입 정보 이어서 입력하기</Link>}
+      <div className="mt-4 border-t border-border pt-4 text-center"><Link href="/seller/login" className="text-caption text-text-muted">개발자·판매자 전용 로그인</Link></div>
     </>
   );
 }

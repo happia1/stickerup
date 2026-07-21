@@ -8,7 +8,6 @@ async function context(request: Request) {
   const db = createSupabaseAdminClient();
   const teacher = await db.from("teachers").select("id, tenant_id, role, permissions").eq("id", auth.user.id).maybeSingle();
   if (!teacher.data) return { error: NextResponse.json({ error: "선생님 계정이 필요합니다." }, { status: 403 }) };
-  if (teacher.data.role !== "owner" && teacher.data.permissions?.rewards !== true) return { error: NextResponse.json({ error: "상품 관리 권한이 필요합니다." }, { status: 403 }) };
   return { db, teacher: teacher.data };
 }
 

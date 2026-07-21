@@ -378,3 +378,13 @@ pm run build는 기존 EISDIR/EPERM 환경 이슈로 실패
 - `marketplace_products`, `marketplace_product_favorites`와 원본 상품 연결 컬럼을 만드는 migration 10을 추가했다.
 - 상태: `npm.cmd run typecheck`, `npm.cmd run build`, `git diff --check` 통과. 기존 webpack 캐시 경고와 신규 화면의 비차단 Hook 경고만 출력됨.
 - 다음 할 일: Supabase에 migration 10을 적용하고 Vercel에 판매자 계정 환경변수를 등록한 뒤 판매자 등록 → 선생님 찜/저장 → 이벤트 경품 선택 흐름을 확인한다.
+
+## 2026-07-21 (계정 유형별 로그인 분리)
+
+- 일반 로그인 첫 단계에 학생/선생님 선택 버튼을 추가하고 선택 유형과 실제 계정 역할이 다르면 로그아웃 후 올바른 유형을 안내하도록 했다.
+- 아이디 입력란의 `입력해 주세요` placeholder를 제거했다.
+- 일반 로그인 하단에 `개발자·판매자 전용 로그인` 링크를 추가하고 `/seller/login` 전용 인증 화면을 만들었다.
+- 판매자 전용 로그인은 인증 직후 서버의 판매자 허용 목록을 검사하며 권한이 없는 계정은 세션을 종료하고 진입을 차단한다.
+- 추천 상품 카탈로그는 모든 선생님 관리자 계정이 조회·찜·저장할 수 있고, 저장 결과는 기존대로 학원별 상품 보관함에만 보관된다.
+- 상태: `npm.cmd run typecheck`, `npm.cmd run build`, `git diff --check` 통과. 기존 outputFileTracing 및 webpack 캐시 경고만 출력됨.
+- 다음 할 일: 배포 환경에서 학생/선생님 오선택 안내와 판매자 전용 로그인 권한 검증을 확인한다.
