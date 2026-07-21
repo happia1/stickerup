@@ -97,3 +97,9 @@
 ## [2026-07-21] End-of-day onboarding database handoff
 
 - The repository-side signup error mapping and trigger repair migration are prepared. Production signup still requires the Supabase project to run `20260719_05_service_role_permissions.sql` and then `20260719_06_repair_onboarding_triggers.sql` when those migrations have not yet been applied.
+
+## [2026-07-21] 배포 초대 링크 500 오류
+
+- 증상: `/join/student-f78657dc436a`가 Vercel에서 HTTP 500을 반환하고, 대응하는 `/api/invites/...`는 404 invalid/expired를 반환했다.
+- 원인: 조직 관리의 초대 링크 발급이 브라우저 상태에만 추가되어 Supabase `invite_links`에 저장되지 않았다. 서버 리디렉션 진입 페이지도 배포 환경에서 500을 반환했다.
+- 조치: 인증된 `/api/admin/organization`에서 초대 링크를 조회·발급해 Supabase에 저장하도록 변경하고, `/join` 진입은 클라이언트 전환 방식으로 바꿨다. 기존에 임시 상태로 발급한 링크는 새 배포 후 재발급해야 한다.

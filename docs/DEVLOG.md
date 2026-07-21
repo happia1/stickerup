@@ -235,6 +235,12 @@ pm run build는 기존 EISDIR/EPERM 환경 이슈로 실패
 - 상태: `npm.cmd run typecheck`, `npm.cmd run build` 통과. 기존 Windows webpack cache 경고만 남아 있다.
 - 다음 할 일: Supabase SQL Editor에서 `20260721_07_teacher_permissions_and_connections.sql`을 적용하고 실제 학생/선생님 계정으로 연결 승인 흐름을 확인한다.
 
+## 2026-07-21 (persist production invite links)
+
+- 한 일: 배포된 학생 초대 링크의 HTTP 500과 초대 API 404를 재현했다. 조직 관리 화면이 임시 브라우저 상태 대신 인증된 서버 API를 통해 Supabase의 선생님 및 초대 링크를 불러오고 새 링크를 실제 저장하도록 수정했다. `/join`과 `/join/teacher`의 배포 리디렉션 500을 피하도록 진입 방식을 보강했다.
+- 상태: 타입 검사 통과. 기존 `student-f78657dc436a` 토큰은 데이터베이스에 존재하지 않아 새 배포 후 링크를 다시 발급해야 한다.
+- 다음 할 일: 새 배포 후 조직 관리에서 학생 초대 링크를 재발급하고 해당 URL 및 `/api/invites/{token}` 응답을 확인한다.
+
 
 ## 2026-07-21 (auto-login and logout controls)
 
