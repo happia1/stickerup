@@ -297,20 +297,28 @@ export function appReducer(state: AppState, action: Action): AppState {
         status: "active",
         created_at: nowISO(),
       };
-      const item: RewardItem = {
-        id: uid("item"),
-        tenant_id: state.tenant.id,
-        campaign_id: campaign.id,
-        title: action.itemTitle,
-        image_url: action.itemImageUrl,
-        link_url: null,
-        qty: action.itemQty,
-      };
+      const items: RewardItem[] = action.prizes.flatMap((prize) => {
+        const product = state.productCatalog.find((candidate) => candidate.id === prize.productId);
+        return product ? [{ id: uid("item"), tenant_id: state.tenant.id, campaign_id: campaign.id, title: product.title, image_url: product.image_url, link_url: product.purchase_url, qty: prize.qty, product_id: product.id, rank_order: prize.rank }] : [];
+      });
       return {
         ...state,
         rewardCampaigns: [...state.rewardCampaigns, campaign],
-        rewardItems: [...state.rewardItems, item],
+        rewardItems: [...state.rewardItems, ...items],
       };
+    }
+
+    case "ADD_CATALOG_PRODUCT": {
+      const now = nowISO();
+      return { ...state, productCatalog: [...state.productCatalog, { id: uid("product"), tenant_id: state.tenant.id, title: action.title, image_url: action.imageUrl, purchase_url: action.purchaseUrl, description: action.description, created_at: now, updated_at: now }] };
+    }
+
+    case "UPDATE_CATALOG_PRODUCT": {
+      return { ...state, productCatalog: state.productCatalog.map((product) => product.id === action.productId ? { ...product, title: action.title, image_url: action.imageUrl, purchase_url: action.purchaseUrl, description: action.description, updated_at: nowISO() } : product) };
+    }
+
+    case "DELETE_CATALOG_PRODUCT": {
+      return { ...state, productCatalog: state.productCatalog.filter((product) => product.id !== action.productId) };
     }
 
     case "UPDATE_REWARD_CAMPAIGN": {

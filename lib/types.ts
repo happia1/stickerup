@@ -175,6 +175,19 @@ export interface RewardItem {
   image_url: string | null;
   link_url: string | null;
   qty: number;
+  product_id?: string | null;
+  rank_order?: number | null;
+}
+
+export interface ProductCatalogItem {
+  id: string;
+  tenant_id: string;
+  title: string;
+  image_url: string | null;
+  purchase_url: string | null;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface RewardClaim {

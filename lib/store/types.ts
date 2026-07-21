@@ -1,7 +1,7 @@
 import type {
   Tenant, Teacher, InviteLink, Student, ClassRoom, Enrollment,
   StickerLedgerEntry, HomeworkSubmission, PraiseRequest,
-  RankingPeriodConfig, RewardCampaign, RewardItem, RewardClaim, Notice,
+  RankingPeriodConfig, RewardCampaign, RewardItem, RewardClaim, ProductCatalogItem, Notice,
   TierConfig, GradingMode, RankingUnit, Role, TeacherPermissionKey,
 } from "@/lib/types";
 
@@ -21,6 +21,7 @@ export interface AppState {
   rewardCampaigns: RewardCampaign[];
   rewardItems: RewardItem[];
   rewardClaims: RewardClaim[];
+  productCatalog: ProductCatalogItem[];
   notices: Notice[];
   attendancePolicy: TierConfig[];
   homeworkPolicy: TierConfig[];
@@ -49,9 +50,12 @@ export type Action =
   | { type: "SET_NOTICE_PIN"; noticeId: string; pinned: boolean }
   | { type: "DELETE_NOTICE"; noticeId: string }
   | { type: "SET_RANKING_UNIT"; classId: string | null; unit: RankingUnit; customDays?: number | null }
-  | { type: "ADD_REWARD_CAMPAIGN"; classId: string | null; periodStart: string; periodEnd: string; distributionType: "ratio" | "count"; distributionValue: number; itemTitle: string; itemQty: number; itemImageUrl: string | null }
+  | { type: "ADD_REWARD_CAMPAIGN"; classId: string | null; periodStart: string; periodEnd: string; distributionType: "ratio" | "count"; distributionValue: number; prizes: Array<{ rank: number; productId: string; qty: number }> }
   | { type: "UPDATE_REWARD_CAMPAIGN"; campaignId: string; distributionType: "ratio" | "count"; distributionValue: number; periodStart: string; periodEnd: string }
   | { type: "UPDATE_REWARD_ITEM"; itemId: string; title: string; qty: number; imageUrl: string | null }
+  | { type: "ADD_CATALOG_PRODUCT"; title: string; imageUrl: string | null; purchaseUrl: string | null; description: string | null }
+  | { type: "UPDATE_CATALOG_PRODUCT"; productId: string; title: string; imageUrl: string | null; purchaseUrl: string | null; description: string | null }
+  | { type: "DELETE_CATALOG_PRODUCT"; productId: string }
   | { type: "CLAIM_REWARD"; itemId: string; studentId: string; rank: number }
   | { type: "ADD_TEACHER"; name: string; email: string; invitedBy: string }
   | { type: "REMOVE_TEACHER"; teacherId: string }

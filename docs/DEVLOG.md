@@ -313,3 +313,19 @@ pm run build는 기존 EISDIR/EPERM 환경 이슈로 실패
 - 삭제 중 중복 요청을 막고, 성공 시 목록에서 즉시 제거하며 성공/실패 토스트를 표시하도록 처리했다.
 - 상태: `npm.cmd run typecheck`, `npm.cmd run build` 통과. 기존 `useEffect` 의존성 경고와 webpack 캐시 경고만 출력됨.
 - 다음 할 일: 실제 Supabase 계정에서 학생/선생님 초대 링크 발급 후 삭제 동작과 권한별 노출을 확인한다.
+
+## 2026-07-21 (학생-선생님 연결 링크 500 수정)
+
+- 학생 연결 링크를 배포 환경에서 안정적으로 열 수 있는 `/connect/student?token=...` 정적 화면으로 전환했다.
+- 신규 연결 링크 생성 주소를 변경하고, 이미 발급된 `/connect/student/{token}` 링크도 새 화면으로 리디렉션되도록 호환성을 유지했다.
+- 연결 요청 조회, 선생님 로그인 확인, 승인 성공/실패 메시지를 새 화면에 연결했다.
+- 상태: `npm.cmd run typecheck`, `npm.cmd run build` 통과. 기존 outputFileTracing 및 webpack 캐시 경고만 출력됨.
+- 다음 할 일: 배포 후 기존 링크와 신규 링크 모두에서 연결 요청 조회 및 선생님 승인 완료를 확인한다.
+
+## 2026-07-21 (학생 연결 흐름 수정 범위 재확인)
+
+- 초대 링크 없이 가입해 `invited_by_teacher_id`가 없는 학생에게 표시되는 `TeacherConnectionCard`가 이번 수정 대상임을 코드 경로로 재확인했다.
+- 카드에서 발급하는 링크는 `/connect/student?token=...` 형식이며, 기존 `/connect/student/{token}`도 새 화면으로 이동한다.
+- 참고: 링크 발급 API 자체는 기존 `POST /api/student/connection-link`를 그대로 사용하므로, 버튼 클릭 시점의 오류와 발급된 링크를 여는 시점의 오류는 구분해서 확인해야 한다.
+- 상태: 코드 경로 확인 완료. 추가 변경 없음.
+- 실제 배포 점검: 기존 동적 링크 500, 연결 API 200, 새 정적 쿼리 화면 404. 로컬 수정 사항이 아직 Vercel 배포본에 반영되지 않았음을 확인했다.

@@ -28,6 +28,7 @@ function buildInitialState(): AppState {
     rewardCampaigns: seedRewardCampaigns,
     rewardItems: seedRewardItems,
     rewardClaims: seedRewardClaims,
+    productCatalog: [],
     notices: seedNotices,
     attendancePolicy: DEFAULT_ATTENDANCE_TIERS.map((t) => ({ ...t })),
     homeworkPolicy: DEFAULT_HOMEWORK_TIERS.map((t) => ({ ...t })),
