@@ -159,3 +159,8 @@
 - Symptom: `next build` failed because `.next/types/app/admin/approvals/page.ts` was referenced but missing.
 - Cause: route/type generation cache가 이전 빌드 상태를 참조했다.
 - Resolution: generated cache인 `.next/types`만 삭제하고 `npm.cmd run build`를 재실행해 정상 빌드 확인.
+
+## [2026-07-21] Admin profile/settings entry missing
+
+- Symptom: 관리자 앱 상단바에 알림/설정 진입점이 없고, 관리자가 자신의 프로필을 보거나 로그아웃할 수 있는 화면이 없었다.
+- Resolution: 관리자 상단바에 SVG 기반 알림/설정 아이콘을 추가하고 `/admin/settings`에서 프로필 이름/사진과 로그아웃을 관리하도록 구현했다.

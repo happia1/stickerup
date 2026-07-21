@@ -265,3 +265,11 @@ pm run build는 기존 EISDIR/EPERM 환경 이슈로 실패
 - 이벤트 리스트 항목을 클릭하면 아래 상세 영역에서 적용 그룹, 기간, 보상 대상, 상품 수량, 선택 완료/잔여 수량을 확인할 수 있게 구조화했다.
 - 기존 수정 폼은 선택된 이벤트 상세 안에서 열리도록 유지했다.
 - Verification: `npm.cmd run typecheck` 통과, `npm.cmd run build` 통과. 기존 outputFileTracing / webpack cache 경고는 non-blocking.
+
+## 2026-07-21 (admin profile settings)
+
+- 관리자 상단바에 알림 아이콘과 설정 아이콘을 추가했다.
+- 관리자 알림 바텀시트에서 숙제/칭찬/반 승인 대기 건수를 확인하고 관련 탭으로 이동할 수 있게 했다.
+- `/admin/settings` 화면을 추가해 관리자 자신의 프로필, 이름, 사진 추가/제거, 로그아웃을 할 수 있게 했다.
+- 관리자 프로필 이미지/이름을 저장할 수 있도록 teacher 타입과 mock store action을 추가했다.
+- Verification: `npm.cmd run typecheck` 통과, `npm.cmd run build` 통과. 기존 outputFileTracing / webpack cache 경고는 non-blocking.
