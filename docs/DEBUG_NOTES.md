@@ -148,3 +148,14 @@
 - Symptom: the first production build after edits failed reading `app/admin/org/page.tsx` even though the file existed.
 - Cause: transient Windows/Next build file-read race.
 - Resolution: verified the file existed and reran `npm.cmd run build`; the second build completed successfully.
+
+## [2026-07-21] Admin dashboard ranking full-list request
+
+- Symptom: 관리자 대시보드 랭킹이 전체 리스트/그룹별 노출 기간 확인 흐름을 제공하지 않았다.
+- Resolution: 대시보드 랭킹을 scope 기반으로 재구성해 TOP 5와 전체 보기 바텀시트를 분리하고, 전체 기간/전체 노출 기간/그룹별 노출 기간을 선택할 수 있게 했다.
+
+## [2026-07-21] Stale Next generated type file during build
+
+- Symptom: `next build` failed because `.next/types/app/admin/approvals/page.ts` was referenced but missing.
+- Cause: route/type generation cache가 이전 빌드 상태를 참조했다.
+- Resolution: generated cache인 `.next/types`만 삭제하고 `npm.cmd run build`를 재실행해 정상 빌드 확인.
