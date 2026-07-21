@@ -1,4 +1,5 @@
-"use client";
+﻿"use client";
+
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Pill } from "@/components/ui/Pill";
@@ -6,20 +7,162 @@ import { useToast } from "@/lib/toast/provider";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { DEFAULT_TEACHER_PERMISSIONS, type InviteLink, type Teacher, type TeacherPermissionKey } from "@/lib/types";
 
-const PERMISSIONS: Array<[TeacherPermissionKey, string]> = [["notices","공지사항"],["sticker_policy","스티커 정책"],["classes","반 관리"],["students","학생 관리"],["approvals","승인"],["sticker_audit","스티커 로그 감사"],["ranking","랭킹 노출"],["rewards","상품 관리"]];
-const CopyIcon = () => <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-2" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"/></svg>;
+const PERMISSIONS: Array<[TeacherPermissionKey, string]> = [
+  ["notices", "공지사항"],
+  ["sticker_policy", "스티커 정책"],
+  ["classes", "반 관리"],
+  ["students", "학생 관리"],
+  ["approvals", "승인"],
+  ["sticker_audit", "스티커 로그 감사"],
+  ["ranking", "랭킹 노출"],
+  ["rewards", "이벤트/상품 관리"],
+];
+
+function CopyIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-2" aria-hidden="true">
+      <rect x="9" y="9" width="11" height="11" rx="2" />
+      <path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3" />
+    </svg>
+  );
+}
 
 export default function AdminOrgPage() {
-  const toast = useToast(); const [teachers,setTeachers]=useState<Teacher[]>([]); const [links,setLinks]=useState<InviteLink[]>([]); const [currentId,setCurrentId]=useState(""); const [opened,setOpened]=useState<string|null>(null); const [loading,setLoading]=useState(true);
-  const me = useMemo(() => teachers.find(t => t.id === currentId), [teachers,currentId]); const isOwner = me?.role === "owner"; const origin = typeof window === "undefined" ? "" : window.location.origin;
-  const token = async () => { const client=getSupabaseBrowserClient(); const {data}=await client!.auth.getSession(); return data.session?.access_token; };
-  const load = async () => { try { const access=await token(); if(!access) throw new Error("로그인이 필요합니다."); const response=await fetch("/api/admin/organization",{headers:{Authorization:`Bearer ${access}`}}); const payload=await response.json(); if(!response.ok) throw new Error(payload.error); setTeachers(payload.teachers); setLinks(payload.inviteLinks); setCurrentId(payload.currentTeacherId); } catch(error) { toast(error instanceof Error?error.message:"조직 정보를 불러오지 못했습니다."); } finally { setLoading(false); } };
-  useEffect(() => { void load(); }, []);
-  const issue = async (inviteeRole:"student"|"teacher") => { try { const access=await token(); const response=await fetch("/api/admin/organization",{method:"POST",headers:{Authorization:`Bearer ${access}`,"Content-Type":"application/json"},body:JSON.stringify({inviteeRole})}); const payload=await response.json(); if(!response.ok) throw new Error(payload.error); setLinks(current=>[payload.inviteLink,...current]); toast(`${inviteeRole==="teacher"?"선생님":"학생"} 초대 링크를 발급했어요.`); } catch(error) { toast(error instanceof Error?error.message:"초대 링크를 발급하지 못했습니다."); } };
-  const copy=async(url:string)=>{await navigator.clipboard.writeText(url);toast("초대 링크를 복사했어요.");};
+  const toast = useToast();
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [links, setLinks] = useState<InviteLink[]>([]);
+  const [currentId, setCurrentId] = useState("");
+  const [opened, setOpened] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [issuingRole, setIssuingRole] = useState<"student" | "teacher" | null>(null);
 
-  return <div><h2 className="mb-1 text-title">조직 관리</h2><p className="mb-5 text-caption text-text-secondary">선생님을 초대하고 권한을 관리하거나 학생 초대 링크를 발급하세요.</p>
-    <section className="mb-7"><div className="mb-2 flex items-center justify-between gap-3"><h3 className="text-subtitle">선생님 목록</h3>{isOwner&&<Button variant="secondary" onClick={()=>issue("teacher")}>+ 선생님 초대 링크</Button>}</div><div className="overflow-hidden rounded-xl border border-border">{loading&&<p className="p-5 text-caption text-text-secondary">불러오는 중...</p>}{!loading&&!teachers.length&&<p className="p-5 text-caption text-text-secondary">등록된 선생님이 없습니다.</p>}{teachers.map(teacher=><div key={teacher.id} className="border-b border-border last:border-0"><button className="flex w-full items-center gap-3 p-3 text-left" onClick={()=>setOpened(opened===teacher.id?null:teacher.id)}><span className="min-w-0 flex-1"><b className="block">{teacher.name} <span className="text-text-muted">{opened===teacher.id?"⌃":"⌄"}</span></b><span className="block truncate text-caption text-text-secondary">{teacher.email}</span></span><Pill tone={teacher.role==="owner"?"wait":"neutral"}>{teacher.role==="owner"?"원장":"선생님"}</Pill></button>{opened===teacher.id&&<div className="grid gap-2 border-t border-border bg-surface-card p-3 sm:grid-cols-2 lg:grid-cols-4">{PERMISSIONS.map(([key,label])=><label key={key} className="flex items-center justify-between rounded-lg bg-surface-raised px-3 py-2 text-caption"><span>{label}</span><input type="checkbox" checked={teacher.role==="owner"||(teacher.permissions??DEFAULT_TEACHER_PERMISSIONS)[key]} disabled className="h-5 w-9 accent-brand-amber"/></label>)}</div>}</div>)}</div></section>
-    <section><div className="mb-2 flex items-center justify-between"><h3 className="text-subtitle">초대 링크</h3><Button variant="secondary" onClick={()=>issue("student")}>+ 학생 초대 링크</Button></div><div className="overflow-hidden rounded-xl border border-border">{!loading&&!links.length&&<p className="p-5 text-caption text-text-secondary">아직 발급된 초대 링크가 없습니다.</p>}{links.map(link=>{const role=link.invitee_role??"student";const url=`${origin}${role==="teacher"?"/join/teacher/":"/join/"}${link.token}`;return <div key={link.id} className="flex flex-wrap items-center gap-3 border-b border-border p-3 last:border-0"><Pill tone={role==="teacher"?"wait":"neutral"}>{role==="teacher"?"선생님":"학생"}</Pill><span className="min-w-0 flex-1 break-all font-mono text-caption">{url}</span><button className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-2 text-caption" onClick={()=>copy(url)}><CopyIcon/> 복사</button><Pill tone={link.status==="active"?"ok":"neutral"}>{link.status==="active"?"활성":link.status}</Pill></div>})}</div></section>
-  </div>;
+  const me = useMemo(() => teachers.find((teacher) => teacher.id === currentId), [teachers, currentId]);
+  const isOwner = me?.role === "owner";
+  const origin = typeof window === "undefined" ? "" : window.location.origin;
+
+  async function getAccessToken() {
+    const client = getSupabaseBrowserClient();
+    const { data } = await client!.auth.getSession();
+    return data.session?.access_token;
+  }
+
+  async function load() {
+    try {
+      const accessToken = await getAccessToken();
+      if (!accessToken) throw new Error("로그인이 필요합니다.");
+      const response = await fetch("/api/admin/organization", { headers: { Authorization: `Bearer ${accessToken}` } });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error);
+      setTeachers(payload.teachers ?? []);
+      setLinks(payload.inviteLinks ?? []);
+      setCurrentId(payload.currentTeacherId ?? "");
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "조직 정보를 불러오지 못했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // This page intentionally loads once for the authenticated session.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    void load();
+  }, []);
+
+  async function issueInviteLink(inviteeRole: "student" | "teacher") {
+    try {
+      setIssuingRole(inviteeRole);
+      const accessToken = await getAccessToken();
+      if (!accessToken) throw new Error("로그인이 필요합니다.");
+      const response = await fetch("/api/admin/organization", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ inviteeRole }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error);
+      setLinks((current) => [payload.inviteLink, ...current]);
+      toast(`${inviteeRole === "teacher" ? "선생님" : "학생"} 초대 링크를 발급했어요.`);
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "초대 링크를 발급하지 못했습니다.");
+    } finally {
+      setIssuingRole(null);
+    }
+  }
+
+  async function copy(url: string) {
+    await navigator.clipboard.writeText(url);
+    toast("초대 링크를 복사했어요.");
+  }
+
+  return (
+    <div>
+      <h2 className="mb-1 text-title">조직 관리</h2>
+      <p className="mb-5 text-caption text-text-secondary">선생님을 초대하고 권한을 관리하거나 학생 초대 링크를 발급하세요.</p>
+
+      <section className="mb-7">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <h3 className="text-subtitle">선생님 목록</h3>
+          {isOwner && (
+            <Button variant="secondary" onClick={() => issueInviteLink("teacher")} disabled={issuingRole === "teacher"}>
+              + 선생님 초대 링크
+            </Button>
+          )}
+        </div>
+        {!isOwner && <p className="mb-2 text-caption text-text-muted">선생님 초대 링크는 관리자 계정만 발급할 수 있어요.</p>}
+
+        <div className="overflow-hidden rounded-xl border border-border">
+          {loading && <p className="p-5 text-caption text-text-secondary">불러오는 중...</p>}
+          {!loading && !teachers.length && <p className="p-5 text-caption text-text-secondary">등록된 선생님이 없습니다.</p>}
+          {teachers.map((teacher) => (
+            <div key={teacher.id} className="border-b border-border last:border-0">
+              <button className="flex w-full items-center gap-3 p-3 text-left" onClick={() => setOpened(opened === teacher.id ? null : teacher.id)}>
+                <span className="min-w-0 flex-1">
+                  <b className="block">{teacher.name} <span className="text-text-muted">{opened === teacher.id ? "접기" : "펼치기"}</span></b>
+                  <span className="block truncate text-caption text-text-secondary">{teacher.email}</span>
+                </span>
+                <Pill tone={teacher.role === "owner" ? "wait" : "neutral"}>{teacher.role === "owner" ? "관리자" : "선생님"}</Pill>
+              </button>
+              {opened === teacher.id && (
+                <div className="grid gap-2 border-t border-border bg-surface-card p-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {PERMISSIONS.map(([key, label]) => (
+                    <label key={key} className="flex items-center justify-between rounded-lg bg-surface-raised px-3 py-2 text-caption">
+                      <span>{label}</span>
+                      <input type="checkbox" checked={teacher.role === "owner" || (teacher.permissions ?? DEFAULT_TEACHER_PERMISSIONS)[key]} disabled className="h-5 w-9 accent-brand-amber" />
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <h3 className="text-subtitle">초대 링크</h3>
+          <Button variant="secondary" onClick={() => issueInviteLink("student")} disabled={issuingRole === "student"}>
+            + 학생 초대 링크
+          </Button>
+        </div>
+        <div className="overflow-hidden rounded-xl border border-border">
+          {!loading && !links.length && <p className="p-5 text-caption text-text-secondary">아직 발급된 초대 링크가 없습니다.</p>}
+          {links.map((link) => {
+            const role = link.invitee_role ?? "student";
+            const url = `${origin}${role === "teacher" ? "/join/teacher/" : "/join/"}${link.token}`;
+            return (
+              <div key={link.id} className="flex flex-wrap items-center gap-3 border-b border-border p-3 last:border-0">
+                <Pill tone={role === "teacher" ? "wait" : "neutral"}>{role === "teacher" ? "선생님" : "학생"}</Pill>
+                <span className="min-w-0 flex-1 break-all font-mono text-caption">{url}</span>
+                <button className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-2 text-caption" onClick={() => copy(url)}>
+                  <CopyIcon /> 복사
+                </button>
+                <Pill tone={link.status === "active" ? "ok" : "neutral"}>{link.status === "active" ? "활성" : link.status}</Pill>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    </div>
+  );
 }
