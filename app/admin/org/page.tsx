@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Pill } from "@/components/ui/Pill";
 import { useToast } from "@/lib/toast/provider";
@@ -35,6 +35,20 @@ function CloseIcon() {
   );
 }
 
+function ChevronIcon({ opened }: { opened: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" className={`h-4 w-4 fill-none stroke-current stroke-2 transition-transform ${opened ? "rotate-180" : ""}`} aria-hidden="true">
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
+async function getAccessToken() {
+  const client = getSupabaseBrowserClient();
+  const { data } = await client!.auth.getSession();
+  return data.session?.access_token;
+}
+
 export default function AdminOrgPage() {
   const toast = useToast();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -44,18 +58,13 @@ export default function AdminOrgPage() {
   const [loading, setLoading] = useState(true);
   const [issuingRole, setIssuingRole] = useState<"student" | "teacher" | null>(null);
   const [deletingLinkId, setDeletingLinkId] = useState<string | null>(null);
+  const [savingPermission, setSavingPermission] = useState<string | null>(null);
 
   const me = useMemo(() => teachers.find((teacher) => teacher.id === currentId), [teachers, currentId]);
   const isOwner = me?.role === "owner";
   const origin = typeof window === "undefined" ? "" : window.location.origin;
 
-  async function getAccessToken() {
-    const client = getSupabaseBrowserClient();
-    const { data } = await client!.auth.getSession();
-    return data.session?.access_token;
-  }
-
-  async function load() {
+  const load = useCallback(async () => {
     try {
       const accessToken = await getAccessToken();
       if (!accessToken) throw new Error("로그인이 필요합니다.");
@@ -70,13 +79,11 @@ export default function AdminOrgPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [toast]);
 
-  // This page intentionally loads once for the authenticated session.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     void load();
-  }, []);
+  }, [load]);
 
   async function issueInviteLink(inviteeRole: "student" | "teacher") {
     try {
@@ -102,6 +109,28 @@ export default function AdminOrgPage() {
   async function copy(url: string) {
     await navigator.clipboard.writeText(url);
     toast("초대 링크를 복사했어요.");
+  }
+
+  async function updatePermission(teacherId: string, permission: TeacherPermissionKey, enabled: boolean) {
+    const savingKey = `${teacherId}:${permission}`;
+    try {
+      setSavingPermission(savingKey);
+      const accessToken = await getAccessToken();
+      if (!accessToken) throw new Error("로그인이 필요합니다.");
+      const response = await fetch("/api/admin/organization", {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ teacherId, permission, enabled }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error);
+      setTeachers((current) => current.map((teacher) => teacher.id === teacherId ? { ...teacher, permissions: payload.permissions } : teacher));
+      toast("선생님 권한을 변경했어요.");
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "권한을 변경하지 못했습니다.");
+    } finally {
+      setSavingPermission(null);
+    }
   }
 
   async function deleteInviteLink(link: InviteLink) {
@@ -148,17 +177,26 @@ export default function AdminOrgPage() {
             <div key={teacher.id} className="border-b border-border last:border-0">
               <button className="flex w-full items-center gap-3 p-3 text-left" onClick={() => setOpened(opened === teacher.id ? null : teacher.id)}>
                 <span className="min-w-0 flex-1">
-                  <b className="block">{teacher.name} <span className="text-text-muted">{opened === teacher.id ? "접기" : "펼치기"}</span></b>
+                  <b className="block">{teacher.name}</b>
                   <span className="block truncate text-caption text-text-secondary">{teacher.email}</span>
                 </span>
                 <Pill tone={teacher.role === "owner" ? "wait" : "neutral"}>{teacher.role === "owner" ? "관리자" : "선생님"}</Pill>
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full text-[11px] text-text-muted" aria-label={opened === teacher.id ? "접기" : "펼치기"}>
+                  <ChevronIcon opened={opened === teacher.id} />
+                </span>
               </button>
               {opened === teacher.id && (
                 <div className="grid gap-2 border-t border-border bg-surface-card p-3 sm:grid-cols-2 lg:grid-cols-4">
                   {PERMISSIONS.map(([key, label]) => (
                     <label key={key} className="flex items-center justify-between rounded-lg bg-surface-raised px-3 py-2 text-caption">
                       <span>{label}</span>
-                      <input type="checkbox" checked={teacher.role === "owner" || (teacher.permissions ?? DEFAULT_TEACHER_PERMISSIONS)[key]} disabled className="h-5 w-9 accent-brand-amber" />
+                      <input
+                        type="checkbox"
+                        checked={teacher.role === "owner" || (teacher.permissions ?? DEFAULT_TEACHER_PERMISSIONS)[key]}
+                        disabled={!isOwner || teacher.role === "owner" || savingPermission === `${teacher.id}:${key}`}
+                        onChange={(event) => updatePermission(teacher.id, key, event.target.checked)}
+                        className="h-5 w-9 accent-brand-amber disabled:cursor-not-allowed disabled:opacity-60"
+                      />
                     </label>
                   ))}
                 </div>

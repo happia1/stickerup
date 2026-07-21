@@ -2,6 +2,9 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getRequestUser } from "@/lib/supabase/server-auth";
+import { DEFAULT_TEACHER_PERMISSIONS, type TeacherPermissionKey } from "@/lib/types";
+
+const permissionKeys: TeacherPermissionKey[] = ["notices", "sticker_policy", "classes", "students", "approvals", "sticker_audit", "ranking", "rewards"];
 
 async function getTeacher(request: Request) {
   const auth = await getRequestUser(request);
@@ -31,6 +34,23 @@ export async function POST(request: Request) {
   const result = await context.db.from("invite_links").insert({ tenant_id: context.teacher.tenant_id, issuer_teacher_id: context.teacher.id, token, invitee_role: body.inviteeRole, status: "active" }).select("*").single();
   if (result.error) return NextResponse.json({ error: result.error.message }, { status: 400 });
   return NextResponse.json({ inviteLink: result.data });
+}
+
+export async function PATCH(request: Request) {
+  const context = await getTeacher(request); if ("error" in context) return context.error;
+  if (context.teacher.role !== "owner") return NextResponse.json({ error: "관리자만 선생님 권한을 수정할 수 있습니다." }, { status: 403 });
+  const body = await request.json() as { teacherId?: string; permission?: TeacherPermissionKey; enabled?: boolean };
+  if (!body.teacherId || !body.permission || !permissionKeys.includes(body.permission) || typeof body.enabled !== "boolean") {
+    return NextResponse.json({ error: "변경할 권한 정보를 확인해주세요." }, { status: 400 });
+  }
+  const target = await context.db.from("teachers").select("id, role, permissions").eq("id", body.teacherId).eq("tenant_id", context.teacher.tenant_id).maybeSingle();
+  if (target.error) return NextResponse.json({ error: target.error.message }, { status: 400 });
+  if (!target.data) return NextResponse.json({ error: "선생님을 찾을 수 없습니다." }, { status: 404 });
+  if (target.data.role === "owner") return NextResponse.json({ error: "관리자 권한은 변경할 수 없습니다." }, { status: 400 });
+  const permissions = { ...DEFAULT_TEACHER_PERMISSIONS, ...(target.data.permissions ?? {}), [body.permission]: body.enabled };
+  const result = await context.db.from("teachers").update({ permissions }).eq("id", target.data.id).eq("tenant_id", context.teacher.tenant_id).select("permissions").single();
+  if (result.error) return NextResponse.json({ error: result.error.message }, { status: 400 });
+  return NextResponse.json({ teacherId: target.data.id, permissions: result.data.permissions });
 }
 
 export async function DELETE(request: Request) {
