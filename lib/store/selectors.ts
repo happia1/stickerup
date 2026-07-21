@@ -48,15 +48,15 @@ export function totalStickers(
     .reduce((sum, l) => sum + l.count, 0);
 }
 
-function rankingUnitFor(state: AppState, classId: string | null): { unit: RankingUnit; customDays: number | null } {
+function rankingUnitFor(state: AppState, classId: string | null): { unit: RankingUnit; customDays: number | null; customStart: string | null; customEnd: string | null } {
   const config = state.rankingPeriodConfigs.find((c) => c.class_id === classId);
-  return { unit: config?.unit ?? "month", customDays: config?.custom_days ?? null };
+  return { unit: config?.unit ?? "month", customDays: config?.custom_days ?? null, customStart: config?.custom_start ?? null, customEnd: config?.custom_end ?? null };
 }
 
 /** 특정 스코프(전체=null 또는 classId)의 현재 주기 랭킹을 계산한다. */
 export function rankingForScope(state: AppState, classId: string | null): RankingRow[] {
-  const { unit, customDays } = rankingUnitFor(state, classId);
-  const { period_start, period_end } = computePeriodBounds(unit, undefined, customDays);
+  const { unit, customDays, customStart, customEnd } = rankingUnitFor(state, classId);
+  const { period_start, period_end } = computePeriodBounds(unit, undefined, customDays, customStart, customEnd);
   return getRanking({
     ledger: state.ledger,
     enrollments: state.enrollments,
@@ -68,8 +68,8 @@ export function rankingForScope(state: AppState, classId: string | null): Rankin
 }
 
 export function rankingPeriodLabel(state: AppState, classId: string | null): { unit: RankingUnit; start: string; end: string } {
-  const { unit, customDays } = rankingUnitFor(state, classId);
-  const { period_start, period_end } = computePeriodBounds(unit, undefined, customDays);
+  const { unit, customDays, customStart, customEnd } = rankingUnitFor(state, classId);
+  const { period_start, period_end } = computePeriodBounds(unit, undefined, customDays, customStart, customEnd);
   return { unit, start: period_start, end: period_end };
 }
 

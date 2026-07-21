@@ -146,6 +146,8 @@ export interface RankingPeriodConfig {
   class_id: string | null; // null = ?袁⑷퍥(疫꼲嚥≪뮆苡?
   unit: RankingUnit;
   custom_days: number | null; // unit === "custom" ?????????筌욊낯????낆젾 雅뚯눊由???
+  custom_start?: string | null;
+  custom_end?: string | null;
   updated_at: string;
 }
 

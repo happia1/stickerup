@@ -1,0 +1,79 @@
+import { NextResponse } from "next/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getRequestUser } from "@/lib/supabase/server-auth";
+import type { AdminStudentRow } from "@/lib/data/admin-students.types";
+import type { TeacherPermissions } from "@/lib/types";
+
+async function getContext(request: Request) {
+  const auth = await getRequestUser(request);
+  if (!auth.user) return { error: NextResponse.json({ error: auth.error ?? "로그인이 필요합니다." }, { status: 401 }) };
+  const db = createSupabaseAdminClient();
+  const teacher = await db.from("teachers").select("id, tenant_id, role, permissions").eq("id", auth.user.id).maybeSingle();
+  if (teacher.error || !teacher.data) return { error: NextResponse.json({ error: "선생님 계정이 필요합니다." }, { status: 403 }) };
+  const permissions = teacher.data.permissions as TeacherPermissions | null;
+  if (teacher.data.role !== "owner" && permissions?.students === false) {
+    return { error: NextResponse.json({ error: "학생 관리 권한이 없습니다." }, { status: 403 }) };
+  }
+  return { db, teacher: teacher.data };
+}
+
+export async function GET(request: Request) {
+  const context = await getContext(request); if ("error" in context) return context.error;
+  const { db, teacher } = context;
+  const [students, classes, enrollments, ledger, connections] = await Promise.all([
+    db.from("students").select("id, name, age, invited_by_teacher_id, created_at").eq("tenant_id", teacher.tenant_id),
+    db.from("classes").select("id, name").eq("tenant_id", teacher.tenant_id),
+    db.from("enrollments").select("student_id, class_id, status, requested_at").eq("tenant_id", teacher.tenant_id),
+    db.from("sticker_ledger").select("student_id, count, status").eq("tenant_id", teacher.tenant_id),
+    db.from("student_connection_requests").select("student_id, status, created_at").order("created_at", { ascending: false }),
+  ]);
+  const error = students.error ?? classes.error ?? enrollments.error ?? ledger.error ?? connections.error;
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+
+  const classNameById = new Map((classes.data ?? []).map((row) => [row.id, row.name]));
+  const rows: AdminStudentRow[] = (students.data ?? []).map((student) => {
+    const studentEnrollments = (enrollments.data ?? []).filter((row) => row.student_id === student.id);
+    const pendingConnection = (connections.data ?? []).find((row) => row.student_id === student.id && row.status === "pending");
+    const hasPendingEnrollment = studentEnrollments.some((row) => row.status === "pending");
+    const connectionStatus = student.invited_by_teacher_id ? "connected" as const : pendingConnection || hasPendingEnrollment ? "pending" as const : "unconnected" as const;
+    return {
+      id: student.id,
+      name: student.name,
+      age: student.age,
+      connectionStatus,
+      classNames: studentEnrollments.filter((row) => row.status === "approved").map((row) => classNameById.get(row.class_id)).filter((name): name is string => Boolean(name)),
+      totalStickers: (ledger.data ?? []).filter((row) => row.student_id === student.id && row.status === "active").reduce((sum, row) => sum + row.count, 0),
+      requestedAt: pendingConnection?.created_at ?? studentEnrollments.find((row) => row.status === "pending")?.requested_at ?? student.created_at,
+    };
+  }).sort((a, b) => Number(b.connectionStatus === "pending") - Number(a.connectionStatus === "pending") || (b.requestedAt ?? "").localeCompare(a.requestedAt ?? ""));
+
+  return NextResponse.json({ students: rows, pendingConnectionCount: rows.filter((row) => row.connectionStatus === "pending").length });
+}
+
+export async function PATCH(request: Request) {
+  const context = await getContext(request); if ("error" in context) return context.error;
+  const { db, teacher } = context;
+  const body = await request.json() as { studentId?: string; action?: "approve" | "disconnect" };
+  if (!body.studentId || (body.action !== "approve" && body.action !== "disconnect")) {
+    return NextResponse.json({ error: "학생과 처리 작업을 확인해주세요." }, { status: 400 });
+  }
+  const student = await db.from("students").select("id").eq("id", body.studentId).eq("tenant_id", teacher.tenant_id).maybeSingle();
+  if (student.error || !student.data) return NextResponse.json({ error: "학생을 찾을 수 없습니다." }, { status: 404 });
+
+  if (body.action === "approve") {
+    const updateStudent = await db.from("students").update({ invited_by_teacher_id: teacher.id }).eq("id", student.data.id);
+    if (updateStudent.error) return NextResponse.json({ error: updateStudent.error.message }, { status: 400 });
+    const defaultClass = await db.from("classes").select("id").eq("tenant_id", teacher.tenant_id).eq("is_default", true).maybeSingle();
+    if (defaultClass.data) {
+      const enrollment = await db.from("enrollments").upsert({ tenant_id: teacher.tenant_id, student_id: student.data.id, class_id: defaultClass.data.id, status: "approved", approved_at: new Date().toISOString(), approver_id: teacher.id }, { onConflict: "student_id,class_id" });
+      if (enrollment.error) return NextResponse.json({ error: enrollment.error.message }, { status: 400 });
+    }
+    await db.from("student_connection_requests").update({ status: "approved", approved_by: teacher.id, approved_at: new Date().toISOString() }).eq("student_id", student.data.id).eq("status", "pending");
+  } else {
+    const updateStudent = await db.from("students").update({ invited_by_teacher_id: null }).eq("id", student.data.id);
+    if (updateStudent.error) return NextResponse.json({ error: updateStudent.error.message }, { status: 400 });
+    await db.from("enrollments").update({ status: "rejected", approved_at: null, approver_id: null }).eq("student_id", student.data.id).eq("tenant_id", teacher.tenant_id).eq("status", "approved");
+    await db.from("student_connection_requests").update({ status: "revoked" }).eq("student_id", student.data.id).eq("status", "approved");
+  }
+  return NextResponse.json({ ok: true });
+}

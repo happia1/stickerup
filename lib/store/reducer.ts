@@ -268,12 +268,14 @@ export function appReducer(state: AppState, action: Action): AppState {
 
     case "SET_RANKING_UNIT": {
       const customDays = action.customDays ?? null;
+      const customStart = action.unit === "custom" ? action.customStart ?? null : null;
+      const customEnd = action.unit === "custom" ? action.customEnd ?? null : null;
       const exists = state.rankingPeriodConfigs.some((c) => c.class_id === action.classId);
       if (exists) {
         return {
           ...state,
           rankingPeriodConfigs: state.rankingPeriodConfigs.map((c) =>
-            c.class_id === action.classId ? { ...c, unit: action.unit, custom_days: customDays, updated_at: nowISO() } : c
+            c.class_id === action.classId ? { ...c, unit: action.unit, custom_days: customDays, custom_start: customStart, custom_end: customEnd, updated_at: nowISO() } : c
           ),
         };
       }
@@ -281,7 +283,7 @@ export function appReducer(state: AppState, action: Action): AppState {
         ...state,
         rankingPeriodConfigs: [
           ...state.rankingPeriodConfigs,
-          { id: uid("rpc"), tenant_id: state.tenant.id, class_id: action.classId, unit: action.unit, custom_days: customDays, updated_at: nowISO() },
+          { id: uid("rpc"), tenant_id: state.tenant.id, class_id: action.classId, unit: action.unit, custom_days: customDays, custom_start: customStart, custom_end: customEnd, updated_at: nowISO() },
         ],
       };
     }

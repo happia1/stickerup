@@ -49,7 +49,7 @@ export type Action =
   | { type: "ADD_NOTICE"; title: string; content: string; pinned: boolean; authorId: string }
   | { type: "SET_NOTICE_PIN"; noticeId: string; pinned: boolean }
   | { type: "DELETE_NOTICE"; noticeId: string }
-  | { type: "SET_RANKING_UNIT"; classId: string | null; unit: RankingUnit; customDays?: number | null }
+  | { type: "SET_RANKING_UNIT"; classId: string | null; unit: RankingUnit; customDays?: number | null; customStart?: string | null; customEnd?: string | null }
   | { type: "ADD_REWARD_CAMPAIGN"; classId: string | null; periodStart: string; periodEnd: string; distributionType: "ratio" | "count"; distributionValue: number; prizes: Array<{ rank: number; productId: string; qty: number }> }
   | { type: "UPDATE_REWARD_CAMPAIGN"; campaignId: string; distributionType: "ratio" | "count"; distributionValue: number; periodStart: string; periodEnd: string }
   | { type: "UPDATE_REWARD_ITEM"; itemId: string; title: string; qty: number; imageUrl: string | null }

@@ -1,94 +1,70 @@
 "use client";
-import { useAppState, useAppDispatch } from "@/lib/store/provider";
-import { totalStickers } from "@/lib/store/selectors";
+
+import { useEffect, useState } from "react";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { useToast } from "@/lib/toast/provider";
+import type { AdminStudentRow, AdminStudentsData } from "@/lib/data/admin-students.types";
+
+const STATUS_LABEL = { pending: "연결 대기", connected: "연결됨", unconnected: "미연결" } as const;
 
 export default function AdminStudentsPage() {
-  const state = useAppState();
-  const dispatch = useAppDispatch();
+  const toast = useToast();
+  const [students, setStudents] = useState<AdminStudentRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [processingId, setProcessingId] = useState<string | null>(null);
+
+  async function token() {
+    const client = getSupabaseBrowserClient();
+    const { data } = await client!.auth.getSession();
+    return data.session?.access_token;
+  }
+
+  async function load() {
+    try {
+      const accessToken = await token();
+      if (!accessToken) throw new Error("로그인이 필요합니다.");
+      const response = await fetch("/api/admin/students", { headers: { Authorization: `Bearer ${accessToken}` } });
+      const payload = await response.json() as AdminStudentsData & { error?: string };
+      if (!response.ok) throw new Error(payload.error);
+      setStudents(payload.students);
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "학생 목록을 불러오지 못했습니다.");
+    } finally { setLoading(false); }
+  }
+
+  useEffect(() => { void load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function updateConnection(student: AdminStudentRow, action: "approve" | "disconnect") {
+    try {
+      setProcessingId(student.id);
+      const accessToken = await token();
+      if (!accessToken) throw new Error("로그인이 필요합니다.");
+      const response = await fetch("/api/admin/students", { method: "PATCH", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify({ studentId: student.id, action }) });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error);
+      toast(action === "approve" ? `${student.name} 학생의 연결을 승인했어요.` : `${student.name} 학생과의 연결을 해지했어요.`);
+      await load();
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "연결 상태를 변경하지 못했습니다.");
+    } finally { setProcessingId(null); }
+  }
 
   return (
     <div>
       <h2 className="text-title mb-1">학생 관리</h2>
-      <p className="text-caption text-text-secondary mb-5">
-        학생별 반 소속 현황과 반 승인 대기 요청을 확인·처리해요.
-      </p>
-
+      <p className="text-caption text-text-secondary mb-5">앱으로 가입한 학생의 연결 요청을 승인하고 연결 상태를 관리해요.</p>
       <p className="text-subtitle mb-2">학생 목록</p>
-      <div className="border border-border rounded-xl overflow-hidden mb-6">
-        <table className="w-full text-body">
-          <thead>
-            <tr className="text-caption text-text-secondary text-left border-b border-border">
-              <th className="p-2.5">이름</th>
-              <th className="p-2.5">나이</th>
-              <th className="p-2.5">소속 반</th>
-              <th className="p-2.5">총 스티커</th>
-            </tr>
-          </thead>
-          <tbody>
-            {state.students.map((s) => {
-              const classNames = state.classes
-                .filter((c) => state.enrollments.some((e) => e.student_id === s.id && e.class_id === c.id && e.status === "approved"))
-                .map((c) => c.name)
-                .join(", ");
-              return (
-                <tr key={s.id} className="border-b last:border-0 border-border">
-                  <td className="p-2.5 font-semibold">{s.name}</td>
-                  <td className="p-2.5">{s.age}</td>
-                  <td className="p-2.5">{classNames}</td>
-                  <td className="p-2.5">{totalStickers(state, s.id)}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      <p className="text-subtitle mb-2">반 승인 대기 요청</p>
       <div className="border border-border rounded-xl overflow-hidden">
         <table className="w-full text-body">
-          <thead>
-            <tr className="text-caption text-text-secondary text-left border-b border-border">
-              <th className="p-2.5">학생</th>
-              <th className="p-2.5">신청 반</th>
-              <th className="p-2.5">신청일</th>
-              <th className="p-2.5">처리</th>
-            </tr>
-          </thead>
+          <thead><tr className="text-caption text-text-secondary text-left border-b border-border"><th className="p-2.5">이름</th><th className="p-2.5">나이</th><th className="p-2.5">소속 반</th><th className="p-2.5">총 스티커</th><th className="p-2.5">연결 상태</th><th className="p-2.5">처리</th></tr></thead>
           <tbody>
-            {state.enrollments
-              .filter((e) => e.status === "pending")
-              .map((e) => {
-                const student = state.students.find((s) => s.id === e.student_id);
-                const cls = state.classes.find((c) => c.id === e.class_id);
-                return (
-                  <tr key={e.id} className="border-b last:border-0 border-border">
-                    <td className="p-2.5">{student?.name}</td>
-                    <td className="p-2.5">{cls?.name}</td>
-                    <td className="p-2.5">{e.requested_at.slice(0, 10)}</td>
-                    <td className="p-2.5 flex gap-1.5">
-                      <button
-                        className="border border-state-success text-state-success rounded-lg px-2 py-1 text-caption"
-                        onClick={() => dispatch({ type: "APPROVE_ENROLLMENT", enrollmentId: e.id, approverId: state.currentUserId })}
-                      >
-                        승인
-                      </button>
-                      <button
-                        className="border border-state-danger text-state-danger rounded-lg px-2 py-1 text-caption"
-                        onClick={() => dispatch({ type: "REJECT_ENROLLMENT", enrollmentId: e.id })}
-                      >
-                        반려
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            {state.enrollments.filter((e) => e.status === "pending").length === 0 && (
-              <tr>
-                <td className="p-2.5 text-center text-text-secondary" colSpan={4}>
-                  대기 중인 신청이 없어요.
-                </td>
-              </tr>
-            )}
+            {loading && <tr><td colSpan={6} className="p-5 text-center text-text-secondary">불러오는 중...</td></tr>}
+            {!loading && !students.length && <tr><td colSpan={6} className="p-5 text-center text-text-secondary">등록된 학생이 없습니다.</td></tr>}
+            {students.map((student) => <tr key={student.id} className={`border-b last:border-0 border-border ${student.connectionStatus === "pending" ? "bg-state-warningBg/40" : ""}`}>
+              <td className="p-2.5 font-semibold">{student.name}{student.connectionStatus === "pending" && <span className="ml-2 rounded-full bg-brand-amber px-2 py-0.5 text-caption text-surface-page">대기</span>}</td>
+              <td className="p-2.5">{student.age ?? "-"}</td><td className="p-2.5">{student.classNames.join(", ") || "-"}</td><td className="p-2.5">{student.totalStickers}</td><td className="p-2.5">{STATUS_LABEL[student.connectionStatus]}</td>
+              <td className="p-2.5">{student.connectionStatus === "connected" ? <button disabled={processingId === student.id} className="rounded-lg border border-state-danger px-2.5 py-1 text-caption text-state-danger disabled:opacity-50" onClick={() => updateConnection(student, "disconnect")}>해지</button> : student.connectionStatus === "pending" ? <button disabled={processingId === student.id} className="rounded-lg border border-state-success px-2.5 py-1 text-caption text-state-success disabled:opacity-50" onClick={() => updateConnection(student, "approve")}>연결 승인</button> : <span className="text-caption text-text-muted">요청 대기</span>}</td>
+            </tr>)}
           </tbody>
         </table>
       </div>

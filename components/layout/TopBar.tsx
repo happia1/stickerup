@@ -1,11 +1,12 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { useAppState } from "@/lib/store/provider";
 import { getTeacherById, pendingCounts } from "@/lib/store/selectors";
 import { fmtDate } from "@/lib/format";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 function BellIcon() {
   return (
@@ -63,14 +64,31 @@ export function StudentTopBar() {
 export function AdminTopBar() {
   const state = useAppState();
   const [notifOpen, setNotifOpen] = useState(false);
+  const [remoteConnectionCount, setRemoteConnectionCount] = useState<number | null>(null);
   const counts = pendingCounts(state);
   const me = getTeacherById(state, state.currentUserId);
-  const totalPending = counts.homework + counts.praise + counts.enrollment;
+  const connectionCount = remoteConnectionCount ?? counts.enrollment;
+  const totalPending = counts.homework + counts.praise + connectionCount;
   const notifItems = [
     { label: "숙제 승인 대기", count: counts.homework, href: "/admin/approvals" },
     { label: "칭찬 승인 대기", count: counts.praise, href: "/admin/approvals" },
-    { label: "반 승인 대기", count: counts.enrollment, href: "/admin/students" },
+    { label: "연결 대기중인 학생", count: connectionCount, href: "/admin/students" },
   ];
+
+  useEffect(() => {
+    let active = true;
+    async function loadPendingConnections() {
+      const client = getSupabaseBrowserClient();
+      const { data } = await client!.auth.getSession();
+      if (!data.session) return;
+      const response = await fetch("/api/admin/students", { headers: { Authorization: `Bearer ${data.session.access_token}` } });
+      if (!response.ok) return;
+      const payload = await response.json() as { pendingConnectionCount?: number };
+      if (active) setRemoteConnectionCount(payload.pendingConnectionCount ?? 0);
+    }
+    void loadPendingConnections();
+    return () => { active = false; };
+  }, [notifOpen]);
 
   return (
     <div className="flex items-center justify-between bg-surface-page px-6 py-3">
