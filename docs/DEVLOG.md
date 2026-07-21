@@ -251,3 +251,9 @@ pm run build는 기존 EISDIR/EPERM 환경 이슈로 실패
 - `전체 보기` 버튼을 추가해 선택된 랭킹 범위의 전체 학생 리스트를 바텀시트로 확인할 수 있게 했다.
 - `랭킹 노출 설정` 바로가기 버튼을 추가했다.
 - Verification: `npm.cmd run typecheck` 통과. 첫 `npm.cmd run build`는 stale `.next/types` 참조로 실패해 `.next/types`만 삭제 후 재실행했고, 두 번째 `npm.cmd run build` 통과.
+
+## 2026-07-21 (rename reward management labels)
+
+- 관리자 사이드바와 조직 권한의 `상품(리워드) 관리` 라벨을 `이벤트/상품 관리`로 변경했다.
+- 이벤트/상품 관리 화면의 사용자 노출 문구에서 `캠페인`을 `이벤트`로 변경했다. 예: `새 상품 캠페인 등록` → `새 상품 이벤트 등록`.
+- Verification: `npm.cmd run typecheck` 통과, `npm.cmd run build` 통과. 기존 outputFileTracing / webpack cache 경고는 non-blocking.

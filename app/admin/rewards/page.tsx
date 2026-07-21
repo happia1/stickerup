@@ -139,7 +139,7 @@ function EditCampaignForm({ campaign, onClose }: { campaign: RewardCampaign; onC
             Object.entries(itemDrafts).forEach(([itemId, d]) => {
               dispatch({ type: "UPDATE_REWARD_ITEM", itemId, title: d.title, qty: d.qty, imageUrl: d.imageUrl });
             });
-            showToast("이벤트이 수정되었어요.");
+            showToast("이벤트가 수정되었어요.");
             onClose();
           }}
         >
@@ -311,7 +311,7 @@ export default function AdminRewardsPage() {
               itemQty,
               itemImageUrl,
             });
-            showToast("새 상품 이벤트이 등록되었어요.");
+            showToast("새 상품 이벤트가 등록되었어요.");
             setItemTitle("");
             setItemImageUrl(null);
           }}
