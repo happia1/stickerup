@@ -44,9 +44,11 @@ export type Action =
   | { type: "WITHDRAW_ENROLLMENT"; enrollmentId: string }
   | { type: "ADD_CLASS"; name: string; attendanceTime: string; specialStart: string | null; specialEnd: string | null; rankingUnit: RankingUnit }
   | { type: "UPDATE_CLASS_ATTENDANCE_TIME"; classId: string; attendanceTime: string }
+  | { type: "UPDATE_CLASS_SPECIAL_PERIOD"; classId: string; specialStart: string; specialEnd: string }
   | { type: "SET_ATTENDANCE_POLICY"; tiers: TierConfig[] }
   | { type: "SET_HOMEWORK_POLICY"; tiers: TierConfig[]; mode: GradingMode }
-  | { type: "ADD_NOTICE"; title: string; content: string; pinned: boolean; authorId: string }
+  | { type: "ADD_NOTICE"; title: string; content: string; imageUrl: string | null; pinned: boolean; authorId: string }
+  | { type: "UPDATE_NOTICE"; noticeId: string; title: string; content: string; imageUrl: string | null; pinned: boolean }
   | { type: "SET_NOTICE_PIN"; noticeId: string; pinned: boolean }
   | { type: "DELETE_NOTICE"; noticeId: string }
   | { type: "SET_RANKING_UNIT"; classId: string | null; unit: RankingUnit; customDays?: number | null; customStart?: string | null; customEnd?: string | null }

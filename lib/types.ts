@@ -207,6 +207,7 @@ export interface Notice {
   tenant_id: string;
   title: string;
   content: string;
+  image_url?: string | null;
   pinned: boolean;
   author_teacher_id: string | null;
   created_at: string;

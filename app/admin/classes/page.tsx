@@ -17,6 +17,29 @@ export default function AdminClassesPage() {
   const [specialStart, setSpecialStart] = useState("");
   const [specialEnd, setSpecialEnd] = useState("");
   const [rankingUnit, setRankingUnit] = useState<RankingUnit>("month");
+  const [editingPeriodId, setEditingPeriodId] = useState<string | null>(null);
+  const [editingStart, setEditingStart] = useState("");
+  const [editingEnd, setEditingEnd] = useState("");
+
+  function beginPeriodEdit(classId: string, start: string | null, end: string | null) {
+    setEditingPeriodId(classId);
+    setEditingStart(start ?? "");
+    setEditingEnd(end ?? "");
+  }
+
+  function savePeriod(classId: string) {
+    if (!editingStart || !editingEnd) {
+      showToast("특강 시작일과 종료일을 모두 입력해주세요.");
+      return;
+    }
+    if (editingStart > editingEnd) {
+      showToast("특강 종료일은 시작일보다 빠를 수 없습니다.");
+      return;
+    }
+    dispatch({ type: "UPDATE_CLASS_SPECIAL_PERIOD", classId, specialStart: editingStart, specialEnd: editingEnd });
+    setEditingPeriodId(null);
+    showToast("특강 기간을 수정했어요.");
+  }
 
   return (
     <div>
@@ -112,7 +135,24 @@ export default function AdminClassesPage() {
                       onChange={(e) => dispatch({ type: "UPDATE_CLASS_ATTENDANCE_TIME", classId: c.id, attendanceTime: e.target.value })}
                     />
                   </td>
-                  <td className="p-2.5">{c.special_start ? `${c.special_start} ~ ${c.special_end}` : "상시"}</td>
+                  <td className="p-2.5">
+                    {c.is_default ? (
+                      "상시"
+                    ) : editingPeriodId === c.id ? (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <input type="date" aria-label={`${c.name} 특강 시작일`} className="rounded-lg border border-border px-2 py-1 text-caption" value={editingStart} max={editingEnd || undefined} onChange={(e) => setEditingStart(e.target.value)} />
+                        <span className="text-text-secondary">~</span>
+                        <input type="date" aria-label={`${c.name} 특강 종료일`} className="rounded-lg border border-border px-2 py-1 text-caption" value={editingEnd} min={editingStart || undefined} onChange={(e) => setEditingEnd(e.target.value)} />
+                        <button type="button" className="rounded-lg border border-state-success px-2 py-1 text-caption text-state-success" onClick={() => savePeriod(c.id)}>저장</button>
+                        <button type="button" className="rounded-lg border border-border px-2 py-1 text-caption text-text-secondary" onClick={() => setEditingPeriodId(null)}>취소</button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span>{c.special_start && c.special_end ? `${c.special_start} ~ ${c.special_end}` : "기간 미설정"}</span>
+                        <button type="button" className="rounded-lg border border-border px-2 py-1 text-caption text-text-secondary hover:text-text-primary" onClick={() => beginPeriodEdit(c.id, c.special_start, c.special_end)}>수정</button>
+                      </div>
+                    )}
+                  </td>
                   <td className="p-2.5">{RANKING_UNIT_LABEL[config?.unit ?? c.ranking_unit]}</td>
                   <td className="p-2.5">{studentCount}명</td>
                   <td className="p-2.5">

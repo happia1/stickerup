@@ -52,6 +52,7 @@ export function FlapBanner({ notices: noticesFromData }: { notices?: Notice[] })
               {n.pinned && <Pill tone="wait">고정</Pill>}
             </div>
             <p className="text-caption text-text-muted my-1">{fmtDate(n.created_at)}</p>
+            {n.image_url && <img src={n.image_url} alt={`${n.title} 첨부 이미지`} className="mb-3 max-h-72 w-full rounded-xl object-contain bg-surface-raised" />}
             <p className="text-body leading-relaxed">{n.content}</p>
           </div>
         ))}

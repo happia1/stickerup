@@ -245,9 +245,10 @@ export function appReducer(state: AppState, action: Action): AppState {
           {
             id: uid("notice"),
             tenant_id: state.tenant.id,
-            title: action.title,
-            content: action.content,
-            pinned: action.pinned,
+              title: action.title,
+              content: action.content,
+              image_url: action.imageUrl,
+              pinned: action.pinned,
             author_teacher_id: action.authorId,
             created_at: nowISO(),
           },
@@ -307,6 +308,24 @@ export function appReducer(state: AppState, action: Action): AppState {
         ...state,
         rewardCampaigns: [...state.rewardCampaigns, campaign],
         rewardItems: [...state.rewardItems, ...items],
+      };
+    }
+
+    case "UPDATE_NOTICE": {
+      return {
+        ...state,
+        notices: state.notices.map((notice) => notice.id === action.noticeId ? { ...notice, title: action.title, content: action.content, image_url: action.imageUrl, pinned: action.pinned } : notice),
+      };
+    }
+
+    case "UPDATE_CLASS_SPECIAL_PERIOD": {
+      return {
+        ...state,
+        classes: state.classes.map((c) =>
+          c.id === action.classId
+            ? { ...c, special_start: action.specialStart, special_end: action.specialEnd, status: "active" as const, updated_at: nowISO() }
+            : c
+        ),
       };
     }
 
