@@ -396,3 +396,10 @@ pm run build는 기존 EISDIR/EPERM 환경 이슈로 실패
 - `happia1`의 내부 Auth 이메일은 `id-68617070696131@auth.stickerup.invalid`이며 개발자 허용 환경변수를 `DEVELOPER_USER_IDS`, `DEVELOPER_EMAILS`로 정리했다. 기존 SELLER 변수는 배포 호환을 위해 계속 인식한다.
 - 상태: `npm.cmd run typecheck`, `npm.cmd run build`, `git diff --check` 통과. 기존 outputFileTracing 및 webpack 캐시 경고만 출력됨.
 - 다음 할 일: Supabase Auth에 내부 이메일 계정을 생성하고 Vercel `DEVELOPER_EMAILS`를 설정한 뒤 개발자 로그인을 확인한다.
+
+## 2026-07-21 (개발자 환경변수 단일화)
+
+- 개발자 권한 검사에서 기존 `SELLER_EMAILS`, `SELLER_USER_IDS` 호환 처리를 제거했다.
+- 이제 `DEVELOPER_EMAILS`와 `DEVELOPER_USER_IDS`만 개발자 접근 권한에 사용하며 인증 유틸리티 명칭도 개발자 기준으로 변경했다.
+- 상태: `npm.cmd run typecheck`, `git diff --check` 통과.
+- 다음 할 일: Vercel에서 남아 있는 `SELLER_EMAILS` 환경변수를 삭제하고 재배포한다.

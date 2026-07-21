@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getRequestUser } from "@/lib/supabase/server-auth";
-import { isSellerUser } from "@/lib/seller-auth";
+import { isDeveloperUser } from "@/lib/developer-auth";
 
 async function context(request: Request) {
   const auth = await getRequestUser(request);
   if (!auth.user) return { error: NextResponse.json({ error: auth.error }, { status: 401 }) };
-  if (!isSellerUser(auth.user)) return { error: NextResponse.json({ error: "개발자 계정만 접근할 수 있습니다." }, { status: 403 }) };
+  if (!isDeveloperUser(auth.user)) return { error: NextResponse.json({ error: "개발자 계정만 접근할 수 있습니다." }, { status: 403 }) };
   return { db: createSupabaseAdminClient() };
 }
 
