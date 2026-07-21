@@ -27,6 +27,14 @@ function CopyIcon() {
   );
 }
 
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-2" aria-hidden="true">
+      <path d="m6 6 12 12M18 6 6 18" />
+    </svg>
+  );
+}
+
 export default function AdminOrgPage() {
   const toast = useToast();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -35,6 +43,7 @@ export default function AdminOrgPage() {
   const [opened, setOpened] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [issuingRole, setIssuingRole] = useState<"student" | "teacher" | null>(null);
+  const [deletingLinkId, setDeletingLinkId] = useState<string | null>(null);
 
   const me = useMemo(() => teachers.find((teacher) => teacher.id === currentId), [teachers, currentId]);
   const isOwner = me?.role === "owner";
@@ -93,6 +102,27 @@ export default function AdminOrgPage() {
   async function copy(url: string) {
     await navigator.clipboard.writeText(url);
     toast("초대 링크를 복사했어요.");
+  }
+
+  async function deleteInviteLink(link: InviteLink) {
+    try {
+      setDeletingLinkId(link.id);
+      const accessToken = await getAccessToken();
+      if (!accessToken) throw new Error("로그인이 필요합니다.");
+      const response = await fetch("/api/admin/organization", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ inviteLinkId: link.id }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error);
+      setLinks((current) => current.filter((item) => item.id !== link.id));
+      toast("초대 링크를 삭제했어요.");
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "초대 링크를 삭제하지 못했습니다.");
+    } finally {
+      setDeletingLinkId(null);
+    }
   }
 
   return (
@@ -160,6 +190,18 @@ export default function AdminOrgPage() {
                   <CopyIcon /> 복사
                 </button>
                 <Pill tone={link.status === "active" ? "ok" : "neutral"}>{link.status === "active" ? "활성" : link.status}</Pill>
+                {(role !== "teacher" || isOwner) && (
+                  <button
+                    type="button"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-surface-raised hover:text-text-primary disabled:cursor-wait disabled:opacity-50"
+                    onClick={() => deleteInviteLink(link)}
+                    disabled={deletingLinkId === link.id}
+                    aria-label={`${role === "teacher" ? "선생님" : "학생"} 초대 링크 삭제`}
+                    title="초대 링크 삭제"
+                  >
+                    <CloseIcon />
+                  </button>
+                )}
               </div>
             );
           })}

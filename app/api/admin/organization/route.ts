@@ -32,3 +32,29 @@ export async function POST(request: Request) {
   if (result.error) return NextResponse.json({ error: result.error.message }, { status: 400 });
   return NextResponse.json({ inviteLink: result.data });
 }
+
+export async function DELETE(request: Request) {
+  const context = await getTeacher(request); if ("error" in context) return context.error;
+  const body = await request.json() as { inviteLinkId?: string };
+  if (!body.inviteLinkId) return NextResponse.json({ error: "삭제할 초대 링크를 확인해주세요." }, { status: 400 });
+
+  const invite = await context.db
+    .from("invite_links")
+    .select("id, invitee_role")
+    .eq("id", body.inviteLinkId)
+    .eq("tenant_id", context.teacher.tenant_id)
+    .maybeSingle();
+  if (invite.error) return NextResponse.json({ error: invite.error.message }, { status: 400 });
+  if (!invite.data) return NextResponse.json({ error: "초대 링크를 찾을 수 없습니다." }, { status: 404 });
+  if (invite.data.invitee_role === "teacher" && context.teacher.role !== "owner") {
+    return NextResponse.json({ error: "관리자만 선생님 초대 링크를 삭제할 수 있습니다." }, { status: 403 });
+  }
+
+  const result = await context.db
+    .from("invite_links")
+    .delete()
+    .eq("id", invite.data.id)
+    .eq("tenant_id", context.teacher.tenant_id);
+  if (result.error) return NextResponse.json({ error: result.error.message }, { status: 400 });
+  return NextResponse.json({ deletedInviteLinkId: invite.data.id });
+}
