@@ -13,7 +13,6 @@ const NAV = [
   { href: "/admin/logs", label: "스티커 로그 · 감사" },
   { href: "/admin/ranking-settings", label: "랭킹 노출 설정" },
   { href: "/admin/rewards", label: "이벤트/상품 관리" },
-  { href: "/admin/product-market", label: "추천 상품 둘러보기" },
   { href: "/admin/org", label: "조직 관리" },
 ];
 

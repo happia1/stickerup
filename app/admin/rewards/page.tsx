@@ -87,7 +87,7 @@ function ProductCatalog() {
   const edit=(product:ProductCatalogItem)=>{setEditing(product);setTitle(product.title);setPurchaseUrl(product.purchase_url??"");setDescription(product.description??"");setImageUrl(product.image_url);};
   const save=async()=>{if(!title.trim()){toast("상품명을 입력해 주세요.");return;} const normalizedUrl=purchaseUrl.trim()||null; if(normalizedUrl&&!/^https?:\/\//i.test(normalizedUrl)){toast("구매 링크는 http:// 또는 https://로 시작해야 해요.");return;} const access=await getAccessToken();if(access){const response=await fetch("/api/admin/products",{method:editing?"PATCH":"POST",headers:{Authorization:`Bearer ${access}`,"Content-Type":"application/json"},body:JSON.stringify({productId:editing?.id,title:title.trim(),imageUrl,purchaseUrl:normalizedUrl,description:description.trim()||null})});const payload=await response.json();if(!response.ok){toast(payload.error??"상품을 저장하지 못했어요.");return;}await loadProducts();}else if(editing){dispatch({type:"UPDATE_CATALOG_PRODUCT",productId:editing.id,title:title.trim(),imageUrl,purchaseUrl:normalizedUrl,description:description.trim()||null});}else{dispatch({type:"ADD_CATALOG_PRODUCT",title:title.trim(),imageUrl,purchaseUrl:normalizedUrl,description:description.trim()||null});}toast(editing?"상품을 수정했어요.":"상품을 보관함에 추가했어요.");reset();};
   const remove=async(productId:string)=>{const access=await getAccessToken();if(access){const response=await fetch("/api/admin/products",{method:"DELETE",headers:{Authorization:`Bearer ${access}`,"Content-Type":"application/json"},body:JSON.stringify({productId})});if(!response.ok){const payload=await response.json();toast(payload.error??"상품을 삭제하지 못했어요.");return;}await loadProducts();}else dispatch({type:"DELETE_CATALOG_PRODUCT",productId});toast("상품을 삭제했어요.");};
-  return <section className="mb-6 rounded-card bg-surface-page p-5"><div className="mb-4"><h3 className="text-subtitle">상품 보관함</h3><p className="mt-1 text-caption text-text-secondary">상품을 한 번 등록하고 여러 이벤트의 순위 상품으로 재사용하세요.</p></div>
+  return <section className="mb-6 rounded-card bg-surface-page p-5"><div className="mb-4"><h3 className="text-subtitle">상품 카탈로그</h3><p className="mt-1 text-caption text-text-secondary">상품을 한 번 등록하고 여러 이벤트의 순위 상품으로 재사용하세요.</p></div>
     <div className="mb-4 grid gap-2 lg:grid-cols-3">{state.productCatalog.length===0&&<p className="rounded-xl bg-surface-card p-5 text-caption text-text-secondary lg:col-span-3">등록된 상품이 없습니다.</p>}{state.productCatalog.map(product=><div key={product.id} className="rounded-xl border border-border bg-surface-card p-3"><div className="flex gap-3">{product.image_url?<img src={product.image_url} alt={product.title} className="h-14 w-14 rounded-lg object-cover"/>:<div className="h-14 w-14 rounded-lg bg-surface-raised"/>}<div className="min-w-0 flex-1"><p className="font-bold">{product.title}</p><p className="truncate text-caption text-text-secondary">{product.description||"설명 없음"}</p></div></div><div className="mt-3 flex gap-2">{product.purchase_url&&<a href={product.purchase_url} target="_blank" rel="noreferrer" className="rounded-lg bg-brand-amber px-2.5 py-1.5 text-caption font-bold text-surface-page">구매 바로가기</a>}<button className="rounded-lg border border-border px-2.5 py-1.5 text-caption" onClick={()=>edit(product)}>수정</button><button className="text-caption text-state-danger" onClick={()=>void remove(product.id)}>삭제</button></div></div>)}</div>
     <div className="rounded-xl bg-surface-card p-4"><p className="mb-3 font-bold">{editing?"상품 수정":"새 상품 등록"}</p><div className="grid gap-3 sm:grid-cols-2"><label className="text-caption text-text-secondary">상품명<input value={title} onChange={e=>setTitle(e.target.value)} className="mt-1 w-full rounded-lg border border-border px-2.5 py-2"/></label><label className="text-caption text-text-secondary">구매 링크<input type="url" value={purchaseUrl} onChange={e=>setPurchaseUrl(e.target.value)} placeholder="https://..." className="mt-1 w-full rounded-lg border border-border px-2.5 py-2"/></label><label className="text-caption text-text-secondary sm:col-span-2">설명<input value={description} onChange={e=>setDescription(e.target.value)} className="mt-1 w-full rounded-lg border border-border px-2.5 py-2"/></label><div className="sm:col-span-2"><ImageUploadField value={imageUrl} onChange={setImageUrl}/></div></div><div className="mt-3 flex gap-2"><Button onClick={save}>{editing?"수정 저장":"상품 추가"}</Button>{editing&&<Button variant="secondary" onClick={reset}>취소</Button>}</div></div>
   </section>;
@@ -292,12 +292,6 @@ export default function AdminRewardsPage() {
       <h2 className="mb-1 text-title">이벤트/상품 관리</h2>
       <p className="mb-5 text-caption text-text-secondary">이벤트는 그룹의 랭킹 단위기간과 연결돼요. 주기가 끝나면 완료로 분류되고, 다음 주기 보상은 새 이벤트로 등록해요.</p>
 
-      <div className="mb-6 flex justify-end">
-        <Link href="/admin/products" className="inline-flex items-center rounded-xl border border-border bg-surface-card px-4 py-2.5 text-body font-bold text-text-primary transition hover:border-brand-amber">
-          상품 보관함 관리 →
-        </Link>
-      </div>
-
       <section className="mb-6 rounded-card bg-surface-page p-5">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <h3 className="text-subtitle">이벤트 리스트</h3>
@@ -342,7 +336,7 @@ export default function AdminRewardsPage() {
       {selectedEvent && <EventDetail campaign={selectedEvent} editingId={editingId} setEditingId={setEditingId} />}
 
       <section className="mt-6 max-w-lg rounded-card bg-surface-page p-5">
-        <h4 className="mb-3 text-body font-bold">새 상품 이벤트 등록</h4>
+        <h4 className="mb-3 text-body font-bold">이벤트 생성</h4>
         <label className="mb-1 block text-caption font-semibold text-text-secondary">적용 그룹</label>
         <select className="mb-3 w-full rounded-lg border border-border px-2.5 py-2 text-body" value={scopeId} onChange={(event) => setScopeId(event.target.value)}>
           <option value="__all__">전체</option>
@@ -362,7 +356,7 @@ export default function AdminRewardsPage() {
             {distType === "count" ? "인원 수" : "비율(%)"}
             <input type="number" className="mt-1 w-full rounded-lg border border-border px-2.5 py-2 text-body" value={distType === "count" ? distValue : Math.round(distValue * 100)} onChange={(event) => { const value = Number(event.target.value) || 0; setDistValue(distType === "count" ? value : value / 100); }} />
           </label>
-          <div className="col-span-2"><p className="mb-2 text-caption font-semibold text-text-secondary">순위별 상품</p>{prizes.map((prize,index)=><div key={prize.rank} className="mb-2 grid grid-cols-[64px_1fr_80px_32px] items-center gap-2"><b className="text-caption">{prize.rank}등</b><select value={prize.productId} onChange={e=>setPrizes(current=>current.map((item,i)=>i===index?{...item,productId:e.target.value}:item))} className="rounded-lg border border-border px-2.5 py-2 text-body"><option value="">상품 선택</option>{state.productCatalog.map(product=><option key={product.id} value={product.id}>{product.title}</option>)}</select><input aria-label={`${prize.rank}등 수량`} type="number" min="1" value={prize.qty} onChange={e=>setPrizes(current=>current.map((item,i)=>i===index?{...item,qty:Math.max(1,Number(e.target.value)||1)}:item))} className="rounded-lg border border-border px-2 py-2"/><button type="button" className="text-state-danger" onClick={()=>setPrizes(current=>current.filter((_,i)=>i!==index).map((item,i)=>({...item,rank:i+1})))}>×</button></div>)}<button type="button" className="text-caption text-brand-amber" onClick={()=>setPrizes(current=>[...current,{rank:current.length+1,productId:"",qty:1}])}>+ 다음 순위 상품 추가</button></div>
+          <div className="col-span-2"><div className="mb-2 flex items-center justify-between gap-3"><p className="text-caption font-semibold text-text-secondary">순위별 상품</p><Link href="/admin/products" className="rounded-lg border border-border px-3 py-1.5 text-caption font-bold">상품 카탈로그 관리 →</Link></div>{prizes.map((prize,index)=><div key={prize.rank} className="mb-2 grid grid-cols-[64px_1fr_80px_32px] items-center gap-2"><b className="text-caption">{prize.rank}등</b><select value={prize.productId} onChange={e=>setPrizes(current=>current.map((item,i)=>i===index?{...item,productId:e.target.value}:item))} className="rounded-lg border border-border px-2.5 py-2 text-body"><option value="">상품 선택</option>{state.productCatalog.map(product=><option key={product.id} value={product.id}>{product.title}</option>)}</select><input aria-label={`${prize.rank}등 수량`} type="number" min="1" value={prize.qty} onChange={e=>setPrizes(current=>current.map((item,i)=>i===index?{...item,qty:Math.max(1,Number(e.target.value)||1)}:item))} className="rounded-lg border border-border px-2 py-2"/><button type="button" className="text-state-danger" onClick={()=>setPrizes(current=>current.filter((_,i)=>i!==index).map((item,i)=>({...item,rank:i+1})))}>×</button></div>)}<button type="button" className="text-caption text-brand-amber" onClick={()=>setPrizes(current=>[...current,{rank:current.length+1,productId:"",qty:1}])}>+ 다음 순위 상품 추가</button></div>
         </div>
         <Button
           onClick={() => {
@@ -372,7 +366,7 @@ export default function AdminRewardsPage() {
               return;
             }
             dispatch({ type: "ADD_REWARD_CAMPAIGN", classId: classIdForForm, periodStart: bounds.period_start, periodEnd: bounds.period_end, distributionType: distType, distributionValue: distValue, prizes: selectedPrizes });
-            showToast("새 상품 이벤트가 등록되었어요.");
+            showToast("이벤트가 생성되었어요.");
             setStatusFilter("active");
             setPrizes([{rank:1,productId:"",qty:1},{rank:2,productId:"",qty:1},{rank:3,productId:"",qty:1}]);
           }}
