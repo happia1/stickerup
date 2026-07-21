@@ -12,6 +12,7 @@ type SignupType = "student" | "teacher";
 interface InvitePreview {
   academyName: string;
   teacherName: string;
+  inviteeRole: "student" | "teacher";
 }
 
 export default function SignupPage() {
@@ -84,6 +85,7 @@ function SignupForm() {
         if (!response.ok || !payload.invite) throw new Error(payload.error ?? "초대 링크를 확인하지 못했습니다.");
         if (active) {
           setInvite(payload.invite);
+          setSignupType(payload.invite.inviteeRole);
           setSignupType("student");
           setAcademyName(payload.invite.academyName);
         }

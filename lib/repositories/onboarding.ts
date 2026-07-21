@@ -8,6 +8,7 @@ export interface InvitePreview {
   teacherId: string;
   academyName: string;
   teacherName: string;
+  inviteeRole: "student" | "teacher";
 }
 
 export interface TeacherOnboardingInput {
@@ -67,7 +68,7 @@ export async function getActiveInvitePreview(
 ): Promise<InvitePreview | null> {
   const inviteResult = await supabase
     .from("invite_links")
-    .select("id, tenant_id, issuer_teacher_id, expires_at")
+    .select("id, tenant_id, issuer_teacher_id, expires_at, invitee_role")
     .eq("token", inviteCode)
     .eq("status", "active")
     .maybeSingle();
@@ -90,7 +91,17 @@ export async function getActiveInvitePreview(
     teacherId: inviteResult.data.issuer_teacher_id,
     academyName: tenantResult.data.name,
     teacherName: teacherResult.data.name,
+    inviteeRole: inviteResult.data.invitee_role ?? "student",
   };
+}
+
+export async function completeInvitedTeacherOnboarding(supabase: SupabaseClient, input: Omit<TeacherOnboardingInput, "academyName"> & { inviteCode: string }) {
+  await ensureProfileIsNew(supabase, input.userId);
+  const invite = await getActiveInvitePreview(supabase, input.inviteCode);
+  if (!invite || invite.inviteeRole !== "teacher") throw new Error("This teacher invite link is invalid or expired.");
+  const result = await supabase.from("teachers").insert({ id: input.userId, tenant_id: invite.tenantId, role: "assistant", name: input.teacherName, email: input.email, invited_by: invite.teacherId });
+  if (result.error) fail(result.error, "Unable to create teacher profile.");
+  return { tenantId: invite.tenantId };
 }
 
 export async function completeTeacherOnboarding(
@@ -161,6 +172,7 @@ export async function completeStudentOnboarding(
   const inviteCode = input.inviteCode?.trim();
   const invite = inviteCode ? await getActiveInvitePreview(supabase, inviteCode) : null;
   if (inviteCode && !invite) throw new Error("This invite link is invalid or expired.");
+  if (invite?.inviteeRole === "teacher") throw new Error("This link is for teacher signup.");
 
   let tenantId: string;
   let teacherId: string | null = null;

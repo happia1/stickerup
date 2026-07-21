@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { completeStudentOnboarding, completeTeacherOnboarding } from "@/lib/repositories/onboarding";
+import { completeInvitedTeacherOnboarding, completeStudentOnboarding, completeTeacherOnboarding } from "@/lib/repositories/onboarding";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getRequestUser } from "@/lib/supabase/server-auth";
 import { getAuthEmailForIdentifier, isUsernameLoginIdentifier, normalizeLoginIdentifier } from "@/lib/auth/identifier";
@@ -81,13 +81,15 @@ export async function POST(request: Request) {
     }
 
     if (signupType === "teacher") {
-      const result = await completeTeacherOnboarding(admin, {
+      const result = payload.inviteCode ? await completeInvitedTeacherOnboarding(admin, {
+        userId: user.id, email: user.email, teacherName: name, inviteCode: payload.inviteCode,
+      }) : await completeTeacherOnboarding(admin, {
         userId: user.id,
         email: user.email,
         academyName,
         teacherName: name,
       });
-      return NextResponse.json({ redirectTo: "/admin/dashboard", inviteCode: result.inviteCode });
+      return NextResponse.json({ redirectTo: "/admin/dashboard", inviteCode: "inviteCode" in result ? result.inviteCode : undefined });
     }
 
     if (age === null || !Number.isInteger(age) || age < 1 || age > 100) {
