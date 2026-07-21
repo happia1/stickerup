@@ -30,7 +30,9 @@ function startOfWeekMonday(d: Date): Date {
 export function computePeriodBounds(
   unit: RankingUnit,
   refDate: Date = DEMO_NOW,
-  customDays: number | null = null
+  customDays: number | null = null,
+  customStart: string | null = null,
+  customEnd: string | null = null
 ): PeriodBounds {
   const ref = new Date(refDate);
   ref.setHours(0, 0, 0, 0);
@@ -53,6 +55,9 @@ export function computePeriodBounds(
       return { period_start: toDateOnly(start), period_end: toDateOnly(end) };
     }
     case "custom": {
+      if (customStart && customEnd && customStart <= customEnd) {
+        return { period_start: customStart, period_end: customEnd };
+      }
       const days = customDays && customDays > 0 ? customDays : 7;
       const start = new Date(ref);
       start.setDate(ref.getDate() - (days - 1));

@@ -275,6 +275,12 @@ pm run build는 기존 EISDIR/EPERM 환경 이슈로 실패
 - 상태: 검증 진행 중.
 - 다음 할 일: 배포 후 이벤트 화면 → 상품 보관함 → 이벤트 화면 이동과 상품 CRUD를 확인한다.
 
+## 2026-07-21 (fix Vercel ranking helper signature mismatch)
+
+- 한 일: 상품 보관함 분리 커밋의 이벤트 화면이 5개 인자 기간 계산 함수를 호출했지만 원격에는 3개 인자 함수가 남아 Vercel 타입 검사가 실패한 문제를 수정했다. 기간 함수에 선택적 custom 시작일/종료일 인자를 반영해 호출부와 일치시켰다.
+- 상태: 재빌드 및 재배포 진행 중.
+- 다음 할 일: Vercel에서 커밋 빌드 성공과 `/admin/products` 경로 생성을 확인한다.
+
 
 ## 2026-07-21 (auto-login and logout controls)
 
