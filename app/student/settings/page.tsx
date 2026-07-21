@@ -1,12 +1,22 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useToast } from "@/lib/toast/provider";
 import clsx from "@/lib/clsx";
 
 export default function StudentSettingsPage() {
+  const router = useRouter();
   const showToast = useToast();
   const [notifications, setNotifications] = useState(true);
+
+  async function handleLogout() {
+    const supabase = getSupabaseBrowserClient();
+    if (supabase) await supabase.auth.signOut();
+    showToast("로그아웃했습니다.");
+    router.replace("/");
+  }
 
   return (
     <div>
@@ -29,6 +39,17 @@ export default function StudentSettingsPage() {
           <span className={clsx("w-11 h-6 rounded-full relative transition-colors", notifications ? "bg-brand-amber" : "bg-surface-raised")}>
             <span className={clsx("absolute top-0.5 w-5 h-5 rounded-full bg-surface-page transition-transform", notifications ? "translate-x-[22px]" : "translate-x-0.5")} />
           </span>
+        </button>
+      </Card>
+
+      <Card>
+        <h2 className="text-subtitle mb-2">계정</h2>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="w-full rounded-xl bg-surface-raised px-3 py-3 text-left text-body text-text-primary"
+        >
+          로그아웃
         </button>
       </Card>
     </div>

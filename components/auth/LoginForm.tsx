@@ -22,7 +22,34 @@ export function LoginForm() {
 
   useEffect(() => {
     setRememberLogin(getRememberLoginPreference());
-  }, []);
+
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+
+    let active = true;
+    async function redirectIfAlreadySignedIn(client: NonNullable<ReturnType<typeof getSupabaseBrowserClient>>) {
+      const { data } = await client.auth.getSession();
+      const accessToken = data.session?.access_token;
+      if (!accessToken) return;
+
+      try {
+        const profileResponse = await fetch("/api/auth/profile", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          cache: "no-store",
+        });
+        const profile = (await profileResponse.json()) as { role?: ProfileRole; onboarded?: boolean };
+        if (!active || !profile.onboarded || !profile.role) return;
+        router.replace(profile.role === "student" ? "/student/home" : "/admin/dashboard");
+      } catch {
+        // 로그인 화면은 그대로 유지한다. 수동 로그인 시 상세 오류를 표시한다.
+      }
+    }
+
+    void redirectIfAlreadySignedIn(supabase);
+    return () => {
+      active = false;
+    };
+  }, [router]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

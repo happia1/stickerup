@@ -131,3 +131,20 @@
 - Cause: normal app routes still initialized the legacy React store with seeded mock students, classes, ledger entries, rewards, and notices as fallback data.
 - Resolution: emptied the mock seed exports, reset the default current user id, removed the settings demo account switcher, and added an explicit empty/login state when Supabase student data is unavailable.
 
+
+## [2026-07-21] Auto-login session not routing users
+
+- Symptom: users with an existing Supabase session were still shown the login form instead of being routed to their student/admin screen.
+- Cause: the login form persisted Supabase sessions, but it did not check an existing session on mount and route by profile role.
+- Resolution: added an initial `getSession()` check that calls `/api/auth/profile` and redirects by role when the account is onboarded.
+
+## [2026-07-21] Logout control missing from settings
+
+- Symptom: top-bar settings had no logout action.
+- Resolution: added a settings-page logout action for students and a compact admin top-bar logout button. Both call Supabase Auth `signOut()` and return to `/`.
+
+## [2026-07-21] Transient Next build ENOENT on admin org route
+
+- Symptom: the first production build after edits failed reading `app/admin/org/page.tsx` even though the file existed.
+- Cause: transient Windows/Next build file-read race.
+- Resolution: verified the file existed and reran `npm.cmd run build`; the second build completed successfully.

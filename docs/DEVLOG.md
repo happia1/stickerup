@@ -229,3 +229,11 @@ pm run build는 기존 EISDIR/EPERM 환경 이슈로 실패
 - Added `NEXT_PUBLIC_ENABLE_MOCK_DATA=false` to `.env.example` as the documented default.
 - Verification: `npm.cmd run typecheck` passed. `npm.cmd run build` passed. Existing Next.js outputFileTracing / webpack cache warnings remain non-blocking.
 
+
+## 2026-07-21 (auto-login and logout controls)
+
+- Added persisted-session auto redirect to the shared login form. When Supabase already has a valid session, the app now checks `/api/auth/profile` and routes students to `/student/home` and teachers/admins to `/admin/dashboard` without requiring another login.
+- Added logout from the student settings screen reached through the top-bar settings icon. Logout calls Supabase Auth `signOut()` and returns to `/`.
+- Added a compact admin top-bar logout button for teacher/admin sessions.
+- Fixed an existing admin invite action type mismatch by providing the default student invite role.
+- Verification: `npm.cmd run typecheck` passed. First `npm.cmd run build` hit a transient Windows/Next file-read ENOENT for `app/admin/org/page.tsx`; rerunning `npm.cmd run build` passed. Existing outputFileTracing / webpack cache warnings remain non-blocking.

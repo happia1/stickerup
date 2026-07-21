@@ -1,10 +1,12 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { useAppState } from "@/lib/store/provider";
 import { getTeacherById, pendingCounts } from "@/lib/store/selectors";
 import { fmtDate } from "@/lib/format";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export function StudentTopBar() {
   const state = useAppState();
@@ -47,15 +49,23 @@ export function StudentTopBar() {
 }
 
 export function AdminTopBar() {
+  const router = useRouter();
   const state = useAppState();
   const counts = pendingCounts(state);
   const me = getTeacherById(state, state.currentUserId);
+  async function handleLogout() {
+    const supabase = getSupabaseBrowserClient();
+    if (supabase) await supabase.auth.signOut();
+    router.replace("/");
+  }
+
   return (
     <div className="flex items-center justify-between px-6 py-3 bg-surface-page">
       <span className="font-extrabold text-subtitle">🛠 StickerUp Admin</span>
       <div className="flex items-center gap-4 text-caption text-text-secondary">
         <span>승인 대기 {counts.homework + counts.praise + counts.enrollment}건</span>
         <span className="font-bold text-text-primary">{me?.name ?? "관리자"}</span>
+        <button type="button" onClick={handleLogout} className="rounded-lg bg-surface-raised px-3 py-1.5 text-caption text-text-primary">로그아웃</button>
       </div>
     </div>
   );
