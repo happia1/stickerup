@@ -21,7 +21,7 @@ export interface TeacherOnboardingInput {
 export interface StudentOnboardingInput {
   userId: string;
   studentName: string;
-  age: number | null;
+  birthDate: string;
   academyName: string;
   inviteCode?: string | null;
 }
@@ -214,7 +214,7 @@ export async function completeStudentOnboarding(
     invited_by_teacher_id: teacherId,
     invite_link_id: inviteId,
     name: input.studentName,
-    age: input.age,
+    birth_date: input.birthDate,
   });
   if (studentResult.error) fail(studentResult.error, "Unable to create student profile.");
 

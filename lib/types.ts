@@ -46,6 +46,7 @@ export interface Student {
   invite_link_id: string | null;
   name: string;
   age: number | null;
+  birth_date?: string | null;
   profile_image_url: string | null;
   account_status: "active" | "inactive";
   created_at: string;

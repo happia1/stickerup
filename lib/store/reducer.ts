@@ -468,7 +468,7 @@ export function appReducer(state: AppState, action: Action): AppState {
         ...state,
         students: state.students.map((s) =>
           s.id === action.studentId
-            ? { ...s, name: action.name, age: action.age, profile_image_url: action.profileImageUrl }
+            ? { ...s, name: action.name, birth_date: action.birthDate, profile_image_url: action.profileImageUrl }
             : s
         ),
       };

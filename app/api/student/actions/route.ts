@@ -11,13 +11,14 @@ export async function POST(request: Request) {
   const student = await db.from("students").select("id, tenant_id").eq("id", auth.user.id).maybeSingle();
   if (student.error || !student.data) return NextResponse.json({ error: "학생 계정이 필요합니다." }, { status: 403 });
   const studentData = student.data;
-  const body = await request.json() as { action?: "attendance" | "homework" | "praise" | "enrollment" | "withdraw-enrollment" | "profile"; classId?: string | null; classIds?: string[]; enrollmentId?: string; tier?: string; reason?: string; name?: string; age?: number; profileImageUrl?: string | null };
+  const body = await request.json() as { action?: "attendance" | "homework" | "praise" | "enrollment" | "withdraw-enrollment" | "profile"; classId?: string | null; classIds?: string[]; enrollmentId?: string; tier?: string; reason?: string; name?: string; birthDate?: string | null; profileImageUrl?: string | null };
 
   if (body.action === "profile") {
     const name = body.name?.trim();
     if (!name) return NextResponse.json({ error: "이름을 입력해 주세요." }, { status: 400 });
+    if (body.birthDate && (!/^\d{4}-\d{2}-\d{2}$/.test(body.birthDate) || body.birthDate > koreaDateKey())) return NextResponse.json({ error: "올바른 생년월일을 입력해 주세요." }, { status: 400 });
     if (body.profileImageUrl && !body.profileImageUrl.startsWith("data:image/")) return NextResponse.json({ error: "올바른 프로필 이미지를 선택해 주세요." }, { status: 400 });
-    const result = await db.from("students").update({ name, age: body.age || null, profile_image_url: body.profileImageUrl ?? null }).eq("id", studentData.id);
+    const result = await db.from("students").update({ name, birth_date: body.birthDate || null, profile_image_url: body.profileImageUrl ?? null }).eq("id", studentData.id);
     if (result.error) return NextResponse.json({ error: result.error.message }, { status: 400 });
     return NextResponse.json({ ok: true });
   }

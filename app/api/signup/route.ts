@@ -3,6 +3,7 @@ import { completeInvitedTeacherOnboarding, completeStudentOnboarding, completeTe
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getRequestUser } from "@/lib/supabase/server-auth";
 import { getAuthEmailForIdentifier, isUsernameLoginIdentifier, normalizeLoginIdentifier } from "@/lib/auth/identifier";
+import { koreaDateKey } from "@/lib/korea-date";
 import {
   getSupabaseServerConfigError,
   getSupabaseServerConfigMessage,
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
   const payload = (await request.json()) as {
     signupType?: SignupType;
     name?: string;
-    age?: number | null;
+    birthDate?: string | null;
     academyName?: string;
     inviteCode?: string | null;
     identifier?: string;
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
   const signupType = payload.signupType;
   const name = payload.name?.trim();
   const academyName = payload.academyName?.trim();
-  const age = payload.age ?? null;
+  const birthDate = payload.birthDate?.trim() ?? null;
 
   if (!signupType || !name || !academyName) {
     return NextResponse.json({ error: "Signup type, name, and academy name are required." }, { status: 400 });
@@ -64,7 +65,7 @@ export async function POST(request: Request) {
           signup_role: signupType,
           display_name: name,
           academy_name: academyName,
-          age: signupType === "student" ? age : null,
+          birth_date: signupType === "student" ? birthDate : null,
           invite_code: payload.inviteCode ?? null,
           login_identifier: identifier,
         },
@@ -92,13 +93,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ redirectTo: "/admin/dashboard", inviteCode: "inviteCode" in result ? result.inviteCode : undefined });
     }
 
-    if (age === null || !Number.isInteger(age) || age < 1 || age > 100) {
-      return NextResponse.json({ error: "A valid age is required for student signup." }, { status: 400 });
+    if (!birthDate || !/^\d{4}-\d{2}-\d{2}$/.test(birthDate) || Number.isNaN(new Date(`${birthDate}T00:00:00`).getTime()) || birthDate > koreaDateKey()) {
+      return NextResponse.json({ error: "올바른 생년월일을 입력해 주세요." }, { status: 400 });
     }
     const result = await completeStudentOnboarding(admin, {
       userId: user.id,
       studentName: name,
-      age,
+      birthDate,
       academyName,
       inviteCode: payload.inviteCode,
     });

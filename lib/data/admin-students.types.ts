@@ -3,7 +3,7 @@ export type StudentConnectionStatus = "pending" | "connected" | "unconnected";
 export interface AdminStudentRow {
   id: string;
   name: string;
-  age: number | null;
+  birthDate: string | null;
   connectionStatus: StudentConnectionStatus;
   classNames: string[];
   classMemberships: Array<{ classId: string; className: string; isDefault: boolean }>;

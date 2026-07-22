@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getSupabaseBrowserConfigError } from "@/lib/supabase/config";
 import { getAuthEmailForIdentifier, isUsernameLoginIdentifier, normalizeLoginIdentifier } from "@/lib/auth/identifier";
+import { koreaDateKey } from "@/lib/korea-date";
 
 type SignupType = "student" | "teacher";
 
@@ -34,7 +35,7 @@ function SignupForm() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
-  const [age, setAge] = useState("");
+  const [birthDate, setBirthDate] = useState("");
   const [academyName, setAcademyName] = useState("");
   const [invite, setInvite] = useState<InvitePreview | null>(null);
   const [loadingInvite, setLoadingInvite] = useState(Boolean(inviteCode));
@@ -58,7 +59,7 @@ function SignupForm() {
       setIdentifier("");
       setPassword("");
       setName("");
-      setAge("");
+      setBirthDate("");
       setAcademyName("");
       void supabase.auth.signOut({ scope: "local" });
       return () => {
@@ -77,7 +78,7 @@ function SignupForm() {
       if (metadata.signup_role === "student" || metadata.signup_role === "teacher") setSignupType(metadata.signup_role);
       if (typeof metadata.display_name === "string") setName(metadata.display_name);
       if (typeof metadata.academy_name === "string") setAcademyName(metadata.academy_name);
-      if (typeof metadata.age === "number") setAge(String(metadata.age));
+      if (typeof metadata.birth_date === "string") setBirthDate(metadata.birth_date);
     });
     return () => {
       active = false;
@@ -121,8 +122,8 @@ function SignupForm() {
       setMessage("Supabase 환경변수를 설정한 뒤 다시 시도해 주세요.");
       return;
     }
-    if (signupType === "student" && (!Number.isInteger(Number(age)) || Number(age) < 1 || Number(age) > 100)) {
-      setMessage("학생 나이는 1부터 100 사이로 입력해 주세요.");
+    if (signupType === "student" && (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate) || birthDate > koreaDateKey())) {
+      setMessage("올바른 생년월일을 입력해 주세요.");
       return;
     }
     if (!existingSession && password.length < 6) {
@@ -154,7 +155,7 @@ function SignupForm() {
               signup_role: signupType,
               display_name: name,
               academy_name: academyName,
-              age: signupType === "student" ? Number(age) : null,
+              birth_date: signupType === "student" ? birthDate : null,
               invite_code: inviteCode,
               login_identifier: normalizedIdentifier,
             },
@@ -177,7 +178,7 @@ function SignupForm() {
         body: JSON.stringify({
           signupType,
           name,
-          age: signupType === "student" ? Number(age) : null,
+          birthDate: signupType === "student" ? birthDate : null,
           academyName,
           inviteCode,
           identifier: isUsernameSignup ? normalizedIdentifier : undefined,
@@ -242,8 +243,8 @@ function SignupForm() {
           <label className="block text-caption text-text-secondary">이름
             <input required value={name} onChange={(event) => setName(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none" />
           </label>
-          {signupType === "student" && <label className="block text-caption text-text-secondary">나이
-            <input required min="1" max="100" type="number" value={age} onChange={(event) => setAge(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none" />
+          {signupType === "student" && <label className="block text-caption text-text-secondary">생년월일
+            <input required max={koreaDateKey()} type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none" />
           </label>}
           <label className="block text-caption text-text-secondary">학원 이름
             <input required value={academyName} readOnly={Boolean(invite)} onChange={(event) => setAcademyName(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none read-only:cursor-not-allowed read-only:text-text-secondary" />

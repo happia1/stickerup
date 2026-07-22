@@ -9,13 +9,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: requestUser.error }, { status: 401 });
   }
 
-  const payload = (await request.json()) as { inviteCode?: string; studentName?: string; age?: number | null; academyName?: string };
+  const payload = (await request.json()) as { inviteCode?: string; studentName?: string; birthDate?: string; academyName?: string };
   const inviteCode = payload.inviteCode?.trim() || null;
   const studentName = payload.studentName?.trim();
   const academyName = payload.academyName?.trim();
-  const age = payload.age ?? null;
-  if (!studentName || !academyName || (age !== null && (!Number.isInteger(age) || age < 1 || age > 100))) {
-    return NextResponse.json({ error: "Academy name, student name, and a valid age are required." }, { status: 400 });
+  const birthDate = payload.birthDate?.trim();
+  if (!studentName || !academyName || !birthDate || !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
+    return NextResponse.json({ error: "학원 이름, 학생 이름과 올바른 생년월일이 필요합니다." }, { status: 400 });
   }
 
   try {
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
       userId: requestUser.user.id,
       inviteCode,
       studentName,
-      age,
+      birthDate,
       academyName,
     });
     return NextResponse.json({ redirectTo: "/student/home", enrollmentStatus: result.enrollmentStatus });

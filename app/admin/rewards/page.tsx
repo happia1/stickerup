@@ -316,6 +316,7 @@ export default function AdminRewardsPage() {
     <div>
       <h2 className="mb-1 text-title">이벤트/상품 관리</h2>
       <p className="mb-5 text-caption text-text-secondary">이벤트는 그룹의 랭킹 단위기간과 연결돼요. 주기가 끝나면 완료로 분류되고, 다음 주기 보상은 새 이벤트로 등록해요.</p>
+      <div className="mb-5 grid max-w-md grid-cols-2 rounded-xl bg-surface-raised p-1"><button type="button" className="rounded-lg bg-brand-amber px-4 py-2.5 font-bold text-surface-page">이벤트 리스트</button><Link href="/admin/products" className="rounded-lg px-4 py-2.5 text-center font-bold text-text-secondary">경품 리스트 관리</Link></div>
 
       <section className="mb-6 rounded-card bg-surface-page p-5">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
@@ -357,16 +358,14 @@ export default function AdminRewardsPage() {
             })}
           </div>
         )}
+        <div className="mt-4 flex justify-end"><button type="button" onClick={()=>setCreateOpen(true)} className="inline-flex items-center gap-1 rounded-lg bg-brand-amber px-3 py-2 text-caption font-bold text-surface-page"><span className="text-lg leading-none">＋</span> 이벤트 생성</button></div>
       </section>
 
-      <section className="mt-6 rounded-card bg-surface-page p-5">
-        <div className={createOpen ? "mb-4 flex items-center justify-between gap-3" : "flex items-center justify-between gap-3"}>
+      {createOpen&&<div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4" role="dialog" aria-modal="true" onClick={()=>setCreateOpen(false)}><section className="my-auto max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-card bg-surface-page p-5" onClick={event=>event.stopPropagation()}>
+        <div className="mb-4 flex items-center justify-between gap-3">
           <h4 className="text-subtitle">이벤트 생성</h4>
-          <button type="button" aria-expanded={createOpen} onClick={() => setCreateOpen((open) => !open)} className="rounded-lg border border-border px-3 py-2 text-caption font-bold text-text-secondary">
-            {createOpen ? "접기 ▲" : "펼치기 ▼"}
-          </button>
+          <button type="button" onClick={()=>setCreateOpen(false)} aria-label="닫기" className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-raised text-xl text-text-secondary">×</button>
         </div>
-        {createOpen && <>
         <label className="mb-1 block text-caption font-semibold text-text-secondary">이벤트명</label>
         <input value={eventName} onChange={(event) => setEventName(event.target.value)} placeholder="예: 7월 출석왕 이벤트" className="mb-3 w-full rounded-lg border border-border px-2.5 py-2 text-body" />
         <label className="mb-1 block text-caption font-semibold text-text-secondary">이벤트 설명</label><textarea value={eventDescription} onChange={(event) => setEventDescription(event.target.value)} placeholder="학생에게 보여줄 이벤트 설명" className="mb-3 min-h-20 w-full rounded-lg border border-border px-2.5 py-2 text-body" />
@@ -413,13 +412,7 @@ export default function AdminRewardsPage() {
           이벤트 등록하기
         </Button>
         </div>
-        </>}
-      </section>
-
-      <Link href="/admin/products" className="mt-3 flex items-center justify-between gap-3 rounded-card bg-surface-page p-5">
-          <h4 className="text-subtitle">경품 리스트 관리</h4>
-          <span className="rounded-lg border border-border px-3 py-2 text-caption font-bold text-text-secondary">바로가기 →</span>
-      </Link>
+      </section></div>}
     </div>
   );
 }

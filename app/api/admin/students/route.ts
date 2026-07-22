@@ -21,7 +21,7 @@ export async function GET(request: Request) {
   const context = await getContext(request); if ("error" in context) return context.error;
   const { db, teacher } = context;
   const [students, classes, enrollments, ledger, connections] = await Promise.all([
-    db.from("students").select("id, name, age, invited_by_teacher_id, created_at").eq("tenant_id", teacher.tenant_id),
+    db.from("students").select("id, name, birth_date, invited_by_teacher_id, created_at").eq("tenant_id", teacher.tenant_id),
     db.from("classes").select("id, name, is_default").eq("tenant_id", teacher.tenant_id),
     db.from("enrollments").select("student_id, class_id, status, requested_at").eq("tenant_id", teacher.tenant_id),
     db.from("sticker_ledger").select("student_id, count, status").eq("tenant_id", teacher.tenant_id),
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
     return {
       id: student.id,
       name: student.name,
-      age: student.age,
+      birthDate: student.birth_date,
       connectionStatus,
       classNames: studentEnrollments.filter((row) => row.status === "approved").map((row) => classNameById.get(row.class_id)).filter((name): name is string => Boolean(name)),
       classMemberships: approvedMemberships,

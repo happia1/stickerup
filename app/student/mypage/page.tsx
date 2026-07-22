@@ -18,9 +18,16 @@ import { useToast } from "@/lib/toast/provider";
 import clsx from "@/lib/clsx";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { setPreferredClass } from "@/lib/preferred-class";
+import { koreaDateKey } from "@/lib/korea-date";
 
 function formatAttendanceTime(value: string): string {
   return value.slice(0, 5);
+}
+
+function birthdayLabel(value?: string | null) {
+  if (!value) return "생일 미입력";
+  const [, month, day] = value.split("-");
+  return `${Number(month)}월 ${Number(day)}일`;
 }
 
 function resizeProfileImage(file: File): Promise<string> {
@@ -53,7 +60,7 @@ export default function StudentMyPage() {
   const me = getStudentById(state, state.currentUserId);
   const [editingProfile, setEditingProfile] = useState(false);
   const [name, setName] = useState(me?.name ?? "");
-  const [age, setAge] = useState(String(me?.age ?? ""));
+  const [birthDate, setBirthDate] = useState(me?.birth_date ?? "");
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(me?.profile_image_url ?? null);
   const [savingProfile, setSavingProfile] = useState(false);
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
@@ -111,7 +118,7 @@ export default function StudentMyPage() {
                 className="w-7 h-7 rounded-full bg-surface-raised text-text-secondary text-caption flex items-center justify-center flex-shrink-0"
                 onClick={() => {
                   setName(me.name);
-                  setAge(String(me.age ?? ""));
+                  setBirthDate(me.birth_date ?? "");
                   setProfileImageUrl(me.profile_image_url ?? null);
                   setEditingProfile((value) => !value);
                 }}
@@ -121,14 +128,15 @@ export default function StudentMyPage() {
             </div>
             {editingProfile ? (
               <input
-                type="number"
-                className="mt-2 w-24 bg-surface-raised rounded-lg px-2.5 py-1.5 text-caption text-text-primary"
-                value={age}
-                onChange={(event) => setAge(event.target.value)}
-                aria-label="나이"
+                type="date"
+                max={koreaDateKey()}
+                className="mt-2 w-full max-w-44 bg-surface-raised rounded-lg px-2.5 py-1.5 text-caption text-text-primary"
+                value={birthDate}
+                onChange={(event) => setBirthDate(event.target.value)}
+                aria-label="생년월일"
               />
             ) : (
-              <p className="text-caption text-text-secondary truncate">{approved.map((cls) => cls.name).join(" · ")}</p>
+              <p className="text-caption text-text-secondary truncate"><span className="font-bold text-brand-amber">{birthdayLabel(me.birth_date)}</span>{approved.length ? ` · ${approved.map((cls) => cls.name).join(" · ")}` : ""}</p>
             )}
           </div>
           <div className="text-right">
@@ -157,9 +165,8 @@ export default function StudentMyPage() {
                 try {
                   setSavingProfile(true);
                   const nextName = name.trim() || me.name;
-                  const nextAge = Number(age) || 0;
-                  await postStudentAction({ action: "profile", name: nextName, age: nextAge, profileImageUrl });
-                  dispatch({ type: "UPDATE_STUDENT_PROFILE", studentId: me.id, name: nextName, age: nextAge, profileImageUrl });
+                  await postStudentAction({ action: "profile", name: nextName, birthDate: birthDate || null, profileImageUrl });
+                  dispatch({ type: "UPDATE_STUDENT_PROFILE", studentId: me.id, name: nextName, birthDate: birthDate || null, profileImageUrl });
                   showToast("프로필이 저장되었어요.");
                   setEditingProfile(false);
                 } catch (error) {
@@ -174,7 +181,7 @@ export default function StudentMyPage() {
               className="!py-2 !text-caption"
               onClick={() => {
                 setName(me.name);
-                setAge(String(me.age ?? ""));
+                setBirthDate(me.birth_date ?? "");
                 setProfileImageUrl(me.profile_image_url ?? null);
                 setEditingProfile(false);
               }}
