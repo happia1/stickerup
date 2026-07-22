@@ -2,31 +2,31 @@ import { Button } from "./Button";
 
 export function RewardCard({
   title,
-  qty,
-  claimed,
   buttonLabel,
   disabled,
   onClaim,
   imageUrl,
 }: {
   title: string;
-  qty: number;
-  claimed: number;
   buttonLabel: string;
   disabled: boolean;
   onClaim: () => void;
   imageUrl?: string | null;
 }) {
   return (
-    <div className="min-w-[140px] max-w-[140px] rounded-card p-2.5 flex-shrink-0 bg-surface-raised">
-      {imageUrl ? <img src={imageUrl} alt={title} className="mb-1.5 h-20 w-full rounded-lg object-cover" /> : <div className="text-2xl text-center mb-1.5">🎁</div>}
-      <p className="text-micro font-bold text-center leading-tight mb-1">{title}</p>
-      <p className="text-micro text-text-muted text-center mb-2">
-        잔여 {qty - claimed}/{qty}
-      </p>
+    <article className="w-[44%] min-w-[132px] max-w-[156px] flex-none snap-start rounded-card bg-surface-raised p-2.5">
+      {imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={imageUrl} alt={title} className="mb-2 aspect-square w-full rounded-lg object-cover" />
+      ) : (
+        <div className="mb-2 flex aspect-square w-full items-center justify-center rounded-lg bg-surface-page text-3xl" aria-hidden="true">
+          🎁
+        </div>
+      )}
+      <p className="mb-2 line-clamp-2 min-h-8 text-center text-micro font-bold leading-tight">{title}</p>
       <Button variant="secondary" fullWidth disabled={disabled} onClick={onClaim} className="!py-1.5 !text-micro">
         {buttonLabel}
       </Button>
-    </div>
+    </article>
   );
 }
