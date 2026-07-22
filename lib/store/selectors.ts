@@ -173,7 +173,7 @@ export function pendingCounts(state: AppState) {
   return {
     homework: 0,
     praise: state.praiseRequests.filter((p) => p.approval_status === "pending").length,
-    enrollment: state.enrollments.filter((e) => e.status === "pending").length,
+    enrollment: 0,
   };
 }
 

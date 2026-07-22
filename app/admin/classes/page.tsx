@@ -44,8 +44,8 @@ export default function AdminClassesPage() {
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-1">
+    <div className="classes-page">
+      <div className="classes-page-header flex items-center justify-between mb-1">
         <h2 className="text-title">반 관리</h2>
         <Button onClick={() => setShowForm((v) => !v)}>{showForm ? "닫기" : "+ 특강반 추가"}</Button>
       </div>
@@ -122,6 +122,10 @@ export default function AdminClassesPage() {
         </div>
       )}
 
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <h3 className="text-subtitle">특강반 목록</h3>
+        <Button onClick={() => setShowForm((value) => !value)}>{showForm ? "닫기" : "+ 특강반 추가"}</Button>
+      </div>
       <div className="border border-border rounded-xl overflow-hidden mb-6">
         <table className="w-full text-body">
           <thead>

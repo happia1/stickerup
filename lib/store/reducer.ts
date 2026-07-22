@@ -176,9 +176,9 @@ export function appReducer(state: AppState, action: Action): AppState {
           tenant_id: state.tenant.id,
           student_id: action.studentId,
           class_id: classId,
-          status: "pending" as const,
+          status: "approved" as const,
           requested_at: nowISO(),
-          approved_at: null,
+          approved_at: nowISO(),
           approver_id: null,
         }));
       return { ...state, enrollments: [...state.enrollments, ...newRows] };

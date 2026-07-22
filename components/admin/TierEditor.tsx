@@ -10,11 +10,9 @@ function uidLocal(): string {
 export function TierEditor({
   tiers,
   onSave,
-  savedLabel = "저장된 값",
 }: {
   tiers: TierConfig[];
   onSave: (tiers: TierConfig[]) => void;
-  savedLabel?: string;
 }) {
   const [draft, setDraft] = useState<TierConfig[]>(() => tiers.map((t) => ({ ...t })));
   const [dirty, setDirty] = useState(false);
@@ -121,7 +119,6 @@ export function TierEditor({
         >
           수정완료
         </Button>
-        {!dirty && <span className="text-caption text-text-muted">{savedLabel}과 동일해요.</span>}
       </div>
     </div>
   );

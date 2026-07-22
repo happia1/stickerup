@@ -87,7 +87,7 @@ export default function AdminDashboardPage() {
 
       <div className="mb-6 grid grid-cols-3 gap-3">
         <KpiCard label="칭찬 승인 대기" value={`${counts.praise}건`} />
-        <KpiCard label="반 승인 대기" value={`${counts.enrollment}건`} />
+        <KpiCard label="등록 학생" value={`${state.students.length}명`} />
         <KpiCard label="누적 롤백" value={`${cancelled}건`} />
       </div>
 

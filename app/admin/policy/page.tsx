@@ -28,7 +28,6 @@ export default function AdminPolicyPage() {
       <div className="mb-6">
         <TierEditor
           tiers={state.attendancePolicy}
-          savedLabel="현재 저장된 출석 정책"
           onSave={(tiers) => {
             dispatch({ type: "SET_ATTENDANCE_POLICY", tiers });
             showToast("출석 정책이 반영되었어요.");
@@ -67,7 +66,6 @@ export default function AdminPolicyPage() {
       <TierEditor
         key={homeworkKey}
         tiers={state.homeworkPolicy}
-        savedLabel="현재 저장된 숙제 정책"
         onSave={(tiers) => {
           dispatch({ type: "SET_HOMEWORK_POLICY", tiers, mode });
           showToast("숙제 정책이 반영되었어요.");

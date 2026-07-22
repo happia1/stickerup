@@ -51,17 +51,64 @@ textarea::placeholder {
   scrollbar-width: none;
 }
 
-@media (max-width: 1023px) {
-  .admin-content table {
-    min-width: 680px;
-  }
+.classes-page-header > button {
+  display: none;
+}
 
+.classes-page > p.text-subtitle.mb-2,
+.classes-page > p.text-subtitle.mb-2 + div {
+  display: none;
+}
+
+@media (max-width: 1023px) {
   .admin-content input,
   .admin-content select,
   .admin-content textarea,
   .admin-content button,
   .admin-content a {
     max-width: 100%;
+  }
+}
+
+@media (max-width: 767px) {
+  .admin-content table {
+    width: 100%;
+    table-layout: fixed;
+    font-size: 11px;
+    line-height: 1.25;
+  }
+
+  .admin-content th,
+  .admin-content td {
+    min-width: 0;
+    padding: 6px 4px !important;
+    overflow-wrap: anywhere;
+    word-break: keep-all;
+    white-space: normal;
+    vertical-align: middle;
+  }
+
+  .admin-content td .truncate,
+  .admin-content td.truncate {
+    overflow: visible;
+    white-space: normal;
+    text-overflow: clip;
+  }
+
+  .admin-content td input,
+  .admin-content td select {
+    width: 100%;
+    min-width: 0;
+    padding: 4px 2px;
+    font-size: 10px;
+  }
+
+  .admin-content td button,
+  .admin-content td a {
+    white-space: normal;
+    padding: 4px;
+    font-size: 10px;
+    line-height: 1.2;
   }
 }
 

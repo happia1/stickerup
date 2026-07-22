@@ -11,6 +11,7 @@ import { useToast } from "@/lib/toast/provider";
 import clsx from "@/lib/clsx";
 import { submitStudentAction } from "@/lib/student-action-client";
 import { koreaDateKey } from "@/lib/korea-date";
+import { Accordion } from "@/components/ui/Accordion";
 
 export function HomeworkSection() {
   const state = useAppState();
@@ -77,11 +78,10 @@ export function HomeworkSection() {
       </Card>
 
       <Card>
-        <h3 className="text-subtitle mb-2">내 과제 체크 내역</h3>
-        {myHomeworks.length === 0 ? (
-          <p className="text-caption text-text-muted">신청 내역이 없어요.</p>
-        ) : (
-          myHomeworks.map((h) => {
+        <Accordion label={`내 과제 체크 내역 (${myHomeworks.length})`} defaultOpen={false}>
+          {myHomeworks.length === 0 ? (
+            <p className="text-caption text-text-muted">과제 체크 내역이 없어요.</p>
+          ) : myHomeworks.map((h) => {
             const cls = state.classes.find((c) => c.id === h.class_id);
             const tierDef = state.homeworkPolicy.find((t) => t.tier === h.completion_tier);
             return (
@@ -97,8 +97,8 @@ export function HomeworkSection() {
                 </Pill>
               </div>
             );
-          })
-        )}
+          })}
+        </Accordion>
       </Card>
     </div>
   );
