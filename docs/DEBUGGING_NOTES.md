@@ -162,3 +162,10 @@
 - 확인: 실제 Supabase 조직에는 선생님 2명, 학생 3명, 기본반 1개만 존재했고 notices/reward_campaigns/homework_submissions/praise_requests는 0건이었다.
 - 조치: `/api/app-state` 전역 hydrate, `/api/student/actions`, `/api/admin/approvals`, `/api/app-mutations`를 추가해 조직 데이터 조회와 변경을 Supabase에 연결했다.
 - 참고: 과거 브라우저 메모리에만 만들고 DB에 저장되지 않은 특강반·공지·이벤트는 서버에서 복구할 수 없으므로 배포 후 다시 등록해야 한다.
+
+## [2026-07-22] 연결 해지가 기본반 승인까지 취소하는 오류
+
+- 증상: 전에 연결 승인된 학생이 학생관리에서 다시 승인 대기로 표시되고, 학생 로그인 시 선생님 연결 카드가 재노출되며 기본반도 사라졌다.
+- 원인: 학생관리의 `disconnect` 처리가 `invited_by_teacher_id`만 해제하지 않고 승인된 enrollments까지 `rejected`로 변경했다.
+- 확인: 두 학생이 실제 DB에서 `invited_by_teacher_id = null`, 기본반 `rejected`, 연결 요청 `revoked/pending` 상태였다.
+- 조치: 연결 해지는 반 등록 상태를 변경하지 않도록 수정했다. 두 학생의 선생님 연결과 기본반 승인을 실제 DB에서 복원하고, 연결/반 상태가 모두 정상임을 재확인했다.

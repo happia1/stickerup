@@ -13,6 +13,7 @@ export default function AdminStudentsPage() {
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [focusedStudentId, setFocusedStudentId] = useState("");
+  const [canDeleteStudents, setCanDeleteStudents] = useState(false);
 
   async function token() {
     const client = getSupabaseBrowserClient();
@@ -28,6 +29,7 @@ export default function AdminStudentsPage() {
       const payload = await response.json() as AdminStudentsData & { error?: string };
       if (!response.ok) throw new Error(payload.error);
       setStudents(payload.students);
+      setCanDeleteStudents(payload.canDeleteStudents);
     } catch (error) {
       toast(error instanceof Error ? error.message : "학생 목록을 불러오지 못했습니다.");
     } finally { setLoading(false); }
@@ -37,7 +39,10 @@ export default function AdminStudentsPage() {
   useEffect(() => { setFocusedStudentId(new URLSearchParams(window.location.search).get("student") ?? ""); }, []);
   useEffect(() => { if (focusedStudentId && students.length) document.getElementById(`student-${focusedStudentId}`)?.scrollIntoView({ behavior: "smooth", block: "center" }); }, [focusedStudentId, students]);
 
-  async function updateConnection(student: AdminStudentRow, action: "approve" | "disconnect") {
+  async function updateConnection(student: AdminStudentRow, action: "approve" | "disconnect" | "revoke_pending" | "delete") {
+    if (action === "disconnect" && !window.confirm(`${student.name} 학생과의 선생님 연결을 해지할까요? 반 승인 상태는 유지됩니다.`)) return;
+    if (action === "revoke_pending" && !window.confirm(`${student.name} 학생의 연결 대기를 해지할까요?`)) return;
+    if (action === "delete" && !window.confirm(`${student.name} 학생 계정과 모든 데이터를 완전히 삭제할까요? 이 작업은 되돌릴 수 없습니다.`)) return;
     try {
       setProcessingId(student.id);
       const accessToken = await token();
@@ -45,7 +50,7 @@ export default function AdminStudentsPage() {
       const response = await fetch("/api/admin/students", { method: "PATCH", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify({ studentId: student.id, action }) });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error);
-      toast(action === "approve" ? `${student.name} 학생의 연결을 승인했어요.` : `${student.name} 학생과의 연결을 해지했어요.`);
+      toast(action === "approve" ? `${student.name} 학생의 연결을 승인했어요.` : action === "delete" ? `${student.name} 학생을 삭제했어요.` : `${student.name} 학생의 연결 상태를 해지했어요.`);
       await load();
     } catch (error) {
       toast(error instanceof Error ? error.message : "연결 상태를 변경하지 못했습니다.");
@@ -66,7 +71,7 @@ export default function AdminStudentsPage() {
             {students.map((student) => <tr id={`student-${student.id}`} key={student.id} className={`border-b last:border-0 border-border ${student.connectionStatus === "pending" ? "bg-state-warningBg/40" : ""} ${focusedStudentId === student.id ? "outline outline-2 outline-brand-amber outline-offset-[-2px]" : ""}`}>
               <td className="p-2.5 font-semibold">{student.name}{student.connectionStatus === "pending" && <span className="ml-2 rounded-full bg-brand-amber px-2 py-0.5 text-caption text-surface-page">대기</span>}</td>
               <td className="p-2.5">{student.age ?? "-"}</td><td className="p-2.5">{student.classNames.join(", ") || "-"}</td><td className="p-2.5">{student.totalStickers}</td><td className="p-2.5">{STATUS_LABEL[student.connectionStatus]}</td>
-              <td className="p-2.5">{student.connectionStatus === "connected" ? <button disabled={processingId === student.id} className="rounded-lg border border-state-danger px-2.5 py-1 text-caption text-state-danger disabled:opacity-50" onClick={() => updateConnection(student, "disconnect")}>해지</button> : student.connectionStatus === "pending" ? <button disabled={processingId === student.id} className="rounded-lg border border-state-success px-2.5 py-1 text-caption text-state-success disabled:opacity-50" onClick={() => updateConnection(student, "approve")}>연결 승인</button> : <span className="text-caption text-text-muted">요청 대기</span>}</td>
+              <td className="p-2.5"><div className="flex flex-wrap items-center gap-1.5">{student.connectionStatus === "connected" ? <button disabled={processingId === student.id} className="rounded-lg border border-state-danger px-2.5 py-1 text-caption text-state-danger disabled:opacity-50" onClick={() => updateConnection(student, "disconnect")}>연결 해지</button> : student.connectionStatus === "pending" ? <><button disabled={processingId === student.id} className="rounded-lg border border-state-success px-2.5 py-1 text-caption text-state-success disabled:opacity-50" onClick={() => updateConnection(student, "approve")}>연결 승인</button><button disabled={processingId === student.id} className="rounded-lg border border-border px-2.5 py-1 text-caption text-text-secondary disabled:opacity-50" onClick={() => updateConnection(student, "revoke_pending")}>대기 해지</button></> : <span className="text-caption text-text-muted">연결 요청 대기</span>}{canDeleteStudents && <button disabled={processingId === student.id} className="rounded-lg px-2.5 py-1 text-caption text-state-danger disabled:opacity-50" onClick={() => updateConnection(student, "delete")}>삭제</button>}</div></td>
             </tr>)}
           </tbody>
         </table>
