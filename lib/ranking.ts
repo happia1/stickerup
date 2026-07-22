@@ -45,6 +45,9 @@ export function computePeriodBounds(
   const ref = koreaCalendarDate(refDate);
 
   switch (unit) {
+    case "all": {
+      return { period_start: "1970-01-01", period_end: toDateOnly(ref) };
+    }
     case "day": {
       const s = toDateOnly(ref);
       return { period_start: s, period_end: s };

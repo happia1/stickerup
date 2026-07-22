@@ -4,14 +4,14 @@ import { computePeriodBounds } from "@/lib/ranking";
 import { RANKING_UNIT_LABEL } from "@/lib/types";
 import type { RankingUnit } from "@/lib/types";
 
-function UnitSelect({ value, onChange }: { value: RankingUnit; onChange: (u: RankingUnit) => void }) {
+function UnitSelect({ value, onChange, includeAll = false }: { value: RankingUnit; onChange: (u: RankingUnit) => void; includeAll?: boolean }) {
   return (
     <select
       className="border border-border rounded-lg px-2.5 py-1.5 text-body"
       value={value}
       onChange={(e) => onChange(e.target.value as RankingUnit)}
     >
-      {Object.entries(RANKING_UNIT_LABEL).map(([v, l]) => (
+      {Object.entries(RANKING_UNIT_LABEL).filter(([v]) => includeAll || v !== "all").map(([v, l]) => (
         <option key={v} value={v}>
           {l}
         </option>
@@ -52,6 +52,7 @@ export default function AdminRankingSettingsPage() {
         <h4 className="text-body font-bold mb-3">전체(글로벌) 랭킹 기본 단위기간</h4>
         <div className="flex items-center gap-3 mb-2 flex-wrap">
           <UnitSelect
+            includeAll
             value={globalUnit}
             onChange={(u) => dispatch({ type: "SET_RANKING_UNIT", classId: null, unit: u, customStart: u === "custom" ? globalBounds.period_start : null, customEnd: u === "custom" ? globalBounds.period_end : null })}
           />
@@ -63,7 +64,7 @@ export default function AdminRankingSettingsPage() {
             />
           )}
           <span className="text-caption text-text-secondary">
-            현재 주기: {globalBounds.period_start} ~ {globalBounds.period_end}
+            현재 주기: {globalUnit === "all" ? `처음부터 ~ ${globalBounds.period_end}` : `${globalBounds.period_start} ~ ${globalBounds.period_end}`}
           </span>
         </div>
       </div>

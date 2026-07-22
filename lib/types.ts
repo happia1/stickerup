@@ -7,7 +7,7 @@ export type TeacherPermissionKey = "notices" | "sticker_policy" | "classes" | "s
 export type TeacherPermissions = Record<TeacherPermissionKey, boolean>;
 export const DEFAULT_TEACHER_PERMISSIONS: TeacherPermissions = { notices: true, sticker_policy: true, classes: true, students: true, approvals: true, sticker_audit: false, ranking: true, rewards: false };
 
-export type RankingUnit = "day" | "week" | "month" | "quarter" | "custom";
+export type RankingUnit = "day" | "week" | "month" | "quarter" | "custom" | "all";
 
 export interface Tenant {
   id: string;
@@ -287,6 +287,7 @@ export const RANKING_UNIT_LABEL: Record<RankingUnit, string> = {
   month: "Monthly",
   quarter: "Quarterly",
   custom: "Custom",
+  all: "전체 기간",
 };
 
 export type StickerDenomination = "gold" | "silver" | "bronze" | null;

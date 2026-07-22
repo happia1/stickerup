@@ -41,6 +41,11 @@ export async function GET(request: Request) {
   const results = [tenant, teachers, invites, students, classes, enrollments, ledger, homework, praise, ranking, campaigns, items, claims, notices, products];
   const error = results.find((result) => result.error)?.error;
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  const productById = new Map((products.data ?? []).map((product) => [product.id, product]));
+  const syncedRewardItems = (items.data ?? []).map((item) => {
+    const product = item.product_id ? productById.get(item.product_id) : null;
+    return product ? { ...item, title: product.title, image_url: product.image_url, link_url: product.purchase_url } : item;
+  });
 
   return NextResponse.json({ state: {
     currentUserId: auth.user.id,
@@ -56,7 +61,7 @@ export async function GET(request: Request) {
     praiseRequests: praise.data ?? [],
     rankingPeriodConfigs: ranking.data ?? [],
     rewardCampaigns: campaigns.data ?? [],
-    rewardItems: items.data ?? [],
+    rewardItems: syncedRewardItems,
     rewardClaims: claims.data ?? [],
     notices: notices.data ?? [],
     productCatalog: products.data ?? [],

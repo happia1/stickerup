@@ -20,6 +20,8 @@ export default function AdminClassesPage() {
   const [editingPeriodId, setEditingPeriodId] = useState<string | null>(null);
   const [editingStart, setEditingStart] = useState("");
   const [editingEnd, setEditingEnd] = useState("");
+  const [editingNameId, setEditingNameId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
   const defaultClass = state.classes.find((cls) => cls.is_default);
   const specialClasses = state.classes.filter((cls) => !cls.is_default);
 
@@ -41,6 +43,15 @@ export default function AdminClassesPage() {
     dispatch({ type: "UPDATE_CLASS_SPECIAL_PERIOD", classId, specialStart: editingStart, specialEnd: editingEnd });
     setEditingPeriodId(null);
     showToast("특강 기간을 수정했어요.");
+  }
+
+  function saveClassName(classId: string) {
+    const nextName = editingName.trim();
+    if (!nextName) return showToast("특강반 이름을 입력해 주세요.");
+    dispatch({ type: "UPDATE_CLASS_NAME", classId, name: nextName });
+    setEditingNameId(null);
+    setEditingName("");
+    showToast("특강반 이름을 수정했어요.");
   }
 
   return (
@@ -88,7 +99,7 @@ export default function AdminClassesPage() {
             <div>
               <label className="block text-caption font-semibold text-text-secondary mb-1">랭킹 단위기간</label>
               <select className="w-full border border-border rounded-lg px-2.5 py-2 text-body" value={rankingUnit} onChange={(e) => setRankingUnit(e.target.value as RankingUnit)}>
-                {Object.entries(RANKING_UNIT_LABEL).map(([v, l]) => (
+                {Object.entries(RANKING_UNIT_LABEL).filter(([v]) => v !== "all").map(([v, l]) => (
                   <option key={v} value={v}>
                     {l}
                   </option>
@@ -127,11 +138,11 @@ export default function AdminClassesPage() {
         <Button onClick={() => setShowForm((value) => !value)}>{showForm ? "닫기" : "+ 특강반 추가"}</Button>
       </div>
       <div className="mb-6 overflow-x-auto rounded-xl border border-border">
-        <table className="min-w-[780px] table-fixed text-body">
+        <table className="min-w-[740px] table-fixed text-body">
           <thead>
             <tr className="text-caption text-text-secondary text-left border-b border-border">
-              <th className="w-28 p-2.5">반</th>
-              <th className="w-36 p-2.5">정규 출석 시각</th>
+              <th className="w-44 p-2.5">반</th>
+              <th className="w-28 p-2.5">정규 출석 시각</th>
               <th className="w-72 p-2.5">특강 기간</th>
               <th className="w-24 p-2.5">랭킹 단위</th>
               <th className="w-24 p-2.5">소속 학생 수</th>
@@ -144,11 +155,11 @@ export default function AdminClassesPage() {
               const config = state.rankingPeriodConfigs.find((r) => r.class_id === c.id);
               return (
                 <tr key={c.id} className="border-b last:border-0 border-border">
-                  <td className="p-2.5 font-semibold">{c.name}</td>
+                  <td className="p-2.5 font-semibold">{editingNameId===c.id?<div className="flex items-center gap-1"><input autoFocus value={editingName} onChange={event=>setEditingName(event.target.value)} onKeyDown={event=>{if(event.key==="Enter")saveClassName(c.id);if(event.key==="Escape")setEditingNameId(null);}} aria-label={`${c.name} 이름 수정`} className="min-w-0 flex-1 rounded-lg border border-border px-2 py-1 text-body"/><button type="button" onClick={()=>saveClassName(c.id)} className="rounded-lg border border-state-success px-2 py-1 text-caption text-state-success">저장</button><button type="button" onClick={()=>setEditingNameId(null)} className="px-1 py-1 text-caption text-text-muted">취소</button></div>:<div className="flex items-center gap-2"><span className="min-w-0 flex-1 truncate">{c.name}</span><button type="button" onClick={()=>{setEditingNameId(c.id);setEditingName(c.name);}} className="shrink-0 rounded-lg border border-border px-2 py-1 text-caption text-text-secondary">수정</button></div>}</td>
                   <td className="p-2.5">
                     <input
                       type="time"
-                      className="w-full min-w-0 rounded-lg border border-border px-2 py-1 text-body"
+                      className="w-24 max-w-full rounded-lg border border-border px-1.5 py-1 text-body"
                       value={c.attendance_time}
                       onChange={(e) => dispatch({ type: "UPDATE_CLASS_ATTENDANCE_TIME", classId: c.id, attendanceTime: e.target.value })}
                     />

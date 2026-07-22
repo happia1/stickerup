@@ -20,8 +20,6 @@ type RankingScope = {
   description: string;
 };
 
-const ALL_TIME_START = "2000-01-01";
-const ALL_TIME_END = "2999-12-31";
 const medalLabel = { gold: "금", silver: "은", bronze: "동" } as const;
 
 export default function AdminDashboardPage() {
@@ -29,7 +27,7 @@ export default function AdminDashboardPage() {
   const counts = pendingCounts(state);
   const cancelled = state.ledger.filter((l) => l.status === "rolled_back").length;
   const todayStr = DEMO_NOW.toISOString().slice(0, 10);
-  const [scopeId, setScopeId] = useState("all-time");
+  const [scopeId, setScopeId] = useState("global-period");
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const scopes = useMemo<RankingScope[]>(() => {
@@ -50,20 +48,12 @@ export default function AdminDashboardPage() {
 
     return [
       {
-        id: "all-time",
-        label: "전체 기간",
-        classId: null,
-        periodStart: ALL_TIME_START,
-        periodEnd: ALL_TIME_END,
-        description: "누적 전체 랭킹",
-      },
-      {
         id: "global-period",
         label: "전체 랭킹",
         classId: null,
         periodStart: globalPeriod.start,
         periodEnd: globalPeriod.end,
-        description: `${globalPeriod.start} ~ ${globalPeriod.end}`,
+        description: globalPeriod.unit === "all" ? "전체 기간" : `${globalPeriod.start} ~ ${globalPeriod.end}`,
       },
       ...groupScopes,
     ];
@@ -124,18 +114,18 @@ export default function AdminDashboardPage() {
           ))}
         </div>
 
-        <RankingTable rows={topRows} state={state} emptyText="아직 랭킹 데이터가 없습니다." />
+        <RankingTable rows={topRows} state={state} selectedClassId={selectedScope.classId} emptyText="아직 랭킹 데이터가 없습니다." />
       </section>
 
       <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title={`${selectedScope.label} 전체 리스트`}>
         <p className="mb-3 text-caption text-text-secondary">{selectedScope.description}</p>
-        <RankingTable rows={rows} state={state} emptyText="표시할 학생 랭킹이 없습니다." />
+        <RankingTable rows={rows} state={state} selectedClassId={selectedScope.classId} emptyText="표시할 학생 랭킹이 없습니다." />
       </BottomSheet>
     </div>
   );
 }
 
-function RankingTable({ rows, state, emptyText }: { rows: RankingRow[]; state: ReturnType<typeof useAppState>; emptyText: string }) {
+function RankingTable({ rows, state, selectedClassId, emptyText }: { rows: RankingRow[]; state: ReturnType<typeof useAppState>; selectedClassId: string | null; emptyText: string }) {
   if (rows.length === 0) {
     return <p className="rounded-xl bg-surface-raised p-5 text-center text-caption text-text-secondary">{emptyText}</p>;
   }
@@ -156,7 +146,7 @@ function RankingTable({ rows, state, emptyText }: { rows: RankingRow[]; state: R
           {rows.map((row) => {
             const student = state.students.find((s) => s.id === row.student_id);
             const classNames = state.classes
-              .filter((c) => state.enrollments.some((e) => e.student_id === row.student_id && e.class_id === c.id && e.status === "approved"))
+              .filter((c) => (!selectedClassId || c.id === selectedClassId) && state.enrollments.some((e) => e.student_id === row.student_id && e.class_id === c.id && e.status === "approved"))
               .map((c) => c.name)
               .join(", ");
 

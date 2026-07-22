@@ -45,6 +45,7 @@ export type Action =
   | { type: "WITHDRAW_ENROLLMENT"; enrollmentId: string }
   | { type: "ADD_CLASS"; name: string; attendanceTime: string; specialStart: string | null; specialEnd: string | null; rankingUnit: RankingUnit }
   | { type: "UPDATE_CLASS_ATTENDANCE_TIME"; classId: string; attendanceTime: string }
+  | { type: "UPDATE_CLASS_NAME"; classId: string; name: string }
   | { type: "UPDATE_CLASS_SPECIAL_PERIOD"; classId: string; specialStart: string; specialEnd: string }
   | { type: "SET_ATTENDANCE_POLICY"; tiers: TierConfig[] }
   | { type: "SET_HOMEWORK_POLICY"; tiers: TierConfig[]; mode: GradingMode }

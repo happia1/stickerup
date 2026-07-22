@@ -43,3 +43,15 @@ export async function repairCatalogProductImages(db: AdminClient, products: Arra
   }));
   return products;
 }
+
+export async function syncCatalogProductsToRewardItems(
+  db: AdminClient,
+  products: Array<{ id: string; title: string; image_url: string | null; purchase_url?: string | null }>
+) {
+  const results = await Promise.all(products.map((product) => db.from("reward_items").update({
+    title: product.title,
+    image_url: cleanProductImage(product.image_url),
+    link_url: product.purchase_url?.trim() || null,
+  }).eq("product_id", product.id)));
+  return results.find((result) => result.error)?.error ?? null;
+}

@@ -1,5 +1,5 @@
 "use client";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AttendanceSection } from "@/components/student/AttendanceSection";
 import { HomeworkSection } from "@/components/student/HomeworkSection";
@@ -9,7 +9,9 @@ import { ChipTabs } from "@/components/ui/Tabs";
 import { Accordion } from "@/components/ui/Accordion";
 import { Card } from "@/components/ui/Card";
 import { activeDatesForStudent, dailyBreakdown, getClassById, totalStickers } from "@/lib/store/selectors";
-import { useAppState } from "@/lib/store/provider";
+import { useAppDispatch, useAppState } from "@/lib/store/provider";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import type { AppState } from "@/lib/store/types";
 import { DEMO_NOW } from "@/lib/demoClock";
 import { fmtDateTime } from "@/lib/format";
 
@@ -65,8 +67,32 @@ function StudentStickerInner() {
   const [tab, setTab] = useState<SubTab>(initial);
   const [selectedDate, setSelectedDate] = useState(toDateOnly(DEMO_NOW));
   const state = useAppState();
+  const dispatch = useAppDispatch();
   const activeDates = activeDatesForStudent(state, state.currentUserId);
   const logs = state.ledger.filter((entry) => entry.student_id === state.currentUserId).sort((a, b) => b.created_at.localeCompare(a.created_at));
+
+  useEffect(() => {
+    let active = true;
+    async function refreshLedger() {
+      const client = getSupabaseBrowserClient();
+      if (!client) return;
+      const { data } = await client.auth.getSession();
+      if (!data.session) return;
+      const response = await fetch("/api/app-state", { headers: { Authorization: `Bearer ${data.session.access_token}` }, cache: "no-store" });
+      if (!response.ok || !active) return;
+      const payload = await response.json() as { state?: Partial<AppState> & Pick<AppState, "currentUserId" | "currentUserRole" | "tenant"> };
+      if (active && payload.state) dispatch({ type: "HYDRATE_APP_STATE", state: payload.state });
+    }
+    void refreshLedger();
+    const refreshWhenVisible = () => { if (document.visibilityState === "visible") void refreshLedger(); };
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      active = false;
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [dispatch]);
 
   return (
     <div>

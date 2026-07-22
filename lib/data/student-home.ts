@@ -49,6 +49,17 @@ export async function getStudentHomeData(
         supabase.from("reward_claims").select("*").eq("student_id", student.id),
       ])
     : [{ data: [], error: null }, { data: [], error: null }];
+  const rawRewardItems = assertQuery(itemsResult.data as RewardItem[] | null, itemsResult.error, "Reward items");
+  const productIds = Array.from(new Set(rawRewardItems.map((item) => item.product_id).filter((id): id is string => Boolean(id))));
+  const productsResult = productIds.length
+    ? await supabase.from("product_catalog").select("id, title, image_url, purchase_url").in("id", productIds)
+    : { data: [], error: null };
+  const products = assertQuery(productsResult.data, productsResult.error, "Reward products");
+  const productById = new Map(products.map((product) => [product.id, product]));
+  const rewardItems = rawRewardItems.map((item) => {
+    const product = item.product_id ? productById.get(item.product_id) : null;
+    return product ? { ...item, title: product.title, image_url: product.image_url, link_url: product.purchase_url } : item;
+  });
 
   return {
     student,
@@ -59,7 +70,7 @@ export async function getStudentHomeData(
     notices: assertQuery(noticeResult.data as Notice[] | null, noticeResult.error, "Notices"),
     rankingPeriodConfigs: assertQuery(rankingResult.data as RankingPeriodConfig[] | null, rankingResult.error, "Ranking period config"),
     rewardCampaigns: campaigns,
-    rewardItems: assertQuery(itemsResult.data as RewardItem[] | null, itemsResult.error, "Reward items"),
+    rewardItems,
     rewardClaims: assertQuery(claimsResult.data as RewardClaim[] | null, claimsResult.error, "Reward claims"),
   };
 }
