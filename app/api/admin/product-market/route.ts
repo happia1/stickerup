@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getRequestUser } from "@/lib/supabase/server-auth";
-import { stableProductImage } from "@/lib/server/stable-product-image";
+import { preferredProductImage, stableProductImage } from "@/lib/server/stable-product-image";
 
 async function context(request: Request) {
   const auth = await getRequestUser(request);
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     return result.error ? NextResponse.json({ error: result.error.message }, { status: 400 }) : NextResponse.json({ favorite: !existing.data });
   }
   if (body.action === "save") {
-    const imageUrl = await stableProductImage(ctx.db, product.data.prize_image_url ?? product.data.image_url, `catalog/${ctx.teacher.tenant_id}/${product.data.id}`);
+    const imageUrl = await stableProductImage(ctx.db, preferredProductImage(product.data.prize_image_url, product.data.image_url), `catalog/${ctx.teacher.tenant_id}/${product.data.id}`);
     const result = await ctx.db.from("product_catalog").upsert({ tenant_id: ctx.teacher.tenant_id, source_marketplace_product_id: product.data.id, title: product.data.title, price_label: product.data.price_label, category: product.data.category, image_url: imageUrl, purchase_url: product.data.purchase_url, description: product.data.description, updated_at: new Date().toISOString() }, { onConflict: "tenant_id,source_marketplace_product_id" }).select("*").single();
     return result.error ? NextResponse.json({ error: result.error.message }, { status: 400 }) : NextResponse.json({ product: result.data });
   }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getRequestUser } from "@/lib/supabase/server-auth";
-import { isStableProductImage, stableProductImage } from "@/lib/server/stable-product-image";
+import { repairCatalogProductImages } from "@/lib/server/stable-product-image";
 
 async function getContext(request: Request) {
   const auth = await getRequestUser(request);
@@ -21,10 +21,7 @@ export async function GET(request: Request) {
   ]);
   const likeError = likes.error?.code === "42P01" ? null : likes.error;
   if (result.error || likeError) return NextResponse.json({ error: (result.error ?? likeError)?.message }, { status: 400 });
-  await Promise.all((result.data ?? []).filter((product) => product.image_url && !isStableProductImage(product.image_url)).map(async (product) => {
-    const stableUrl = await stableProductImage(context.db, product.image_url, `catalog/${context.teacher.tenant_id}/${product.source_marketplace_product_id ?? product.id}`);
-    if (stableUrl !== product.image_url) { product.image_url = stableUrl; await context.db.from("product_catalog").update({ image_url: stableUrl, updated_at: new Date().toISOString() }).eq("id", product.id).eq("tenant_id", context.teacher.tenant_id); }
-  }));
+  await repairCatalogProductImages(context.db, result.data ?? [], context.teacher.tenant_id);
   const products = (result.data ?? []).map((product) => ({ ...product, like_count: (likes.data ?? []).filter((like) => like.product_id === product.id).length })).sort((a, b) => b.like_count - a.like_count || a.title.localeCompare(b.title, "ko"));
   return NextResponse.json({ products });
 }
@@ -33,7 +30,7 @@ export async function POST(request: Request) {
   const context = await getContext(request); if ("error" in context) return context.error;
   const body = await request.json();
   if (!body.title?.trim()) return NextResponse.json({ error: "상품명이 필요합니다." }, { status: 400 });
-  const result = await context.db.from("product_catalog").insert({ tenant_id: context.teacher.tenant_id, title: body.title.trim(), price_label: body.priceLabel?.trim() || null, category: body.category?.trim() || null, image_url: body.imageUrl ?? null, purchase_url: body.purchaseUrl ?? null, description: body.description ?? null }).select("*").single();
+  const result = await context.db.from("product_catalog").insert({ tenant_id: context.teacher.tenant_id, title: body.title.trim(), price_label: body.priceLabel?.trim() || null, category: body.category?.trim() || null, image_url: body.imageUrl?.trim() || null, purchase_url: body.purchaseUrl ?? null, description: body.description ?? null }).select("*").single();
   return result.error ? NextResponse.json({ error: result.error.message }, { status: 400 }) : NextResponse.json({ product: result.data });
 }
 
@@ -45,7 +42,7 @@ export async function PATCH(request: Request) {
   if (existing.error) return NextResponse.json({ error: existing.error.message }, { status: 400 });
   if (!existing.data) return NextResponse.json({ error: "상품을 찾을 수 없습니다." }, { status: 404 });
   if (existing.data.source_marketplace_product_id) return NextResponse.json({ error: "개발자 연동 상품은 개발자 상품 관리에서만 수정할 수 있습니다." }, { status: 409 });
-  const result = await context.db.from("product_catalog").update({ title: body.title.trim(), price_label: body.priceLabel?.trim() || null, category: body.category?.trim() || null, image_url: body.imageUrl ?? null, purchase_url: body.purchaseUrl ?? null, description: body.description ?? null, updated_at: new Date().toISOString() }).eq("id", body.productId).eq("tenant_id", context.teacher.tenant_id).select("*").single();
+  const result = await context.db.from("product_catalog").update({ title: body.title.trim(), price_label: body.priceLabel?.trim() || null, category: body.category?.trim() || null, image_url: body.imageUrl?.trim() || null, purchase_url: body.purchaseUrl ?? null, description: body.description ?? null, updated_at: new Date().toISOString() }).eq("id", body.productId).eq("tenant_id", context.teacher.tenant_id).select("*").single();
   return result.error ? NextResponse.json({ error: result.error.message }, { status: 400 }) : NextResponse.json({ product: result.data });
 }
 

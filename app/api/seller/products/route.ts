@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   const ctx = await context(request); if ("error" in ctx) return ctx.error;
   const body = await request.json();
   if (!body.title?.trim() || !/^https?:\/\//i.test(body.purchaseUrl ?? "")) return NextResponse.json({ error: "상품명과 올바른 구매 링크가 필요합니다." }, { status: 400 });
-  const result = await ctx.db.from("marketplace_products").insert({ title: body.title.trim(), price_label: body.priceLabel?.trim() || null, image_url: body.imageUrl ?? null, prize_image_url: body.prizeImageUrl ?? null, purchase_url: body.purchaseUrl.trim(), description: body.description?.trim() || null, category: body.category?.trim() || null, is_active: body.isActive !== false, sort_order: Number(body.sortOrder) || 0 }).select("*").single();
+  const result = await ctx.db.from("marketplace_products").insert({ title: body.title.trim(), price_label: body.priceLabel?.trim() || null, image_url: body.imageUrl?.trim() || null, prize_image_url: body.prizeImageUrl?.trim() || null, purchase_url: body.purchaseUrl.trim(), description: body.description?.trim() || null, category: body.category?.trim() || null, is_active: body.isActive !== false, sort_order: Number(body.sortOrder) || 0 }).select("*").single();
   return result.error ? NextResponse.json({ error: result.error.message }, { status: 400 }) : NextResponse.json({ product: result.data });
 }
 
@@ -28,9 +28,9 @@ export async function PATCH(request: Request) {
   const ctx = await context(request); if ("error" in ctx) return ctx.error;
   const body = await request.json();
   if (!body.productId || !body.title?.trim() || !/^https?:\/\//i.test(body.purchaseUrl ?? "")) return NextResponse.json({ error: "상품 정보를 확인해 주세요." }, { status: 400 });
-  const result = await ctx.db.from("marketplace_products").update({ title: body.title.trim(), price_label: body.priceLabel?.trim() || null, image_url: body.imageUrl ?? null, prize_image_url: body.prizeImageUrl ?? null, purchase_url: body.purchaseUrl.trim(), description: body.description?.trim() || null, category: body.category?.trim() || null, is_active: body.isActive !== false, sort_order: Number(body.sortOrder) || 0, updated_at: new Date().toISOString() }).eq("id", body.productId).select("*").single();
+  const result = await ctx.db.from("marketplace_products").update({ title: body.title.trim(), price_label: body.priceLabel?.trim() || null, image_url: body.imageUrl?.trim() || null, prize_image_url: body.prizeImageUrl?.trim() || null, purchase_url: body.purchaseUrl.trim(), description: body.description?.trim() || null, category: body.category?.trim() || null, is_active: body.isActive !== false, sort_order: Number(body.sortOrder) || 0, updated_at: new Date().toISOString() }).eq("id", body.productId).select("*").single();
   if (result.error) return NextResponse.json({ error: result.error.message }, { status: 400 });
-  const linked = await ctx.db.from("product_catalog").update({ title: result.data.title, price_label: result.data.price_label, category: result.data.category, image_url: result.data.prize_image_url ?? result.data.image_url, purchase_url: result.data.purchase_url, description: result.data.description, updated_at: new Date().toISOString() }).eq("source_marketplace_product_id", result.data.id);
+  const linked = await ctx.db.from("product_catalog").update({ title: result.data.title, price_label: result.data.price_label, category: result.data.category, image_url: result.data.prize_image_url?.trim() || result.data.image_url?.trim() || null, purchase_url: result.data.purchase_url, description: result.data.description, updated_at: new Date().toISOString() }).eq("source_marketplace_product_id", result.data.id);
   if (linked.error) return NextResponse.json({ error: linked.error.message }, { status: 400 });
   return NextResponse.json({ product: result.data });
 }

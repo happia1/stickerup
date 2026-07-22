@@ -64,7 +64,7 @@ export function RankingBlock({ data }: { data?: StudentHomeData }) {
             />
           )}
         </div>
-        <p className="shrink-0 py-1.5 text-right text-caption font-bold text-text-primary">
+          <p className="shrink-0 py-1.5 text-right text-caption font-normal text-text-muted">
           {period.start} ~ {period.end}
         </p>
       </div>

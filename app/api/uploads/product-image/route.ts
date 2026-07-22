@@ -9,6 +9,7 @@ const ALLOWED_TYPES = new Map([
   ["image/png", "png"],
   ["image/webp", "webp"],
   ["image/gif", "gif"],
+  ["image/avif", "avif"],
 ]);
 
 export async function POST(request: Request) {
