@@ -213,7 +213,7 @@ export function appReducer(state: AppState, action: Action): AppState {
         id: uid("class"),
         tenant_id: state.tenant.id,
         name: action.name,
-        attendance_time: action.attendanceTime,
+        attendance_time: "00:00",
         is_default: false,
         special_start: action.specialStart,
         special_end: action.specialEnd,
@@ -234,15 +234,6 @@ export function appReducer(state: AppState, action: Action): AppState {
         ...state,
         classes: [...state.classes, newClass],
         rankingPeriodConfigs: [...state.rankingPeriodConfigs, rankingConfig],
-      };
-    }
-
-    case "UPDATE_CLASS_ATTENDANCE_TIME": {
-      return {
-        ...state,
-        classes: state.classes.map((c) =>
-          c.id === action.classId ? { ...c, attendance_time: action.attendanceTime, updated_at: nowISO() } : c
-        ),
       };
     }
 
@@ -319,14 +310,9 @@ export function appReducer(state: AppState, action: Action): AppState {
         status: "active",
         created_at: nowISO(),
       };
-      const items: RewardItem[] = action.prizes.flatMap((prize) => {
-        const product = state.productCatalog.find((candidate) => candidate.id === prize.productId);
-        return product ? [{ id: uid("item"), tenant_id: state.tenant.id, campaign_id: campaign.id, title: product.title, image_url: product.image_url, link_url: product.purchase_url, qty: prize.qty, product_id: product.id, rank_order: prize.rank }] : [];
-      });
       return {
         ...state,
         rewardCampaigns: [...state.rewardCampaigns, campaign],
-        rewardItems: [...state.rewardItems, ...items],
       };
     }
 
@@ -401,23 +387,6 @@ export function appReducer(state: AppState, action: Action): AppState {
       };
     }
 
-    case "CLAIM_REWARD": {
-      return {
-        ...state,
-        rewardClaims: [
-          ...state.rewardClaims,
-          {
-            id: uid("claim"),
-            tenant_id: state.tenant.id,
-            item_id: action.itemId,
-            student_id: action.studentId,
-            rank_at_claim: action.rank,
-            claimed_at: nowISO(),
-          },
-        ],
-      };
-    }
-
     case "ADD_TEACHER": {
       return {
         ...state,
@@ -438,6 +407,16 @@ export function appReducer(state: AppState, action: Action): AppState {
 
     case "REMOVE_TEACHER": {
       return { ...state, teachers: state.teachers.filter((t) => t.id !== action.teacherId) };
+    }
+
+    case "DELETE_REWARD_CAMPAIGN": {
+      const itemIds = new Set(state.rewardItems.filter((item) => item.campaign_id === action.campaignId).map((item) => item.id));
+      return {
+        ...state,
+        rewardCampaigns: state.rewardCampaigns.filter((campaign) => campaign.id !== action.campaignId),
+        rewardItems: state.rewardItems.filter((item) => item.campaign_id !== action.campaignId),
+        rewardClaims: state.rewardClaims.filter((claim) => !itemIds.has(claim.item_id)),
+      };
     }
 
     case "SET_TEACHER_PERMISSION": {

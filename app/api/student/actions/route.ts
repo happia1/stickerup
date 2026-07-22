@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     const enrollment = await db.from("enrollments").select("id, class_id, status").eq("id", body.enrollmentId).eq("student_id", studentData.id).maybeSingle();
     if (!enrollment.data) return NextResponse.json({ error: "취소할 반 신청을 찾지 못했어요." }, { status: 404 });
     const classRoom = await db.from("classes").select("is_default").eq("id", enrollment.data.class_id).eq("tenant_id", studentData.tenant_id).maybeSingle();
-    if (!classRoom.data || classRoom.data.is_default) return NextResponse.json({ error: "기본반은 신청 취소할 수 없어요." }, { status: 400 });
+    if (!classRoom.data || classRoom.data.is_default) return NextResponse.json({ error: "정규반은 신청 취소할 수 없어요." }, { status: 400 });
     const result = await db.from("enrollments").delete().eq("id", enrollment.data.id).eq("student_id", studentData.id);
     if (result.error) return NextResponse.json({ error: result.error.message }, { status: 400 });
     return NextResponse.json({ ok: true });
@@ -46,21 +46,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ enrollments: result.data });
   }
 
-  if (body.classId) {
-    const enrollment = await db.from("enrollments").select("id").eq("student_id", student.data.id).eq("class_id", body.classId).eq("status", "approved").maybeSingle();
-    if (!enrollment.data) return NextResponse.json({ error: "승인된 반을 선택해주세요." }, { status: 400 });
-  }
-
   if (body.action === "praise") {
     const reason = body.reason?.trim();
     if (!reason) return NextResponse.json({ error: "칭찬 사유를 입력해주세요." }, { status: 400 });
-    const result = await db.from("praise_requests").insert({ tenant_id: student.data.tenant_id, student_id: student.data.id, class_id: body.classId ?? null, reason, approval_status: "pending" }).select("*").single();
+    const checkDate = koreaDateKey();
+    const duplicate = await db.from("praise_requests").select("id").eq("student_id", student.data.id).gte("requested_at", `${checkDate}T00:00:00+09:00`).lte("requested_at", `${checkDate}T23:59:59.999+09:00`).neq("approval_status", "rejected").limit(1).maybeSingle();
+    if (duplicate.error) return NextResponse.json({ error: duplicate.error.message }, { status: 400 });
+    if (duplicate.data) return NextResponse.json({ error: "칭찬 스티커는 하루에 한 번만 요청할 수 있어요." }, { status: 409 });
+    const result = await db.from("praise_requests").insert({ tenant_id: student.data.tenant_id, student_id: student.data.id, class_id: null, reason, approval_status: "pending" }).select("*").single();
     if (result.error) return NextResponse.json({ error: result.error.message }, { status: 400 });
     return NextResponse.json({ request: result.data });
   }
 
-  if (!body.classId || !body.tier) return NextResponse.json({ error: "반과 평가 기준을 선택해주세요." }, { status: 400 });
   if (body.action === "homework") {
+    if (!body.classId || !body.tier) return NextResponse.json({ error: "특강반과 과제 완료율을 선택해주세요." }, { status: 400 });
+    const [enrollment, classRoom] = await Promise.all([
+      db.from("enrollments").select("id").eq("student_id", student.data.id).eq("class_id", body.classId).eq("status", "approved").maybeSingle(),
+      db.from("classes").select("id, is_default").eq("id", body.classId).eq("tenant_id", studentData.tenant_id).maybeSingle(),
+    ]);
+    if (!enrollment.data || !classRoom.data || classRoom.data.is_default) return NextResponse.json({ error: "과제를 제출할 승인된 특강반을 선택해주세요." }, { status: 400 });
     const tier = DEFAULT_HOMEWORK_TIERS.find((item) => item.tier === body.tier);
     if (!tier) return NextResponse.json({ error: "숙제 완료율을 확인해주세요." }, { status: 400 });
     const checkDate = koreaDateKey();
@@ -79,15 +83,16 @@ export async function POST(request: Request) {
   }
 
   if (body.action === "attendance") {
-    const tier = DEFAULT_ATTENDANCE_TIERS.find((item) => item.tier === body.tier);
-    if (!tier) return NextResponse.json({ error: "출석 기준을 확인해주세요." }, { status: 400 });
+    const tier = DEFAULT_ATTENDANCE_TIERS.find((item) => item.tier === "on_time")!;
     const checkDate = koreaDateKey();
-    const duplicate = await db.from("attendance_records").select("id").eq("student_id", student.data.id).eq("class_id", body.classId).eq("check_date", checkDate).limit(1).maybeSingle();
+    const regularClass = await db.from("classes").select("id").eq("tenant_id", studentData.tenant_id).eq("is_default", true).eq("status", "active").maybeSingle();
+    if (!regularClass.data) return NextResponse.json({ error: "정규반 정보를 찾을 수 없어요." }, { status: 400 });
+    const duplicate = await db.from("attendance_records").select("id").eq("student_id", student.data.id).eq("check_date", checkDate).limit(1).maybeSingle();
     if (duplicate.error) return NextResponse.json({ error: duplicate.error.message }, { status: 400 });
-    if (duplicate.data) return NextResponse.json({ error: "출석은 반별로 하루에 한 번만 체크할 수 있어요." }, { status: 409 });
-    const attendance = await db.from("attendance_records").insert({ tenant_id: student.data.tenant_id, student_id: student.data.id, class_id: body.classId, tier: tier.tier, sticker_count: tier.count, check_date: checkDate }).select("id, created_at").single();
-    if (attendance.error) return NextResponse.json({ error: attendance.error.code === "23505" ? "출석은 반별로 하루에 한 번만 체크할 수 있어요." : attendance.error.message }, { status: attendance.error.code === "23505" ? 409 : 400 });
-    const ledger = await db.from("sticker_ledger").insert({ tenant_id: student.data.tenant_id, student_id: student.data.id, class_id: body.classId, source_type: "attendance", source_id: attendance.data.id, count: tier.count, status: "active" });
+    if (duplicate.data) return NextResponse.json({ error: "출석은 하루에 한 번만 체크할 수 있어요." }, { status: 409 });
+    const attendance = await db.from("attendance_records").insert({ tenant_id: student.data.tenant_id, student_id: student.data.id, class_id: regularClass.data.id, tier: tier.tier, sticker_count: tier.count, check_date: checkDate }).select("id, created_at").single();
+    if (attendance.error) return NextResponse.json({ error: attendance.error.code === "23505" ? "출석은 하루에 한 번만 체크할 수 있어요." : attendance.error.message }, { status: attendance.error.code === "23505" ? 409 : 400 });
+    const ledger = await db.from("sticker_ledger").insert({ tenant_id: student.data.tenant_id, student_id: student.data.id, class_id: regularClass.data.id, source_type: "attendance", source_id: attendance.data.id, count: tier.count, status: "active" });
     if (ledger.error) {
       await db.from("attendance_records").delete().eq("id", attendance.data.id);
       return NextResponse.json({ error: ledger.error.message }, { status: 400 });

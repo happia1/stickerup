@@ -27,7 +27,7 @@ export async function PATCH(request: Request) {
     const defaultClass = await db.from("classes").select("id").eq("tenant_id", teacher.data.tenant_id).eq("is_default", true).maybeSingle();
     classId = defaultClass.data?.id ?? null;
   }
-  if (!classId) return NextResponse.json({ error: "스티커를 지급할 기본반이 없습니다." }, { status: 400 });
+  if (!classId) return NextResponse.json({ error: "스티커를 지급할 정규반이 없습니다." }, { status: 400 });
   const approved = await db.from(table).update({ approval_status: "approved", approver_id: teacher.data.id, approved_at: new Date().toISOString(), ...(body.type === "praise" ? { sticker_count: count } : {}) }).eq("id", body.requestId);
   if (approved.error) return NextResponse.json({ error: approved.error.message }, { status: 400 });
   const ledger = await db.from("sticker_ledger").insert({ tenant_id: teacher.data.tenant_id, student_id: row.data.student_id, class_id: classId, source_type: body.type, source_id: body.requestId, count, status: "active", actor_teacher_id: teacher.data.id });

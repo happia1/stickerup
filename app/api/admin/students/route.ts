@@ -75,7 +75,7 @@ export async function PATCH(request: Request) {
   if (body.action === "remove_class") {
     if (!body.classId) return NextResponse.json({ error: "해지할 반을 확인해주세요." }, { status: 400 });
     const classInfo = await db.from("classes").select("is_default").eq("id", body.classId).eq("tenant_id", teacher.tenant_id).maybeSingle();
-    if (!classInfo.data || classInfo.data.is_default) return NextResponse.json({ error: "기본반 소속은 해지할 수 없습니다." }, { status: 400 });
+    if (!classInfo.data || classInfo.data.is_default) return NextResponse.json({ error: "정규반 소속은 해지할 수 없습니다." }, { status: 400 });
     const removed = await db.from("enrollments").delete().eq("student_id", student.data.id).eq("class_id", body.classId).eq("tenant_id", teacher.tenant_id);
     if (removed.error) return NextResponse.json({ error: removed.error.message }, { status: 400 });
   } else if (body.action === "delete") {

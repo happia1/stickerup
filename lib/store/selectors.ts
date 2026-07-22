@@ -1,6 +1,6 @@
 import type { AppState } from "./types";
 import { getRanking, computePeriodBounds } from "@/lib/ranking";
-import type { ClassRoom, RankingRow, RewardCampaign, RewardItem, RankingUnit } from "@/lib/types";
+import type { ClassRoom, RankingRow, RewardCampaign, RankingUnit } from "@/lib/types";
 import { koreaDateKey } from "@/lib/korea-date";
 
 export function getStudentById(state: AppState, id: string) {
@@ -19,7 +19,7 @@ export function getDefaultClass(state: AppState): ClassRoom | null {
   return state.classes.find((c) => c.is_default) ?? null;
 }
 
-/** 학생이 승인된 상태로 소속된 반 목록 (기본반 포함) */
+/** 학생이 승인된 상태로 소속된 반 목록 (정규반 포함) */
 export function approvedClassesForStudent(state: AppState, studentId: string): ClassRoom[] {
   const classIds = state.enrollments
     .filter((e) => e.student_id === studentId && e.status === "approved")
@@ -40,7 +40,7 @@ export function totalStickers(
   return state.ledger
     .filter((l) => {
       if (l.student_id !== studentId || l.status !== "active") return false;
-      if (opts.classId && l.class_id !== opts.classId) return false;
+      if (opts.classId && l.source_type === "homework" && l.class_id !== opts.classId) return false;
       const ledgerDay = koreaDateKey(l.created_at);
       if (opts.start && ledgerDay < opts.start) return false;
       if (opts.end && ledgerDay > opts.end) return false;
@@ -74,7 +74,7 @@ export function rankingPeriodLabel(state: AppState, classId: string | null): { u
   return { unit, start: period_start, end: period_end };
 }
 
-/** 그룹 우선 노출: 학생이 소속된 특강반(기본반 제외) 중 가장 먼저 승인된 반을 기본값으로,
+/** 그룹 우선 노출: 학생이 소속된 특강반(정규반 제외) 중 가장 먼저 승인된 반을 기본값으로,
  *  없으면 전체(null) 랭킹을 기본값으로 반환한다. (PRD 4.9) */
 export function defaultRankingScopeForStudent(state: AppState, studentId: string): string | null {
   const nonDefault = state.enrollments
@@ -93,71 +93,13 @@ export function campaignStatus(campaign: RewardCampaign, ref: Date = new Date())
   return "active";
 }
 
-export interface CampaignMeta {
-  status: "scheduled" | "active" | "ended";
-  rows: RankingRow[];
-  eligibleCount: number;
-  myRank: number | null;
-  iAmEligible: boolean;
-  iHaveClaimed: boolean;
-  isMyTurn: boolean;
-}
-
-/** 순차 선택(드래프트) 자격/차례 계산 — 목업의 getCampaignMeta 로직 포팅 */
-export function getCampaignMeta(state: AppState, campaign: RewardCampaign, studentId: string): CampaignMeta {
-  const status = campaignStatus(campaign);
-  const rows = getRanking({
-    ledger: state.ledger,
-    enrollments: state.enrollments,
-    studentIds: state.students.map((s) => s.id),
-    classId: campaign.class_id,
-    periodStart: campaign.period_start,
-    periodEnd: campaign.period_end,
-  });
-  const dist = campaign.target_distribution;
-  const eligibleCount =
-    dist.type === "count" ? Math.min(dist.value, rows.length) : Math.max(1, Math.round(rows.length * dist.value));
-
-  const items = state.rewardItems.filter((i) => i.campaign_id === campaign.id);
-  const claimedStudentIds = new Set(
-    state.rewardClaims.filter((c) => items.some((i) => i.id === c.item_id)).map((c) => c.student_id)
-  );
-
-  const myRow = rows.find((r) => r.student_id === studentId);
-  const myRank = myRow ? myRow.rank : null;
-
-  let nextTurnId: string | null = null;
-  for (const r of rows) {
-    if (r.rank <= eligibleCount && !claimedStudentIds.has(r.student_id)) {
-      nextTurnId = r.student_id;
-      break;
-    }
-  }
-
-  const iAmEligible = !!(myRank && myRank <= eligibleCount);
-  const iHaveClaimed = claimedStudentIds.has(studentId);
-  const isMyTurn = status === "ended" && iAmEligible && !iHaveClaimed && nextTurnId === studentId;
-
-  return { status, rows, eligibleCount, myRank, iAmEligible, iHaveClaimed, isMyTurn };
-}
-
-export function itemsForCampaign(state: AppState, campaignId: string): RewardItem[] {
-  return state.rewardItems.filter((i) => i.campaign_id === campaignId);
-}
-
-export function claimsForItem(state: AppState, itemId: string) {
-  return state.rewardClaims.filter((c) => c.item_id === itemId);
-}
-
 /** 학생 홈에 노출할 대표 이벤트: 학생이 접근 가능한 스코프(소속 반 + 전체) 중
  *  진행중인 이벤트을 우선, 없으면 예정 이벤트을 반환한다. */
 export function featuredCampaignForStudent(state: AppState, studentId: string): RewardCampaign | null {
   const myClassIds = new Set(approvedClassesForStudent(state, studentId).map((c) => c.id));
   const visible = state.rewardCampaigns.filter((c) => c.class_id === null || myClassIds.has(c.class_id));
-  const claimable = visible.find((c) => campaignStatus(c) === "ended" && !getCampaignMeta(state, c, studentId).iHaveClaimed);
-  if (claimable) return claimable;
   const active = visible.find((c) => campaignStatus(c) === "active");
-  return active ?? visible.find((c) => campaignStatus(c) === "scheduled") ?? null;
+  return active ?? visible.find((c) => campaignStatus(c) === "scheduled") ?? visible.find((c) => campaignStatus(c) === "ended") ?? null;
 }
 
 export function ddayLabel(dateStr: string, ref: Date = new Date()): string {

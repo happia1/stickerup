@@ -114,7 +114,9 @@ export function getRanking({
   const totals = scopedStudentIds.map((studentId) => {
     const relevant = ledger.filter((l) => {
       if (l.student_id !== studentId || l.status !== "active") return false;
-      if (classId !== null && l.class_id !== classId) return false;
+      // 출석과 칭찬은 반 공통으로 하루 한 번 지급되므로 어떤 소속 반 랭킹에서도 포함한다.
+      // 과제만 특강반별 기록이므로 선택한 반의 원장만 집계한다.
+      if (classId !== null && l.source_type === "homework" && l.class_id !== classId) return false;
       const day = koreaDateKey(l.created_at);
       return day >= periodStart && day <= periodEnd;
     });

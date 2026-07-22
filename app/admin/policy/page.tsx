@@ -18,22 +18,10 @@ export default function AdminPolicyPage() {
     <div>
       <h2 className="text-title mb-1">스티커 정책 설정</h2>
       <p className="text-caption text-text-secondary mb-5">
-        출석·숙제 구간의 이름, 범위, 지급 스티커 수를 자유롭게 조정할 수 있어요. 수정 후 반드시 &ldquo;수정완료&rdquo;를 눌러야 반영돼요.
+        출석은 학생당 하루 한 번으로 고정되며, 과제 완료 단계별 지급 기준만 설정할 수 있어요.
       </p>
 
-      <p className="text-subtitle mb-2">출석 구간별 지급 수</p>
-      <p className="text-caption text-text-secondary mb-2">
-        반마다 조정 가능한 값은 정규 출석 시각뿐이에요(반 관리 탭에서 설정). 아래 구간·지급 수는 전체 반 공통이에요.
-      </p>
-      <div className="mb-6">
-        <TierEditor
-          tiers={state.attendancePolicy}
-          onSave={(tiers) => {
-            dispatch({ type: "SET_ATTENDANCE_POLICY", tiers });
-            showToast("출석 정책이 반영되었어요.");
-          }}
-        />
-      </div>
+      <div className="mb-6 rounded-xl bg-surface-page p-4"><p className="text-subtitle">출석 지급 기준</p><p className="mt-1 text-caption text-text-secondary">반과 출석 시간에 관계없이 학생당 하루 한 번 출석 스티커가 지급돼요.</p></div>
 
       <p className="text-subtitle mb-2">숙제 완료율별 지급 수</p>
       <p className="text-caption text-text-secondary mb-2">

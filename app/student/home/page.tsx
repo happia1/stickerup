@@ -94,7 +94,7 @@ export default function StudentHomePage() {
 
   return (
     <div>
-      {showClassPrompt&&<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"><div className="w-full max-w-sm rounded-card bg-surface-card p-6 text-center"><h2 className="text-subtitle">현재 등록된 특강반을 설정해 주세요</h2><p className="mt-2 text-caption text-text-secondary">특강반을 선택하면 출석·숙제·칭찬의 기본 반으로 사용됩니다.</p><Link href="/student/mypage#class-enrollment" className="mt-5 block rounded-xl bg-brand-amber py-3 font-bold text-surface-page">마이페이지에서 특강반 선택</Link><button onClick={()=>setClassPromptDismissed(true)} className="mt-3 text-caption text-text-muted">나중에 하기</button></div></div>}
+      {showClassPrompt&&<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"><div className="w-full max-w-sm rounded-card bg-surface-card p-6 text-center"><h2 className="text-subtitle">현재 등록된 특강반을 설정해 주세요</h2><p className="mt-2 text-caption text-text-secondary">특강반별 과제를 확인하려면 수강할 반을 선택해 주세요.</p><Link href="/student/mypage#class-enrollment" className="mt-5 block rounded-xl bg-brand-amber py-3 font-bold text-surface-page">마이페이지에서 특강반 선택</Link><button onClick={()=>setClassPromptDismissed(true)} className="mt-3 text-caption text-text-muted">나중에 하기</button></div></div>}
       <SupabaseModeNotice />
       {!me.invited_by_teacher_id && <TeacherConnectionCard />}
       {connectionMessage && <p className="mb-3 text-caption text-text-muted">{connectionMessage}</p>}

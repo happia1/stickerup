@@ -25,7 +25,7 @@ export async function POST(request: Request, { params }: { params: { token: stri
   const defaultClass = await db.from("classes").select("id").eq("tenant_id", teacher.data.tenant_id).eq("is_default", true).maybeSingle();
   if (defaultClass.data) {
     const enrollment = await db.from("enrollments").upsert({ tenant_id: teacher.data.tenant_id, student_id: connection.data.student_id, class_id: defaultClass.data.id, status: "approved", approved_at: new Date().toISOString(), approver_id: teacher.data.id }, { onConflict: "student_id,class_id" });
-    if (enrollment.error) return NextResponse.json({ error: "학생의 기본반 등록을 완료하지 못했습니다." }, { status: 400 });
+    if (enrollment.error) return NextResponse.json({ error: "학생의 정규반 등록을 완료하지 못했습니다." }, { status: 400 });
   }
   const approved = await db.from("student_connection_requests").update({ status: "approved", approved_by: teacher.data.id, approved_at: new Date().toISOString() }).eq("id", connection.data.id);
   if (approved.error) return NextResponse.json({ error: "연결 요청 상태를 변경하지 못했습니다." }, { status: 400 });

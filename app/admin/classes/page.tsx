@@ -13,7 +13,6 @@ export default function AdminClassesPage() {
   const showToast = useToast();
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
-  const [attendanceTime, setAttendanceTime] = useState("19:00");
   const [specialStart, setSpecialStart] = useState("");
   const [specialEnd, setSpecialEnd] = useState("");
   const [rankingUnit, setRankingUnit] = useState<RankingUnit>("month");
@@ -61,19 +60,18 @@ export default function AdminClassesPage() {
         <Button onClick={() => setShowForm((v) => !v)}>{showForm ? "닫기" : "+ 특강반 추가"}</Button>
       </div>
       <p className="text-caption text-text-secondary mb-5">
-        기본반은 상시 운영, 특강반은 운영 기간이 끝나면 자동 해제돼요.
+        정규반은 상시 운영하며, 학생은 여러 특강반에 동시에 소속될 수 있어요.
       </p>
 
       <section className="mb-6 rounded-card border border-border bg-surface-page p-5">
-        <h3 className="text-subtitle">기본반 설정</h3>
-        <p className="mb-4 mt-1 text-caption text-text-secondary">모든 학생이 기본으로 소속되며 운영 기간은 상시입니다.</p>
+        <h3 className="text-subtitle">정규반 설정</h3>
+        <p className="mb-4 mt-1 text-caption text-text-secondary">모든 학생이 정규반에 기본으로 소속되며 운영 기간은 상시입니다.</p>
         {defaultClass ? (
-          <div className="grid items-end gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(180px,220px)_minmax(90px,120px)]">
+          <div className="grid items-end gap-4 sm:grid-cols-2">
             <div><p className="text-caption text-text-secondary">반 이름</p><p className="mt-2 font-bold">{defaultClass.name}</p></div>
-            <label className="text-caption text-text-secondary">정규 출석 시각<input type="time" className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-body" value={defaultClass.attendance_time} onChange={(event) => dispatch({ type: "UPDATE_CLASS_ATTENDANCE_TIME", classId: defaultClass.id, attendanceTime: event.target.value })} /></label>
             <div><p className="text-caption text-text-secondary">운영 기간</p><p className="mt-2 font-bold text-state-success">상시</p></div>
           </div>
-        ) : <p className="text-caption text-state-danger">기본반이 없습니다. 데이터베이스 기본반 설정을 확인해 주세요.</p>}
+        ) : <p className="text-caption text-state-danger">정규반이 없습니다. 데이터베이스 정규반 설정을 확인해 주세요.</p>}
       </section>
 
       {showForm && (
@@ -83,10 +81,6 @@ export default function AdminClassesPage() {
             <div>
               <label className="block text-caption font-semibold text-text-secondary mb-1">반 이름</label>
               <input className="w-full border border-border rounded-lg px-2.5 py-2 text-body" value={name} onChange={(e) => setName(e.target.value)} placeholder="예: 물리 특강반" />
-            </div>
-            <div>
-              <label className="block text-caption font-semibold text-text-secondary mb-1">정규 출석 시각</label>
-              <input type="time" className="w-full border border-border rounded-lg px-2.5 py-2 text-body" value={attendanceTime} onChange={(e) => setAttendanceTime(e.target.value)} />
             </div>
             <div>
               <label className="block text-caption font-semibold text-text-secondary mb-1">특강 시작일 (선택)</label>
@@ -116,7 +110,6 @@ export default function AdminClassesPage() {
               dispatch({
                 type: "ADD_CLASS",
                 name,
-                attendanceTime,
                 specialStart: specialStart || null,
                 specialEnd: specialEnd || null,
                 rankingUnit,
@@ -138,11 +131,10 @@ export default function AdminClassesPage() {
         <Button onClick={() => setShowForm((value) => !value)}>{showForm ? "닫기" : "+ 특강반 추가"}</Button>
       </div>
       <div className="mb-6 overflow-x-auto rounded-xl border border-border">
-        <table className="min-w-[740px] table-fixed text-body">
+        <table className="min-w-[620px] table-fixed text-body">
           <thead>
             <tr className="text-caption text-text-secondary text-left border-b border-border">
               <th className="w-44 p-2.5">반</th>
-              <th className="w-28 p-2.5">정규 출석 시각</th>
               <th className="w-72 p-2.5">특강 기간</th>
               <th className="w-24 p-2.5">랭킹 단위</th>
               <th className="w-24 p-2.5">소속 학생 수</th>
@@ -156,14 +148,6 @@ export default function AdminClassesPage() {
               return (
                 <tr key={c.id} className="border-b last:border-0 border-border">
                   <td className="p-2.5 font-semibold">{editingNameId===c.id?<div className="flex items-center gap-1"><input autoFocus value={editingName} onChange={event=>setEditingName(event.target.value)} onKeyDown={event=>{if(event.key==="Enter")saveClassName(c.id);if(event.key==="Escape")setEditingNameId(null);}} aria-label={`${c.name} 이름 수정`} className="min-w-0 flex-1 rounded-lg border border-border px-2 py-1 text-body"/><button type="button" onClick={()=>saveClassName(c.id)} className="rounded-lg border border-state-success px-2 py-1 text-caption text-state-success">저장</button><button type="button" onClick={()=>setEditingNameId(null)} className="px-1 py-1 text-caption text-text-muted">취소</button></div>:<div className="flex items-center gap-2"><span className="min-w-0 flex-1 truncate">{c.name}</span><button type="button" onClick={()=>{setEditingNameId(c.id);setEditingName(c.name);}} className="shrink-0 rounded-lg border border-border px-2 py-1 text-caption text-text-secondary">수정</button></div>}</td>
-                  <td className="p-2.5">
-                    <input
-                      type="time"
-                      className="w-24 max-w-full rounded-lg border border-border px-1.5 py-1 text-body"
-                      value={c.attendance_time}
-                      onChange={(e) => dispatch({ type: "UPDATE_CLASS_ATTENDANCE_TIME", classId: c.id, attendanceTime: e.target.value })}
-                    />
-                  </td>
                   <td className="p-2.5">
                     {c.is_default ? (
                       "상시"
