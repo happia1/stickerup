@@ -5,6 +5,7 @@
 
 import type { RankingUnit, RankingRow, StickerLedgerEntry, Enrollment } from "./types";
 import { DEMO_NOW } from "./demoClock";
+import { koreaDateKey } from "./korea-date";
 
 export interface PeriodBounds {
   period_start: string; // YYYY-MM-DD
@@ -12,15 +13,22 @@ export interface PeriodBounds {
 }
 
 function toDateOnly(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  const year = d.getUTCFullYear();
+  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function koreaCalendarDate(value: Date): Date {
+  const [year, month, day] = koreaDateKey(value).split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day));
 }
 
 function startOfWeekMonday(d: Date): Date {
-  const day = d.getDay(); // 0 = Sun ... 6 = Sat
+  const day = d.getUTCDay(); // 0 = Sun ... 6 = Sat
   const diff = (day === 0 ? -6 : 1) - day; // Monday 기준
   const monday = new Date(d);
-  monday.setDate(d.getDate() + diff);
-  monday.setHours(0, 0, 0, 0);
+  monday.setUTCDate(d.getUTCDate() + diff);
   return monday;
 }
 
@@ -34,8 +42,7 @@ export function computePeriodBounds(
   customStart: string | null = null,
   customEnd: string | null = null
 ): PeriodBounds {
-  const ref = new Date(refDate);
-  ref.setHours(0, 0, 0, 0);
+  const ref = koreaCalendarDate(refDate);
 
   switch (unit) {
     case "day": {
@@ -45,13 +52,13 @@ export function computePeriodBounds(
     case "week": {
       const monday = startOfWeekMonday(ref);
       const sunday = new Date(monday);
-      sunday.setDate(monday.getDate() + 6);
+      sunday.setUTCDate(monday.getUTCDate() + 6);
       return { period_start: toDateOnly(monday), period_end: toDateOnly(sunday) };
     }
     case "quarter": {
-      const quarterStartMonth = Math.floor(ref.getMonth() / 3) * 3;
-      const start = new Date(ref.getFullYear(), quarterStartMonth, 1);
-      const end = new Date(ref.getFullYear(), quarterStartMonth + 3, 0);
+      const quarterStartMonth = Math.floor(ref.getUTCMonth() / 3) * 3;
+      const start = new Date(Date.UTC(ref.getUTCFullYear(), quarterStartMonth, 1));
+      const end = new Date(Date.UTC(ref.getUTCFullYear(), quarterStartMonth + 3, 0));
       return { period_start: toDateOnly(start), period_end: toDateOnly(end) };
     }
     case "custom": {
@@ -60,13 +67,13 @@ export function computePeriodBounds(
       }
       const days = customDays && customDays > 0 ? customDays : 7;
       const start = new Date(ref);
-      start.setDate(ref.getDate() - (days - 1));
+      start.setUTCDate(ref.getUTCDate() - (days - 1));
       return { period_start: toDateOnly(start), period_end: toDateOnly(ref) };
     }
     case "month":
     default: {
-      const start = new Date(ref.getFullYear(), ref.getMonth(), 1);
-      const end = new Date(ref.getFullYear(), ref.getMonth() + 1, 0);
+      const start = new Date(Date.UTC(ref.getUTCFullYear(), ref.getUTCMonth(), 1));
+      const end = new Date(Date.UTC(ref.getUTCFullYear(), ref.getUTCMonth() + 1, 0));
       return { period_start: toDateOnly(start), period_end: toDateOnly(end) };
     }
   }
@@ -105,7 +112,7 @@ export function getRanking({
     const relevant = ledger.filter((l) => {
       if (l.student_id !== studentId || l.status !== "active") return false;
       if (classId !== null && l.class_id !== classId) return false;
-      const day = l.created_at.slice(0, 10);
+      const day = koreaDateKey(l.created_at);
       return day >= periodStart && day <= periodEnd;
     });
     const total_count = relevant.reduce((sum, l) => sum + l.count, 0);

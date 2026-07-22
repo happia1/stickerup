@@ -2,6 +2,7 @@ import type { AppState } from "./types";
 import { DEMO_NOW } from "@/lib/demoClock";
 import { getRanking, computePeriodBounds } from "@/lib/ranking";
 import type { ClassRoom, RankingRow, RewardCampaign, RewardItem, RankingUnit } from "@/lib/types";
+import { koreaDateKey } from "@/lib/korea-date";
 
 export function getStudentById(state: AppState, id: string) {
   return state.students.find((s) => s.id === id) ?? null;
@@ -41,8 +42,9 @@ export function totalStickers(
     .filter((l) => {
       if (l.student_id !== studentId || l.status !== "active") return false;
       if (opts.classId && l.class_id !== opts.classId) return false;
-      if (opts.start && l.created_at.slice(0, 10) < opts.start) return false;
-      if (opts.end && l.created_at.slice(0, 10) > opts.end) return false;
+      const ledgerDay = koreaDateKey(l.created_at);
+      if (opts.start && ledgerDay < opts.start) return false;
+      if (opts.end && ledgerDay > opts.end) return false;
       return true;
     })
     .reduce((sum, l) => sum + l.count, 0);

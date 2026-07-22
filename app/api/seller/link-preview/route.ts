@@ -20,6 +20,19 @@ function decode(value: string | null) {
   return value?.replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">") ?? null;
 }
 
+function inputUrl(value: unknown) {
+  const text = String(value ?? "").trim();
+  const iframeSrc = text.match(/<iframe\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/i)?.[1];
+  return iframeSrc ?? text;
+}
+
+function redirectProductData(url: URL) {
+  const title = url.searchParams.get("title") ?? url.searchParams.get("productDescription");
+  const image = url.searchParams.get("image") ?? url.searchParams.get("productImage");
+  const purchaseUrl = url.searchParams.get("link") ?? url.searchParams.get("linkUrl");
+  return { title, image, purchaseUrl };
+}
+
 function jsonLdProduct(html: string): { title: string | null; description: string | null; image: string | null; price: string | null; currency: string | null } {
   const empty = { title: null, description: null, image: null, price: null, currency: null };
   for (const match of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
@@ -70,21 +83,47 @@ export async function POST(request: Request) {
   if (!isDeveloperUser(auth.user)) return NextResponse.json({ error: "개발자 계정만 접근할 수 있습니다." }, { status: 403 });
   const body = await request.json();
   let target: URL;
-  try { target = new URL(body.url); } catch { return NextResponse.json({ error: "올바른 상품 링크를 입력해 주세요." }, { status: 400 }); }
+  try { target = new URL(inputUrl(body.url)); } catch { return NextResponse.json({ error: "올바른 상품 링크 또는 쿠팡 iframe 태그를 입력해 주세요." }, { status: 400 }); }
   if (!['http:', 'https:'].includes(target.protocol) || isUnsafeHost(target.hostname)) return NextResponse.json({ error: "외부 웹 상품 링크만 사용할 수 있습니다." }, { status: 400 });
   try {
-    const response = await fetch(target, { redirect: "follow", signal: AbortSignal.timeout(12000), headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8", "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.7", "Cache-Control": "no-cache" } });
-    if (!response.ok) throw new Error("상품 페이지를 열 수 없습니다.");
-    const finalUrl = new URL(response.url);
+    const headers = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8", "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.7", "Cache-Control": "no-cache", "Referer": "https://stickerup.vercel.app/" };
+    let currentUrl = target;
+    let response: Response | null = null;
+    let redirectData = redirectProductData(currentUrl);
+    for (let step = 0; step < 6; step += 1) {
+      response = await fetch(currentUrl, { redirect: "manual", signal: AbortSignal.timeout(12000), headers });
+      if (![301, 302, 303, 307, 308].includes(response.status)) break;
+      const location = response.headers.get("location");
+      if (!location) break;
+      const nextUrl = new URL(location, currentUrl);
+      if (isUnsafeHost(nextUrl.hostname)) throw new Error("허용되지 않는 주소입니다.");
+      const nextData = redirectProductData(nextUrl);
+      redirectData = {
+        title: redirectData.title ?? nextData.title,
+        image: nextData.image ?? redirectData.image,
+        purchaseUrl: redirectData.purchaseUrl ?? nextData.purchaseUrl,
+      };
+      currentUrl = nextUrl;
+    }
+    if (!response) throw new Error("상품 페이지를 열 수 없습니다.");
+    if (!response.ok) {
+      const isCoupang = /(^|\.)coupang\.com$|(^|\.)coupa\.ng$/i.test(target.hostname);
+      throw new Error(isCoupang ? "쿠팡 일반 상품 링크는 외부 조회가 차단될 수 있습니다. 쿠팡 파트너스 iframe 태그를 붙여넣어 주세요." : "상품 페이지를 열 수 없습니다.");
+    }
+    const finalUrl = currentUrl;
     if (isUnsafeHost(finalUrl.hostname)) throw new Error("허용되지 않는 주소입니다.");
     const html = (await response.text()).slice(0, 2_000_000);
     const structured = jsonLdProduct(html);
-    const rawTitle = decode(meta(html, "og:title") ?? structured.title ?? embeddedJsonValue(html, ["productName", "itemName"]) ?? html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1] ?? null);
-    const title = rawTitle && !/(access denied|captcha|robot check|페이지를 찾을 수 없습니다)/i.test(rawTitle) ? rawTitle.trim() : null;
+    const isTemu = finalUrl.hostname.toLowerCase().includes("temu.com") || target.hostname.toLowerCase().includes("temu.com");
+    const embeddedTitle = isTemu ? null : embeddedJsonValue(html, ["productName", "itemName"]);
+    const rawTitle = decode(redirectData.title ?? meta(html, "og:title") ?? structured.title ?? embeddedTitle ?? html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1] ?? null);
+    const title = rawTitle && !/(access denied|captcha|robot check|페이지를 찾을 수 없습니다|^temu\s*[|:-]|shop like a billionaire)/i.test(rawTitle) ? rawTitle.trim() : null;
     const description = decode(meta(html, "og:description") ?? structured.description ?? meta(html, "description"));
-    const priceAmount = decode(meta(html, "product:price:amount") ?? meta(html, "og:price:amount") ?? structured.price ?? embeddedJsonValue(html, ["finalPrice", "salePrice", "discountPrice", "priceValue", "price"]) ?? null);
+    const embeddedPrice = isTemu ? null : embeddedJsonValue(html, ["finalPrice", "salePrice", "discountPrice", "priceValue", "price"]);
+    const priceAmount = decode(meta(html, "product:price:amount") ?? meta(html, "og:price:amount") ?? structured.price ?? embeddedPrice ?? null);
     const priceCurrency = decode(meta(html, "product:price:currency") ?? meta(html, "og:price:currency") ?? structured.currency);
-    const rawImage = decode(meta(html, "og:image") ?? meta(html, "twitter:image") ?? structured.image ?? embeddedJsonValue(html, ["imageUrl", "productImage", "thumbnailUrl"]));
+    const embeddedImage = isTemu ? null : embeddedJsonValue(html, ["imageUrl", "productImage", "thumbnailUrl"]);
+    const rawImage = decode(redirectData.image ?? meta(html, "og:image") ?? meta(html, "twitter:image") ?? structured.image ?? embeddedImage);
     const imageUrl = rawImage ? new URL(rawImage, finalUrl).toString() : null;
     const numericPrice = priceAmount ? Number(priceAmount.replace(/[^0-9.]/g, "")) : NaN;
     const basePriceLabel = Number.isFinite(numericPrice) ? `${numericPrice.toLocaleString("ko-KR")}${priceCurrency === "KRW" || !priceCurrency ? "원" : ` ${priceCurrency}`}` : priceAmount;
@@ -93,7 +132,9 @@ export async function POST(request: Request) {
     const priceLabel = basePriceLabel ? `${basePriceLabel}${unitPriceLabel ? ` (${unitPriceLabel})` : ""}` : null;
     const found = [title && "상품명", priceLabel && "가격", imageUrl && "이미지", description && "설명"].filter(Boolean);
     if (!found.length) return NextResponse.json({ error: "이 쇼핑몰이 상품 정보를 외부에 제공하지 않아 자동입력할 수 없습니다. 상품명과 가격을 직접 입력해 주세요." }, { status: 422 });
-    return NextResponse.json({ title, description, imageUrl, priceLabel, unitPriceLabel, quantity, found });
+    const normalizedPurchaseUrl = redirectData.purchaseUrl && /^https?:\/\//i.test(redirectData.purchaseUrl) ? redirectData.purchaseUrl : target.toString();
+    const notice = redirectData.title && !priceLabel ? "쿠팡 제휴 iframe은 상품명과 이미지는 제공하지만 가격은 제공하지 않아 가격을 직접 입력해야 합니다." : null;
+    return NextResponse.json({ title, description, imageUrl, priceLabel, unitPriceLabel, quantity, found, purchaseUrl: normalizedPurchaseUrl, notice });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "상품 정보를 불러오지 못했습니다. 이미지를 직접 등록해 주세요." }, { status: 400 });
   }

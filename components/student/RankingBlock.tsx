@@ -8,7 +8,6 @@ import {
   rankingPeriodLabel,
 } from "@/lib/store/selectors";
 import { getRanking } from "@/lib/ranking";
-import { RANKING_UNIT_LABEL } from "@/lib/types";
 import { Podium } from "@/components/ui/Podium";
 import { ChipTabs } from "@/components/ui/Tabs";
 import { Button } from "@/components/ui/Button";
@@ -55,16 +54,20 @@ export function RankingBlock({ data }: { data?: StudentHomeData }) {
           전체보기
         </Button>
       </div>
-      {scopeOptions.length > 1 && (
-        <ChipTabs
-          options={scopeOptions}
-          value={scope === null ? "__all__" : scope}
-          onChange={(v) => setScope(v === "__all__" ? "__all__" : v)}
-        />
-      )}
-      <p className="text-micro text-text-muted mb-2">
-        {RANKING_UNIT_LABEL[period.unit]} · {period.start} ~ {period.end}
-      </p>
+      <div className="mb-2 flex min-w-0 items-start justify-between gap-3">
+        <div className="min-w-0 flex-1 [&>div]:mb-0">
+          {scopeOptions.length > 1 && (
+            <ChipTabs
+              options={scopeOptions}
+              value={scope === null ? "__all__" : scope}
+              onChange={(v) => setScope(v === "__all__" ? "__all__" : v)}
+            />
+          )}
+        </div>
+        <p className="shrink-0 py-1.5 text-right text-caption font-bold text-text-primary">
+          {period.start} ~ {period.end}
+        </p>
+      </div>
       <Podium rows={rows} students={state.students} highlightStudentId={studentId} maxRows={5} />
 
       <FullRankingSheet
