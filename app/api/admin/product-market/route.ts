@@ -19,7 +19,8 @@ export async function GET(request: Request) {
     ctx.db.from("product_catalog").select("source_marketplace_product_id").eq("tenant_id", ctx.teacher.tenant_id).not("source_marketplace_product_id", "is", null),
     ctx.db.from("marketplace_banners").select("*").eq("is_active", true).order("sort_order").order("created_at", { ascending: false }),
   ]);
-  const error = products.error ?? favorites.error ?? saved.error ?? banners.error;
+  const bannerError = banners.error?.code === "42P01" ? null : banners.error;
+  const error = products.error ?? favorites.error ?? saved.error ?? bannerError;
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ products: products.data, banners: banners.data ?? [], favoriteIds: favorites.data?.map((row) => row.product_id) ?? [], savedIds: saved.data?.map((row) => row.source_marketplace_product_id) ?? [] });
 }
