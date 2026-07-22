@@ -50,3 +50,28 @@ textarea::placeholder {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+@media (max-width: 1023px) {
+  .admin-content table {
+    min-width: 680px;
+  }
+
+  .admin-content input,
+  .admin-content select,
+  .admin-content textarea,
+  .admin-content button,
+  .admin-content a {
+    max-width: 100%;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) and (orientation: portrait) {
+  .admin-content {
+    padding: 20px;
+  }
+
+  .admin-content > div {
+    width: 100%;
+    max-width: 100%;
+  }
+}

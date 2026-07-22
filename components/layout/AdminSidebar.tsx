@@ -19,8 +19,9 @@ const NAV = [
 export function AdminSidebar() {
   const pathname = usePathname();
   return (
-    <div className="w-[210px] flex-shrink-0 bg-surface-raised text-text-secondary p-3">
-      <div className="text-text-primary font-extrabold text-body px-2.5 py-2 mb-3">🛠 관리자</div>
+    <aside className="sticky top-0 z-30 w-full flex-shrink-0 border-b border-border bg-surface-raised text-text-secondary md:h-screen md:w-[180px] md:border-b-0 md:border-r lg:w-[210px]">
+      <div className="hidden px-4 pb-3 pt-5 text-body font-extrabold text-text-primary md:block">🛠 관리자</div>
+      <nav aria-label="관리자 메뉴" className="scrollbar-none flex gap-1 overflow-x-auto px-3 py-2 md:block md:overflow-y-auto md:px-3 md:py-0">
       {NAV.map((item) => {
         const active = pathname?.startsWith(item.href);
         return (
@@ -28,7 +29,7 @@ export function AdminSidebar() {
             key={item.href}
             href={item.href}
             className={clsx(
-              "block px-3 py-2.5 rounded-lg text-body mb-0.5",
+              "shrink-0 whitespace-nowrap rounded-lg px-3 py-2 text-caption md:mb-0.5 md:block md:w-full md:py-2.5 md:text-body",
               active ? "bg-surface-card text-text-primary font-bold" : "text-text-secondary"
             )}
           >
@@ -36,6 +37,7 @@ export function AdminSidebar() {
           </Link>
         );
       })}
-    </div>
+      </nav>
+    </aside>
   );
 }
