@@ -28,7 +28,7 @@ export async function getStudentHomeData(
 
   const [enrollmentResult, ledgerResult, noticeResult, rankingResult, campaignResult, studentsResult] =
     await Promise.all([
-      supabase.from("enrollments").select("*").eq("student_id", student.id).eq("status", "approved"),
+      supabase.from("enrollments").select("*").eq("tenant_id", student.tenant_id).eq("status", "approved"),
       supabase.from("sticker_ledger").select("*").eq("tenant_id", student.tenant_id).eq("status", "active"),
       supabase.from("notices").select("*").eq("tenant_id", student.tenant_id).order("pinned", { ascending: false }).order("created_at", { ascending: false }),
       supabase.from("ranking_period_config").select("*").eq("tenant_id", student.tenant_id),
@@ -37,7 +37,7 @@ export async function getStudentHomeData(
     ]);
 
   const enrollments = assertQuery(enrollmentResult.data as Enrollment[] | null, enrollmentResult.error, "Enrollments");
-  const classIds = enrollments.map((enrollment) => enrollment.class_id);
+  const classIds = enrollments.filter((enrollment) => enrollment.student_id === student.id).map((enrollment) => enrollment.class_id);
   const classesResult = classIds.length
     ? await supabase.from("classes").select("*").in("id", classIds).eq("status", "active")
     : { data: [], error: null };

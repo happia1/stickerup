@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getRequestUser } from "@/lib/supabase/server-auth";
+import { koreaDateKey } from "@/lib/korea-date";
 
 export async function POST(request: Request) {
   const auth = await getRequestUser(request);
@@ -15,13 +16,13 @@ export async function POST(request: Request) {
   if (!item.data) return NextResponse.json({ error: "상품을 찾을 수 없습니다." }, { status: 404 });
   const campaign = await db.from("reward_campaigns").select("id, class_id, period_start, period_end, target_distribution").eq("id", item.data.campaign_id).single();
   if (!campaign.data) return NextResponse.json({ error: "이벤트를 찾을 수 없습니다." }, { status: 404 });
-  const today = new Date().toISOString().slice(0, 10);
+  const today = koreaDateKey();
   if (today <= campaign.data.period_end) return NextResponse.json({ error: "랭킹 기간이 끝난 뒤 선물을 선택할 수 있어요." }, { status: 409 });
 
   const [students, enrollments, ledger, campaignItems] = await Promise.all([
     db.from("students").select("id").eq("tenant_id", studentData.tenant_id),
     db.from("enrollments").select("student_id, class_id, status").eq("tenant_id", studentData.tenant_id).eq("status", "approved"),
-    db.from("sticker_ledger").select("student_id, class_id, count, status, created_at").eq("tenant_id", studentData.tenant_id).eq("status", "active").gte("created_at", `${campaign.data.period_start}T00:00:00`).lte("created_at", `${campaign.data.period_end}T23:59:59.999`),
+    db.from("sticker_ledger").select("student_id, class_id, count, status, created_at").eq("tenant_id", studentData.tenant_id).eq("status", "active").gte("created_at", `${campaign.data.period_start}T00:00:00+09:00`).lte("created_at", `${campaign.data.period_end}T23:59:59.999+09:00`),
     db.from("reward_items").select("id").eq("campaign_id", campaign.data.id),
   ]);
   const eligibleIds = (students.data ?? []).map((row) => row.id).filter((id) => !campaign.data.class_id || (enrollments.data ?? []).some((row) => row.student_id === id && row.class_id === campaign.data.class_id));

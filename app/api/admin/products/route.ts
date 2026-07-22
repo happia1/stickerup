@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getRequestUser } from "@/lib/supabase/server-auth";
+import { isStableProductImage, stableProductImage } from "@/lib/server/stable-product-image";
 
 async function getContext(request: Request) {
   const auth = await getRequestUser(request);
@@ -20,6 +21,10 @@ export async function GET(request: Request) {
   ]);
   const likeError = likes.error?.code === "42P01" ? null : likes.error;
   if (result.error || likeError) return NextResponse.json({ error: (result.error ?? likeError)?.message }, { status: 400 });
+  await Promise.all((result.data ?? []).filter((product) => product.image_url && !isStableProductImage(product.image_url)).map(async (product) => {
+    const stableUrl = await stableProductImage(context.db, product.image_url, `catalog/${context.teacher.tenant_id}/${product.source_marketplace_product_id ?? product.id}`);
+    if (stableUrl !== product.image_url) { product.image_url = stableUrl; await context.db.from("product_catalog").update({ image_url: stableUrl, updated_at: new Date().toISOString() }).eq("id", product.id).eq("tenant_id", context.teacher.tenant_id); }
+  }));
   const products = (result.data ?? []).map((product) => ({ ...product, like_count: (likes.data ?? []).filter((like) => like.product_id === product.id).length })).sort((a, b) => b.like_count - a.like_count || a.title.localeCompare(b.title, "ko"));
   return NextResponse.json({ products });
 }

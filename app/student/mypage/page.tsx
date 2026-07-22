@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 import { useState } from "react";
 import { useAppDispatch, useAppState } from "@/lib/store/provider";
 import {
@@ -8,6 +9,9 @@ import {
   getTeacherById,
   pendingEnrollmentsForStudent,
   totalStickers,
+  campaignStatus,
+  getCampaignMeta,
+  itemsForCampaign,
 } from "@/lib/store/selectors";
 import { fmtDateTime } from "@/lib/format";
 import { Avatar } from "@/components/ui/Avatar";
@@ -66,6 +70,7 @@ export default function StudentMyPage() {
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
   const [requesting, setRequesting] = useState(false);
   const [withdrawingId, setWithdrawingId] = useState<string | null>(null);
+  const [claimingItemId, setClaimingItemId] = useState<string | null>(null);
   if (!me) return null;
 
   const approved = approvedClassesForStudent(state, me.id);
@@ -77,6 +82,9 @@ export default function StudentMyPage() {
     (cls) => cls.status === "active" && !cls.is_default && !approvedIds.has(cls.id) && !pendingIds.has(cls.id)
   );
   const activeTotal = totalStickers(state, me.id);
+  const myClassIds = new Set(approved.map((cls) => cls.id));
+  const winningCampaigns = state.rewardCampaigns.filter((campaign) => (campaign.class_id === null || myClassIds.has(campaign.class_id)) && campaignStatus(campaign) === "ended").map((campaign) => ({ campaign, meta: getCampaignMeta(state, campaign, me.id) })).filter(({ meta }) => meta.iAmEligible);
+  const campaignTitle = (campaign: (typeof state.rewardCampaigns)[number]) => campaign.title?.trim() || (campaign.class_id ? `${state.classes.find((cls)=>cls.id===campaign.class_id)?.name ?? "반"} 랭킹 보상` : "전체 랭킹 보상");
   const toggleClass = (classId: string) => {
     setSelectedClassIds((prev) => (prev.includes(classId) ? prev.filter((id) => id !== classId) : [...prev, classId]));
   };
@@ -200,6 +208,15 @@ export default function StudentMyPage() {
           </p>
         </div>
       </Card>
+
+      {winningCampaigns.some(({meta})=>!meta.iHaveClaimed) && <Card>
+        <div id="reward-selection" className="scroll-mt-20"><h3 className="text-subtitle">경품 선물 고르기</h3><p className="mb-3 mt-1 text-caption text-text-secondary">순위가 높은 학생부터 차례대로 경품을 선택해요.</p></div>
+        <div className="space-y-3">{winningCampaigns.filter(({meta})=>!meta.iHaveClaimed).map(({campaign,meta})=><section key={campaign.id} className="rounded-xl bg-surface-raised p-3"><div className="mb-3 flex items-center justify-between gap-2"><div><p className="text-body font-bold">{campaignTitle(campaign)}</p><p className="text-caption text-text-muted">내 순위 {meta.myRank}등</p></div><Pill tone={meta.isMyTurn?"ok":"wait"}>{meta.isMyTurn?"선택 가능":"앞 순위 선택 대기"}</Pill></div>{meta.isMyTurn?<div className="grid grid-cols-2 gap-2">{itemsForCampaign(state,campaign.id).filter(item=>state.rewardClaims.filter(claim=>claim.item_id===item.id).length<item.qty).map(item=><button type="button" key={item.id} disabled={claimingItemId!==null} className="overflow-hidden rounded-xl border border-border bg-surface-page text-left disabled:opacity-50" onClick={async()=>{try{setClaimingItemId(item.id);const client=getSupabaseBrowserClient();const session=await client!.auth.getSession();if(!session.data.session)throw new Error("로그인이 필요합니다.");const response=await fetch("/api/student/reward-claims",{method:"POST",headers:{Authorization:`Bearer ${session.data.session.access_token}`,"Content-Type":"application/json"},body:JSON.stringify({itemId:item.id})});const payload=await response.json();if(!response.ok)throw new Error(payload.error??"경품을 선택하지 못했어요.");dispatch({type:"CLAIM_REWARD",itemId:item.id,studentId:me.id,rank:meta.myRank??0});showToast(`“${item.title}” 경품을 선택했어요.`);}catch(error){showToast(error instanceof Error?error.message:"경품을 선택하지 못했어요.");}finally{setClaimingItemId(null);}}}><img src={item.image_url??"/images/placeholder-product.svg"} onError={event=>{event.currentTarget.onerror=null;event.currentTarget.src="/images/placeholder-product.svg";}} alt={item.title} className="aspect-square w-full object-cover"/><span className="block p-2 text-caption font-bold">{item.title}</span></button>)}</div>:<p className="rounded-lg bg-surface-page p-3 text-caption text-text-secondary">{meta.myRank}등이에요. 앞 순위 학생이 경품을 선택하면 내 차례가 자동으로 열립니다.</p>}</section>)}</div>
+      </Card>}
+
+      {winningCampaigns.some(({meta})=>meta.iHaveClaimed) && <Card>
+        <h3 className="text-subtitle">내가 받은 경품</h3><div className="mt-3 space-y-2">{state.rewardClaims.filter(claim=>claim.student_id===me.id).flatMap(claim=>{const item=state.rewardItems.find(candidate=>candidate.id===claim.item_id);const campaign=item?state.rewardCampaigns.find(candidate=>candidate.id===item.campaign_id):null;return item&&campaign?[<div key={claim.id} className="flex items-center gap-3 rounded-xl bg-surface-raised p-3"><img src={item.image_url??"/images/placeholder-product.svg"} onError={event=>{event.currentTarget.onerror=null;event.currentTarget.src="/images/placeholder-product.svg";}} alt={item.title} className="h-14 w-14 shrink-0 rounded-lg object-cover"/><div className="min-w-0"><p className="truncate text-body font-bold">{item.title}</p><p className="text-caption text-text-secondary">{campaignTitle(campaign)} · {claim.rank_at_claim}등</p><p className="text-micro text-text-muted">{fmtDateTime(claim.claimed_at)} 선택</p></div></div>]:[]})}</div>
+      </Card>}
 
       <Card>
         <div className="flex items-center justify-between mb-2">

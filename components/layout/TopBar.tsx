@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAppState } from "@/lib/store/provider";
-import { getTeacherById, pendingCounts } from "@/lib/store/selectors";
+import { campaignStatus, getCampaignMeta, getTeacherById, pendingCounts } from "@/lib/store/selectors";
 import { fmtDate } from "@/lib/format";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -32,6 +32,7 @@ export function StudentTopBar() {
   const [notifOpen, setNotifOpen] = useState(false);
 
   const notifItems = [
+    ...state.rewardCampaigns.filter((campaign)=>campaignStatus(campaign)==="ended").filter((campaign)=>{const meta=getCampaignMeta(state,campaign,state.currentUserId);return meta.iAmEligible&&!meta.iHaveClaimed;}).map((campaign)=>{const meta=getCampaignMeta(state,campaign,state.currentUserId);return {text:`축하드려요! ${campaign.title?.trim()||"랭킹 이벤트"} ${meta.myRank}등 경품 지급 대상이에요.`,date:`${campaign.period_end}T23:59:59+09:00`};}),
     ...state.notices.map((notice) => ({ text: `새 공지: ${notice.title}`, date: notice.created_at })),
     ...state.classes
       .filter((cls) => !cls.is_default && cls.status === "active")

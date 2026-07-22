@@ -1,5 +1,4 @@
 import type { AppState } from "./types";
-import { DEMO_NOW } from "@/lib/demoClock";
 import { getRanking, computePeriodBounds } from "@/lib/ranking";
 import type { ClassRoom, RankingRow, RewardCampaign, RewardItem, RankingUnit } from "@/lib/types";
 import { koreaDateKey } from "@/lib/korea-date";
@@ -86,9 +85,9 @@ export function defaultRankingScopeForStudent(state: AppState, studentId: string
   return nonDefault.length > 0 ? nonDefault[0].e.class_id : null;
 }
 
-export function campaignStatus(campaign: RewardCampaign, ref: Date = DEMO_NOW): "scheduled" | "active" | "ended" {
-  const start = new Date(`${campaign.period_start}T00:00:00`);
-  const end = new Date(`${campaign.period_end}T23:59:59`);
+export function campaignStatus(campaign: RewardCampaign, ref: Date = new Date()): "scheduled" | "active" | "ended" {
+  const start = new Date(`${campaign.period_start}T00:00:00+09:00`);
+  const end = new Date(`${campaign.period_end}T23:59:59.999+09:00`);
   if (ref < start) return "scheduled";
   if (ref > end) return "ended";
   return "active";
@@ -161,9 +160,10 @@ export function featuredCampaignForStudent(state: AppState, studentId: string): 
   return active ?? visible.find((c) => campaignStatus(c) === "scheduled") ?? null;
 }
 
-export function ddayLabel(dateStr: string, ref: Date = DEMO_NOW): string {
-  const target = new Date(`${dateStr}T00:00:00`);
-  const diffMs = target.getTime() - new Date(ref.toDateString()).getTime();
+export function ddayLabel(dateStr: string, ref: Date = new Date()): string {
+  const target = new Date(`${dateStr}T00:00:00+09:00`);
+  const today = new Date(`${koreaDateKey(ref)}T00:00:00+09:00`);
+  const diffMs = target.getTime() - today.getTime();
   const diff = Math.round(diffMs / 86400000);
   if (diff > 0) return `D-${diff}`;
   if (diff === 0) return "D-DAY";
