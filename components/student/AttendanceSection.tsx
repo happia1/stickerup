@@ -10,6 +10,7 @@ import { Accordion } from "@/components/ui/Accordion";
 import { useToast } from "@/lib/toast/provider";
 import clsx from "@/lib/clsx";
 import { submitStudentAction } from "@/lib/student-action-client";
+import { koreaDateKey } from "@/lib/korea-date";
 
 const DEMO_SCENARIOS: { tier: AttendanceTier; label: string }[] = [
   { tier: "on_time", label: "정시 이전" },
@@ -30,6 +31,7 @@ export function AttendanceSection() {
   useEffect(() => { if (!classId && myClasses[0]) setClassId(myClasses[0].id); }, [classId, myClasses]);
 
   const selectedClass = getClassById(state, classId);
+  const checkedToday = state.ledger.some((entry) => entry.student_id === state.currentUserId && entry.class_id === classId && entry.source_type === "attendance" && koreaDateKey(entry.created_at) === koreaDateKey());
 
   return (
     <div>
@@ -67,15 +69,16 @@ export function AttendanceSection() {
         </div>
         <Button
           fullWidth
-          disabled={!classId || submitting}
+          disabled={!classId || submitting || checkedToday}
           onClick={async () => {
             try { setSubmitting(true); await submitStudentAction({ action: "attendance", classId, tier: scenario }); dispatch({ type: "CHECK_IN", studentId: state.currentUserId, classId, tier: scenario }); const tierDef = ATTENDANCE_TIERS.find((t) => t.tier === scenario); showToast(`${selectedClass?.name} 출석 완료 — ${tierDef?.label}, ${tierDef?.count}장 지급!`); }
             catch (error) { showToast(error instanceof Error ? error.message : "출석을 저장하지 못했습니다."); }
             finally { setSubmitting(false); }
           }}
         >
-          체크하기
+          {checkedToday ? "오늘 출석 체크 완료" : "체크하기"}
         </Button>
+        {checkedToday && <p className="mt-2 text-center text-caption text-state-success">출석은 이 반에서 내일 다시 체크할 수 있어요.</p>}
       </Card>
 
       <Card>
