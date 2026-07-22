@@ -31,8 +31,18 @@ function FilterIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-none stroke-current stroke-2"><path d="M4 6h16M7 12h10M10 18h4"/></svg>;
 }
 
+function affiliateLabel(url?: string | null): string {
+  if (!url) return "직접 등록";
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    if (host.includes("coupang.com") || host.includes("coupa.ng")) return "쿠팡";
+    if (host.includes("temu.com")) return "테무";
+  } catch { return "기타 제휴"; }
+  return "기타 제휴";
+}
+
 function ProductInfo({ product, compact = false }: { product:Product; compact?:boolean }) {
-  return <div className="min-w-0 flex-1"><p className="text-micro text-brand-amber">{product.category ?? "미분류"}</p><h4 className={`${compact ? "line-clamp-1" : "line-clamp-2"} text-caption font-bold`}>{product.title}</h4><p className="mt-1 text-caption font-bold">{product.price_label ?? "가격정보 없음"}</p><details className="mt-2 text-micro text-text-secondary"><summary className="cursor-pointer">더보기</summary><p className="mt-2">{product.description ?? "상품 설명이 없습니다."}</p></details></div>;
+  return <div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-2 text-micro"><p className="min-w-0 truncate text-brand-amber">{product.category ?? "미분류"}</p><p className="shrink-0 text-text-muted">{affiliateLabel(product.purchase_url)}</p></div><h4 className={`${compact ? "line-clamp-1" : "line-clamp-2"} text-caption font-bold`}>{product.title}</h4><p className="mt-1 text-caption font-bold">{product.price_label ?? "가격정보 없음"}</p><details className="mt-2 text-micro text-text-secondary"><summary className="cursor-pointer">더보기</summary><p className="mt-2">{product.description ?? "상품 설명이 없습니다."}</p></details></div>;
 }
 
 function PromotionCarousel({ banners }: { banners:PromoBanner[] }) {
@@ -93,11 +103,11 @@ export default function AdminProductsPage() {
 
   const view=views[tab];
   return <div>
-    <Link href="/admin/rewards" className="text-caption text-text-secondary">이벤트/상품 관리</Link><h2 className="mt-2 text-title">상품 카탈로그</h2><p className="mb-4 mt-1 text-caption text-text-secondary">추천상품을 확인하고 경품 리스트에 저장해 학생 선호도를 확인하세요.</p>
-    <iframe title="쿠팡 파트너스 배너" src="https://coupa.ng/coeq4M" width="100%" height="36" frameBorder="0" scrolling="no" referrerPolicy="unsafe-url" className="mb-1"/><p className="mb-5 text-micro text-text-muted">{DISCLOSURE}</p>
+    <Link href="/admin/rewards" className="text-caption text-text-secondary">이벤트/상품 관리</Link><h2 className="mt-2 text-title">경품 리스트</h2><p className="mb-4 mt-1 text-caption text-text-secondary">추천상품을 확인하고 경품 리스트에 저장해 학생 선호도를 확인하세요.</p>
     <div className="mb-5 grid max-w-md grid-cols-2 rounded-xl bg-surface-raised p-1"><button onClick={()=>setTab("cart")} className={`rounded-lg px-4 py-2.5 font-bold ${tab==="cart"?"bg-brand-amber text-surface-page":"text-text-secondary"}`}>경품 리스트 {cart.length}</button><button onClick={()=>setTab("recommended")} className={`rounded-lg px-4 py-2.5 font-bold ${tab==="recommended"?"bg-brand-amber text-surface-page":"text-text-secondary"}`}>추천상품</button></div>
+    {tab==="recommended"&&<div className="mb-5 rounded-xl bg-surface-raised p-3"><p className="mb-2 text-caption font-bold">제휴 상품 검색</p><iframe title="쿠팡 파트너스 배너" src="https://coupa.ng/coeq4M" width="100%" height="36" frameBorder="0" scrolling="no" referrerPolicy="unsafe-url" className="mb-1"/><p className="text-micro text-text-muted">{DISCLOSURE}</p>{query&&<div className="mt-3 flex flex-wrap gap-2"><a href={`https://www.coupang.com/np/search?q=${encodeURIComponent(query)}`} target="_blank" rel="noreferrer" className="rounded-lg border border-border px-3 py-2 text-caption font-bold">쿠팡에서 검색</a><a href={`https://www.temu.com/search_result.html?search_key=${encodeURIComponent(query)}`} target="_blank" rel="noreferrer" className="rounded-lg border border-border px-3 py-2 text-caption font-bold">테무에서 검색</a></div>}</div>}
     <CatalogToolbar categories={categories} category={category} setCategory={setCategory} filterOpen={filterOpen} setFilterOpen={setFilterOpen} searchOpen={searchOpen} setSearchOpen={setSearchOpen} query={query} setQuery={setQuery} view={view} setView={value=>setViews(current=>({...current,[tab]:value}))}/>
-    {query&&source.length===0&&tab==="recommended"&&<div className="mb-4 rounded-xl bg-surface-raised p-4 text-caption"><p>카탈로그에 검색 결과가 없습니다.</p><a href={`https://www.coupang.com/np/search?q=${encodeURIComponent(query)}`} target="_blank" rel="noreferrer" className="mt-2 inline-flex font-bold text-brand-amber">쿠팡 전체 상품에서 “{query}” 검색하기 →</a></div>}
+    {query&&source.length===0&&tab==="recommended"&&<div className="mb-4 rounded-xl bg-surface-raised p-4 text-caption"><p>추천상품에 “{query}” 검색 결과가 없습니다. 위 제휴사 검색 버튼을 이용해 보세요.</p></div>}
     <section {...swipeProps}>
       {source.length===0&&!query&&<p className="rounded-xl bg-surface-page p-5 text-caption text-text-secondary">{tab==="cart"?"경품 리스트가 비어 있습니다.":"조건에 맞는 추천상품이 없습니다."}</p>}
       <div className={view==="card"?"grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5":"space-y-2"}>{paged.map((product,index)=><article key={product.id} className={`${view==="card"?"overflow-hidden":"flex items-center gap-3 p-3"} relative rounded-xl border border-border bg-surface-page`}>

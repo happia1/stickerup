@@ -184,7 +184,6 @@ function EventDetail({ campaign, editingId, setEditingId }: { campaign: RewardCa
   const state = useAppState();
   const items = itemsForCampaign(state, campaign.id);
   const status = campaignStatus(campaign) as EventStatusFilter;
-  const qtyTotal = items.reduce((sum, item) => sum + item.qty, 0);
 
   if (editingId === campaign.id) return <EditEventForm campaign={campaign} onClose={() => setEditingId(null)} />;
 
@@ -205,14 +204,10 @@ function EventDetail({ campaign, editingId, setEditingId }: { campaign: RewardCa
         </div>
       </div>
 
-      <div className="mb-3 grid grid-cols-2 gap-2">
+      <div className="mb-3">
         <div className="rounded-xl bg-surface-card p-3">
           <p className="text-caption text-text-secondary">보상 대상</p>
           <p className="text-body font-bold">{distributionLabel(campaign)}</p>
-        </div>
-        <div className="rounded-xl bg-surface-card p-3">
-          <p className="text-caption text-text-secondary">총 상품 수량</p>
-          <p className="text-body font-bold">{qtyTotal}개</p>
         </div>
       </div>
 
@@ -220,26 +215,26 @@ function EventDetail({ campaign, editingId, setEditingId }: { campaign: RewardCa
         <table className="w-full text-body">
           <thead>
             <tr className="border-b border-border text-left text-caption text-text-secondary">
-              <th className="p-2.5">순위 / 상품</th>
-              <th className="p-2.5">수량</th>
+              <th className="p-2.5">순위</th>
+              <th className="p-2.5">상품명</th>
             </tr>
           </thead>
           <tbody>
             {items.length === 0 ? (
               <tr><td colSpan={2} className="p-5 text-center text-caption text-text-secondary">등록된 상품이 없습니다.</td></tr>
             ) : items.map((item) => {
-              const catalogProduct = state.productCatalog.find((product) => product.id === item.product_id) as (ProductCatalogItem & { category?: string | null }) | undefined;
               return (
                 <tr key={item.id} className="border-b border-border last:border-0">
-                  <td className="flex items-center gap-2 p-2.5">
+                  <td className="w-14 whitespace-nowrap p-2.5 font-bold text-brand-amber">{item.rank_order ? `${item.rank_order}등` : "-"}</td>
+                  <td className="min-w-0 p-2.5">
+                    <div className="flex min-w-0 items-center gap-2">
                     {item.image_url && (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={item.image_url} alt={item.title} className="h-8 w-8 rounded-md border border-border object-cover" />
+                      <img src={item.image_url} alt={item.title} className="h-8 w-8 shrink-0 rounded-md border border-border object-cover" />
                     )}
-                    <span>{item.rank_order ? `${item.rank_order}등 · ` : ""}{catalogProduct?.category ? `${catalogProduct.category} · ` : ""}{item.title}</span>
-                    {item.link_url && <a href={item.link_url} target="_blank" rel="noreferrer" className="ml-2 text-caption text-brand-amber">구매 바로가기</a>}
+                    <span className="min-w-0 truncate">{item.title}</span>
+                    </div>
                   </td>
-                  <td className="p-2.5">{item.qty}</td>
                 </tr>
               );
             })}
@@ -268,6 +263,7 @@ export default function AdminRewardsPage() {
   const [prizes, setPrizes] = useState<Array<{ rank: number; productId: string; qty: number }>>([{rank:1,productId:"",qty:1},{rank:2,productId:"",qty:1},{rank:3,productId:"",qty:1}]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [prizeListOpen, setPrizeListOpen] = useState(false);
 
   const eventsByStatus = useMemo(() => {
     const grouped: Record<EventStatusFilter, RewardCampaign[]> = { scheduled: [], active: [], ended: [] };
@@ -342,9 +338,6 @@ export default function AdminRewardsPage() {
             {createOpen ? "접기 ▲" : "펼치기 ▼"}
           </button>
         </div>
-        <Link href="/admin/products" className="mb-4 inline-flex rounded-lg border border-border px-3 py-2 text-caption font-bold">
-          경품 리스트 관리 →
-        </Link>
         {createOpen && <>
         <label className="mb-1 block text-caption font-semibold text-text-secondary">이벤트명</label>
         <input value={eventName} onChange={(event) => setEventName(event.target.value)} placeholder="예: 7월 출석왕 이벤트" className="mb-3 w-full rounded-lg border border-border px-2.5 py-2 text-body" />
@@ -393,6 +386,19 @@ export default function AdminRewardsPage() {
         </Button>
         </div>
         </>}
+      </section>
+
+      <section className="mt-6 rounded-card bg-surface-page p-5">
+        <div className={prizeListOpen ? "mb-4 flex items-center justify-between gap-3" : "flex items-center justify-between gap-3"}>
+          <h4 className="text-subtitle">경품 리스트 관리</h4>
+          <button type="button" aria-expanded={prizeListOpen} onClick={() => setPrizeListOpen((open) => !open)} className="rounded-lg border border-border px-3 py-2 text-caption font-bold text-text-secondary">
+            {prizeListOpen ? "접기 ▲" : "펼치기 ▼"}
+          </button>
+        </div>
+        {prizeListOpen && <div className="rounded-xl bg-surface-card p-4">
+          <p className="mb-3 text-caption text-text-secondary">추천상품을 확인하고 이벤트에 사용할 경품을 관리해요.</p>
+          <Link href="/admin/products" className="inline-flex rounded-lg bg-brand-amber px-4 py-2.5 text-caption font-bold text-surface-page">경품 리스트로 이동 →</Link>
+        </div>}
       </section>
     </div>
   );
