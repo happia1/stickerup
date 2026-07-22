@@ -263,7 +263,6 @@ export default function AdminRewardsPage() {
   const [prizes, setPrizes] = useState<Array<{ rank: number; productId: string; qty: number }>>([{rank:1,productId:"",qty:1},{rank:2,productId:"",qty:1},{rank:3,productId:"",qty:1}]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
-  const [prizeListOpen, setPrizeListOpen] = useState(false);
 
   const eventsByStatus = useMemo(() => {
     const grouped: Record<EventStatusFilter, RewardCampaign[]> = { scheduled: [], active: [], ended: [] };
@@ -388,18 +387,10 @@ export default function AdminRewardsPage() {
         </>}
       </section>
 
-      <section className="mt-6 rounded-card bg-surface-page p-5">
-        <div className={prizeListOpen ? "mb-4 flex items-center justify-between gap-3" : "flex items-center justify-between gap-3"}>
+      <Link href="/admin/products" className="mt-3 flex items-center justify-between gap-3 rounded-card bg-surface-page p-5">
           <h4 className="text-subtitle">경품 리스트 관리</h4>
-          <button type="button" aria-expanded={prizeListOpen} onClick={() => setPrizeListOpen((open) => !open)} className="rounded-lg border border-border px-3 py-2 text-caption font-bold text-text-secondary">
-            {prizeListOpen ? "접기 ▲" : "펼치기 ▼"}
-          </button>
-        </div>
-        {prizeListOpen && <div className="rounded-xl bg-surface-card p-4">
-          <p className="mb-3 text-caption text-text-secondary">추천상품을 확인하고 이벤트에 사용할 경품을 관리해요.</p>
-          <Link href="/admin/products" className="inline-flex rounded-lg bg-brand-amber px-4 py-2.5 text-caption font-bold text-surface-page">경품 리스트로 이동 →</Link>
-        </div>}
-      </section>
+          <span className="rounded-lg border border-border px-3 py-2 text-caption font-bold text-text-secondary">바로가기 →</span>
+      </Link>
     </div>
   );
 }

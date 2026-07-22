@@ -41,10 +41,7 @@ export function AttendanceSection() {
   return (
     <div>
       <Card>
-        <h3 className="text-subtitle mb-1">출석 체크</h3>
-        <p className="text-caption text-text-secondary mb-3">
-          오늘 출석한 시간을 입력해주세요.
-        </p>
+        <div className="mb-3 flex min-w-0 items-center gap-2"><h3 className="shrink-0 text-subtitle">출석 체크</h3><p className="min-w-0 truncate text-micro text-text-secondary">오늘 출석한 시간을 입력해 주세요.</p></div>
         <label className="block text-caption font-semibold text-text-secondary mb-1">체크할 반 선택</label>
         <select
           className="w-full border border-border rounded-lg px-2.5 py-2 text-body mb-3"

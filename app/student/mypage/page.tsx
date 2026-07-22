@@ -19,6 +19,10 @@ import clsx from "@/lib/clsx";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { setPreferredClass } from "@/lib/preferred-class";
 
+function formatAttendanceTime(value: string): string {
+  return value.slice(0, 5);
+}
+
 function resizeProfileImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -199,10 +203,7 @@ export default function StudentMyPage() {
         )}
         {approved.map((cls) => (
           <div key={cls.id} className="flex items-center justify-between py-1.5">
-            <div>
-              <p className="text-body">{cls.name}</p>
-              <p className="text-caption text-text-muted">정규 출석 {cls.attendance_time}</p>
-            </div>
+            <p className="min-w-0 truncate text-body">{cls.name} <span className="text-caption text-text-muted">· 정규 출석 {formatAttendanceTime(cls.attendance_time)}</span></p>
             <Pill tone="ok">승인됨</Pill>
           </div>
         ))}

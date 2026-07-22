@@ -8,7 +8,7 @@ export function RewardCard({
   imageUrl,
 }: {
   title: string;
-  buttonLabel: string;
+  buttonLabel: string | null;
   disabled: boolean;
   onClaim: () => void;
   imageUrl?: string | null;
@@ -23,10 +23,10 @@ export function RewardCard({
           🎁
         </div>
       )}
-      <p className="mb-2 line-clamp-2 min-h-8 text-center text-micro font-bold leading-tight">{title}</p>
-      <Button variant="secondary" fullWidth disabled={disabled} onClick={onClaim} className="!py-1.5 !text-micro">
+      <p className={`${buttonLabel ? "mb-2" : ""} line-clamp-2 text-center text-micro font-bold leading-tight`}>{title}</p>
+      {buttonLabel && <Button variant="secondary" fullWidth disabled={disabled} onClick={onClaim} className="!py-1.5 !text-micro">
         {buttonLabel}
-      </Button>
+      </Button>}
     </article>
   );
 }

@@ -30,10 +30,7 @@ export function HomeworkSection() {
   return (
     <div>
       <Card>
-        <h3 className="text-subtitle mb-1">과제 체크</h3>
-        <p className="text-caption text-text-secondary mb-3">
-          과제 완료율을 선택해 주세요.
-        </p>
+        <div className="mb-3 flex min-w-0 items-center gap-2"><h3 className="shrink-0 text-subtitle">과제 체크</h3><p className="min-w-0 truncate text-micro text-text-secondary">과제 완료율을 선택해 주세요.</p></div>
         <label className="block text-caption font-semibold text-text-secondary mb-1">체크할 반</label>
         <select
           className="w-full border border-border rounded-lg px-2.5 py-2 text-body mb-3"

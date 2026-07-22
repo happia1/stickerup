@@ -25,10 +25,7 @@ export function PraiseSection() {
   return (
     <div>
       <Card>
-        <h3 className="text-subtitle mb-1">칭찬 스티커 요청</h3>
-        <p className="text-caption text-text-secondary mb-3">
-          칭찬 받은 사유와 함께 스티커를 요청할 수 있어요.
-        </p>
+        <div className="mb-3 flex min-w-0 items-center gap-2"><h3 className="shrink-0 text-subtitle">칭찬 스티커 요청</h3><p className="min-w-0 truncate text-micro text-text-secondary">칭찬받을 사유와 함께 스티커를 요청할 수 있어요.</p></div>
         <label className="mb-1 block text-caption font-semibold text-text-secondary">요청할 반</label><select value={classId} onChange={event=>setClassId(event.target.value)} className="mb-3 w-full rounded-lg border border-border px-2.5 py-2 text-body">{myClasses.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select>
         <label className="block text-caption font-semibold text-text-secondary mb-1">사유</label>
         <textarea

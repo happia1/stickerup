@@ -37,8 +37,13 @@ function jsonLdPrice(html: string) {
 
 function quantityFromText(value: string | null) {
   if (!value) return null;
+  const multiplied = value.match(/(\d{1,4})\s*(?:개입|개|매|팩|봉|병|캔|포|정|롤)\s*(?:x|×|\*)\s*(\d{1,3})/i);
+  if (multiplied) {
+    const quantity = Number(multiplied[1]) * Number(multiplied[2]);
+    if (Number.isFinite(quantity) && quantity > 1) return quantity;
+  }
   const matches = [...value.matchAll(/(?:총\s*)?(\d{1,4})\s*(?:개입|개|매|팩|봉|병|캔|포|정|롤)(?:\s|$|[,)])/g)];
-  const quantity = Number(matches.at(-1)?.[1]);
+  const quantity = Math.max(0, ...matches.map((match) => Number(match[1])));
   return Number.isFinite(quantity) && quantity > 1 ? quantity : null;
 }
 
@@ -66,7 +71,7 @@ export async function POST(request: Request) {
     const basePriceLabel = Number.isFinite(numericPrice) ? `${numericPrice.toLocaleString("ko-KR")}${priceCurrency === "KRW" || !priceCurrency ? "원" : ` ${priceCurrency}`}` : priceAmount;
     const quantity = quantityFromText(`${title ?? ""} ${description ?? ""}`);
     const unitPriceLabel = Number.isFinite(numericPrice) && quantity ? `개당 ${Math.round(numericPrice / quantity).toLocaleString("ko-KR")}원` : null;
-    const priceLabel = [basePriceLabel, unitPriceLabel].filter(Boolean).join(" · ") || null;
+    const priceLabel = basePriceLabel ? `${basePriceLabel}${unitPriceLabel ? ` (${unitPriceLabel})` : ""}` : null;
     return NextResponse.json({ title, description, imageUrl, priceLabel, unitPriceLabel, quantity });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "상품 정보를 불러오지 못했습니다. 이미지를 직접 등록해 주세요." }, { status: 400 });
