@@ -9,6 +9,7 @@ export interface AdminStudentRow {
   classMemberships: Array<{ classId: string; className: string; isDefault: boolean }>;
   totalStickers: number;
   requestedAt: string | null;
+  wantedPrizes: Array<{ id: string; title: string; imageUrl: string | null }>;
 }
 
 export interface AdminStudentsData {

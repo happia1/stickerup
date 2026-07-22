@@ -17,7 +17,7 @@ export function RewardCard({
     <article className="w-[44%] min-w-[132px] max-w-[156px] flex-none snap-start rounded-card bg-surface-raised p-2.5">
       {imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={imageUrl} alt={title} className="mb-2 aspect-square w-full rounded-lg object-cover" />
+        <img src={imageUrl} onError={(event)=>{event.currentTarget.onerror=null;event.currentTarget.src="/images/placeholder-product.svg";}} alt={title} className="mb-2 aspect-square w-full rounded-lg object-cover" />
       ) : (
         <div className="mb-2 flex aspect-square w-full items-center justify-center rounded-lg bg-surface-page text-3xl" aria-hidden="true">
           🎁

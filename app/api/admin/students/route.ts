@@ -20,17 +20,21 @@ async function getContext(request: Request) {
 export async function GET(request: Request) {
   const context = await getContext(request); if ("error" in context) return context.error;
   const { db, teacher } = context;
-  const [students, classes, enrollments, ledger, connections] = await Promise.all([
+  const [students, classes, enrollments, ledger, connections, prizeLikes, products] = await Promise.all([
     db.from("students").select("id, name, birth_date, invited_by_teacher_id, created_at").eq("tenant_id", teacher.tenant_id),
     db.from("classes").select("id, name, is_default").eq("tenant_id", teacher.tenant_id),
     db.from("enrollments").select("student_id, class_id, status, requested_at").eq("tenant_id", teacher.tenant_id),
     db.from("sticker_ledger").select("student_id, count, status").eq("tenant_id", teacher.tenant_id),
     db.from("student_connection_requests").select("student_id, status, created_at").order("created_at", { ascending: false }),
+    db.from("prize_product_likes").select("student_id, product_id").eq("tenant_id", teacher.tenant_id),
+    db.from("product_catalog").select("id, title, image_url").eq("tenant_id", teacher.tenant_id),
   ]);
-  const error = students.error ?? classes.error ?? enrollments.error ?? ledger.error ?? connections.error;
+  const prizeLikesError = prizeLikes.error?.code === "42P01" ? null : prizeLikes.error;
+  const error = students.error ?? classes.error ?? enrollments.error ?? ledger.error ?? connections.error ?? prizeLikesError ?? products.error;
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
   const classNameById = new Map((classes.data ?? []).map((row) => [row.id, row.name]));
+  const productById = new Map((products.data ?? []).map((row) => [row.id, row]));
   const rows: AdminStudentRow[] = (students.data ?? []).map((student) => {
     const studentEnrollments = (enrollments.data ?? []).filter((row) => row.student_id === student.id);
     const pendingConnection = (connections.data ?? []).find((row) => row.student_id === student.id && row.status === "pending");
@@ -48,6 +52,10 @@ export async function GET(request: Request) {
       classMemberships: approvedMemberships,
       totalStickers: (ledger.data ?? []).filter((row) => row.student_id === student.id && row.status === "active").reduce((sum, row) => sum + row.count, 0),
       requestedAt: pendingConnection?.created_at ?? student.created_at,
+      wantedPrizes: (prizeLikes.data ?? []).filter((row) => row.student_id === student.id).flatMap((row) => {
+        const product = productById.get(row.product_id);
+        return product ? [{ id: product.id, title: product.title, imageUrl: product.image_url }] : [];
+      }),
     };
   }).sort((a, b) => Number(b.connectionStatus === "pending") - Number(a.connectionStatus === "pending") || (b.requestedAt ?? "").localeCompare(a.requestedAt ?? ""));
 

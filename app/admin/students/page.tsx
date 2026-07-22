@@ -1,6 +1,7 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useToast } from "@/lib/toast/provider";
 import type { AdminStudentRow, AdminStudentsData } from "@/lib/data/admin-students.types";
@@ -16,6 +17,7 @@ export default function AdminStudentsPage() {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [focusedStudentId, setFocusedStudentId] = useState("");
   const [canDeleteStudents, setCanDeleteStudents] = useState(false);
+  const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
 
   async function token() {
     const client = getSupabaseBrowserClient();
@@ -70,11 +72,11 @@ export default function AdminStudentsPage() {
           <tbody>
             {loading && <tr><td colSpan={6} className="p-5 text-center text-text-secondary">불러오는 중...</td></tr>}
             {!loading && !students.length && <tr><td colSpan={6} className="p-5 text-center text-text-secondary">등록된 학생이 없습니다.</td></tr>}
-            {students.map((student) => <tr id={`student-${student.id}`} key={student.id} className={`border-b last:border-0 border-border ${student.connectionStatus === "pending" ? "bg-state-warningBg/40" : ""} ${focusedStudentId === student.id ? "outline outline-2 outline-brand-amber outline-offset-[-2px]" : ""}`}>
-              <td className="p-2.5 font-semibold">{student.name}{isBirthday(student.birthDate)&&<span className="ml-2 rounded-full bg-brand-amber px-2 py-0.5 text-caption text-surface-page">🎂 오늘 생일</span>}{student.connectionStatus === "pending" && <span className="ml-2 rounded-full bg-brand-amber px-2 py-0.5 text-caption text-surface-page">대기</span>}</td>
+            {students.map((student) => <Fragment key={student.id}><tr id={`student-${student.id}`} className={`border-b border-border ${student.connectionStatus === "pending" ? "bg-state-warningBg/40" : ""} ${focusedStudentId === student.id ? "outline outline-2 outline-brand-amber outline-offset-[-2px]" : ""}`}>
+              <td className="p-2.5 font-semibold"><button type="button" onClick={()=>setExpandedStudentId(current=>current===student.id?null:student.id)} className="inline-flex items-center gap-1.5 text-left"><span className={`text-micro transition-transform ${expandedStudentId===student.id?"rotate-180":""}`}>⌄</span>{student.name}</button>{isBirthday(student.birthDate)&&<span className="ml-2 rounded-full bg-brand-amber px-2 py-0.5 text-caption text-surface-page">🎂 오늘 생일</span>}{student.connectionStatus === "pending" && <span className="ml-2 rounded-full bg-brand-amber px-2 py-0.5 text-caption text-surface-page">대기</span>}</td>
               <td className="p-2.5 whitespace-nowrap">{student.birthDate ?? "-"}</td><td className="p-2.5"><div className="flex flex-wrap gap-1">{student.classMemberships.length ? student.classMemberships.map((membership)=><span key={membership.classId} className="inline-flex items-center gap-1 rounded-full bg-surface-raised px-2 py-1 text-caption">{membership.className}{!membership.isDefault&&<button type="button" aria-label={`${membership.className} 소속 해지`} className="text-state-danger" onClick={()=>{if(window.confirm(`${student.name} 학생의 ${membership.className} 소속을 해지할까요?`))void updateConnection(student,"remove_class",membership.classId);}}>×</button>}</span>) : "-"}</div></td><td className="p-2.5">{student.totalStickers}</td><td className="p-2.5">{STATUS_LABEL[student.connectionStatus]}</td>
               <td className="p-2.5"><div className="flex flex-wrap items-center gap-1.5">{student.connectionStatus === "connected" ? <button disabled={processingId === student.id} className="rounded-lg border border-state-danger px-2.5 py-1 text-caption text-state-danger disabled:opacity-50" onClick={() => updateConnection(student, "disconnect")}>연결 해지</button> : student.connectionStatus === "pending" ? <><button disabled={processingId === student.id} className="rounded-lg border border-state-success px-2.5 py-1 text-caption text-state-success disabled:opacity-50" onClick={() => updateConnection(student, "approve")}>연결 승인</button><button disabled={processingId === student.id} className="rounded-lg border border-border px-2.5 py-1 text-caption text-text-secondary disabled:opacity-50" onClick={() => updateConnection(student, "revoke_pending")}>대기 해지</button></> : <span className="text-caption text-text-muted">연결 요청 대기</span>}{canDeleteStudents && <button disabled={processingId === student.id} className="rounded-lg px-2.5 py-1 text-caption text-state-danger disabled:opacity-50" onClick={() => updateConnection(student, "delete")}>삭제</button>}</div></td>
-            </tr>)}
+            </tr>{expandedStudentId===student.id&&<tr className="border-b border-border bg-surface-raised/50"><td colSpan={6} className="p-3 sm:p-4"><p className="mb-2 text-caption font-bold">받고 싶은 선물</p>{student.wantedPrizes.length?<div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">{student.wantedPrizes.map(prize=><div key={prize.id} className="flex items-center gap-2 rounded-lg bg-surface-page p-2"><img src={prize.imageUrl??"/images/placeholder-product.svg"} onError={event=>{event.currentTarget.onerror=null;event.currentTarget.src="/images/placeholder-product.svg";}} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover"/><span className="line-clamp-2 text-caption">{prize.title}</span></div>)}</div>:<p className="text-caption text-text-muted">아직 받고 싶다고 선택한 선물이 없습니다.</p>}</td></tr>}</Fragment>)}
           </tbody>
         </table>
       </div>
