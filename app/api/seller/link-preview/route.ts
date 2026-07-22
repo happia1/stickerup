@@ -20,6 +20,28 @@ function decode(value: string | null) {
   return value?.replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">") ?? null;
 }
 
+function jsonLdPrice(html: string) {
+  for (const match of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+    try {
+      const data = JSON.parse(match[1]);
+      const nodes = Array.isArray(data) ? data : data?.['@graph'] ?? [data];
+      for (const node of nodes) {
+        const offer = Array.isArray(node?.offers) ? node.offers[0] : node?.offers;
+        const price = offer?.price ?? offer?.lowPrice ?? node?.price;
+        if (price != null) return String(price);
+      }
+    } catch { /* malformed third-party metadata */ }
+  }
+  return null;
+}
+
+function quantityFromText(value: string | null) {
+  if (!value) return null;
+  const matches = [...value.matchAll(/(?:총\s*)?(\d{1,4})\s*(?:개입|개|매|팩|봉|병|캔|포|정|롤)(?:\s|$|[,)])/g)];
+  const quantity = Number(matches.at(-1)?.[1]);
+  return Number.isFinite(quantity) && quantity > 1 ? quantity : null;
+}
+
 export async function POST(request: Request) {
   const auth = await getRequestUser(request);
   if (!auth.user) return NextResponse.json({ error: auth.error }, { status: 401 });
@@ -36,13 +58,16 @@ export async function POST(request: Request) {
     const html = (await response.text()).slice(0, 2_000_000);
     const title = decode(meta(html, "og:title") ?? html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1] ?? null);
     const description = decode(meta(html, "og:description") ?? meta(html, "description"));
-    const priceAmount = decode(meta(html, "product:price:amount") ?? meta(html, "og:price:amount"));
+    const priceAmount = decode(meta(html, "product:price:amount") ?? meta(html, "og:price:amount") ?? jsonLdPrice(html) ?? html.match(/(?:salePrice|finalPrice|price)\s*["']?\s*[:=]\s*["']?([0-9,]{3,})/i)?.[1] ?? null);
     const priceCurrency = decode(meta(html, "product:price:currency") ?? meta(html, "og:price:currency"));
     const rawImage = decode(meta(html, "og:image") ?? meta(html, "twitter:image"));
     const imageUrl = rawImage ? new URL(rawImage, finalUrl).toString() : null;
     const numericPrice = priceAmount ? Number(priceAmount.replace(/[^0-9.]/g, "")) : NaN;
-    const priceLabel = Number.isFinite(numericPrice) ? `${numericPrice.toLocaleString("ko-KR")}${priceCurrency === "KRW" || !priceCurrency ? "원" : ` ${priceCurrency}`}` : priceAmount;
-    return NextResponse.json({ title, description, imageUrl, priceLabel });
+    const basePriceLabel = Number.isFinite(numericPrice) ? `${numericPrice.toLocaleString("ko-KR")}${priceCurrency === "KRW" || !priceCurrency ? "원" : ` ${priceCurrency}`}` : priceAmount;
+    const quantity = quantityFromText(`${title ?? ""} ${description ?? ""}`);
+    const unitPriceLabel = Number.isFinite(numericPrice) && quantity ? `개당 ${Math.round(numericPrice / quantity).toLocaleString("ko-KR")}원` : null;
+    const priceLabel = [basePriceLabel, unitPriceLabel].filter(Boolean).join(" · ") || null;
+    return NextResponse.json({ title, description, imageUrl, priceLabel, unitPriceLabel, quantity });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "상품 정보를 불러오지 못했습니다. 이미지를 직접 등록해 주세요." }, { status: 400 });
   }

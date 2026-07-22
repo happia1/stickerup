@@ -13,14 +13,15 @@ async function context(request: Request) {
 
 export async function GET(request: Request) {
   const ctx = await context(request); if ("error" in ctx) return ctx.error;
-  const [products, favorites, saved] = await Promise.all([
+  const [products, favorites, saved, banners] = await Promise.all([
     ctx.db.from("marketplace_products").select("*").eq("is_active", true).order("sort_order").order("created_at", { ascending: false }),
     ctx.db.from("marketplace_product_favorites").select("product_id").eq("teacher_id", ctx.teacher.id),
     ctx.db.from("product_catalog").select("source_marketplace_product_id").eq("tenant_id", ctx.teacher.tenant_id).not("source_marketplace_product_id", "is", null),
+    ctx.db.from("marketplace_banners").select("*").eq("is_active", true).order("sort_order").order("created_at", { ascending: false }),
   ]);
-  const error = products.error ?? favorites.error ?? saved.error;
+  const error = products.error ?? favorites.error ?? saved.error ?? banners.error;
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.json({ products: products.data, favoriteIds: favorites.data?.map((row) => row.product_id) ?? [], savedIds: saved.data?.map((row) => row.source_marketplace_product_id) ?? [] });
+  return NextResponse.json({ products: products.data, banners: banners.data ?? [], favoriteIds: favorites.data?.map((row) => row.product_id) ?? [], savedIds: saved.data?.map((row) => row.source_marketplace_product_id) ?? [] });
 }
 
 export async function POST(request: Request) {
