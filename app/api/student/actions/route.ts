@@ -9,7 +9,20 @@ export async function POST(request: Request) {
   const db = createSupabaseAdminClient();
   const student = await db.from("students").select("id, tenant_id").eq("id", auth.user.id).maybeSingle();
   if (student.error || !student.data) return NextResponse.json({ error: "학생 계정이 필요합니다." }, { status: 403 });
-  const body = await request.json() as { action?: "attendance" | "homework" | "praise"; classId?: string | null; tier?: string; reason?: string };
+  const studentData = student.data;
+  const body = await request.json() as { action?: "attendance" | "homework" | "praise" | "enrollment"; classId?: string | null; classIds?: string[]; tier?: string; reason?: string };
+
+  if (body.action === "enrollment") {
+    const classIds = [...new Set(body.classIds ?? [])];
+    if (!classIds.length) return NextResponse.json({ error: "신청할 특강반을 선택해 주세요." }, { status: 400 });
+    const classes = await db.from("classes").select("id").eq("tenant_id", studentData.tenant_id).eq("is_default", false).eq("status", "active").in("id", classIds);
+    if (classes.error || classes.data.length !== classIds.length) return NextResponse.json({ error: "신청할 수 없는 반이 포함되어 있습니다." }, { status: 400 });
+    const requestedAt = new Date().toISOString();
+    const rows = classIds.map((classId) => ({ tenant_id: studentData.tenant_id, student_id: studentData.id, class_id: classId, status: "pending", requested_at: requestedAt, approved_at: null, approver_id: null }));
+    const result = await db.from("enrollments").upsert(rows, { onConflict: "student_id,class_id" }).select("*");
+    if (result.error) return NextResponse.json({ error: result.error.message }, { status: 400 });
+    return NextResponse.json({ enrollments: result.data });
+  }
 
   if (body.classId) {
     const enrollment = await db.from("enrollments").select("id").eq("student_id", student.data.id).eq("class_id", body.classId).eq("status", "approved").maybeSingle();

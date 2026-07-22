@@ -63,7 +63,7 @@ function ImageUploadField({ value, onChange }: { value: string | null; onChange:
 
 function eventTitle(campaign: RewardCampaign, state: ReturnType<typeof useAppState>) {
   const cls = campaign.class_id ? state.classes.find((c) => c.id === campaign.class_id) : null;
-  return cls ? `${cls.name} 랭킹 보상` : "전체 랭킹 보상";
+  return cls ? `${cls.name} 랭킹 보상` : "기본 랭킹 보상";
 }
 
 function eventScopeLabel(campaign: RewardCampaign, state: ReturnType<typeof useAppState>) {
@@ -229,6 +229,7 @@ function EventDetail({ campaign, editingId, setEditingId }: { campaign: RewardCa
               <tr><td colSpan={4} className="p-5 text-center text-caption text-text-secondary">등록된 상품이 없습니다.</td></tr>
             ) : items.map((item) => {
               const claims = claimsForItem(state, item.id);
+              const catalogProduct = state.productCatalog.find((product) => product.id === item.product_id) as (ProductCatalogItem & { category?: string | null }) | undefined;
               return (
                 <tr key={item.id} className="border-b border-border last:border-0">
                   <td className="flex items-center gap-2 p-2.5">
@@ -236,7 +237,7 @@ function EventDetail({ campaign, editingId, setEditingId }: { campaign: RewardCa
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={item.image_url} alt={item.title} className="h-8 w-8 rounded-md border border-border object-cover" />
                     )}
-                    <span>{item.rank_order ? `${item.rank_order}등 · ` : ""}{item.title}</span>
+                    <span>{item.rank_order ? `${item.rank_order}등 · ` : ""}{catalogProduct?.category ? `${catalogProduct.category} · ` : ""}{item.title}</span>
                     {item.link_url && <a href={item.link_url} target="_blank" rel="noreferrer" className="ml-2 text-caption text-brand-amber">구매 바로가기</a>}
                   </td>
                   <td className="p-2.5">{item.qty}</td>
@@ -259,10 +260,11 @@ export default function AdminRewardsPage() {
   const dispatch = useAppDispatch();
   const showToast = useToast();
 
+  const defaultClass = state.classes.find((c) => c.is_default);
   const groupClasses = state.classes.filter((c) => !c.is_default && c.status === "active");
   const [statusFilter, setStatusFilter] = useState<EventStatusFilter>("active");
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
-  const [scopeId, setScopeId] = useState<string>("__all__");
+  const [scopeId, setScopeId] = useState<string>("__default__");
   const [distType, setDistType] = useState<"count" | "ratio">("count");
   const [distValue, setDistValue] = useState(3);
   const [prizes, setPrizes] = useState<Array<{ rank: number; productId: string; qty: number }>>([{rank:1,productId:"",qty:1},{rank:2,productId:"",qty:1},{rank:3,productId:"",qty:1}]);
@@ -277,14 +279,14 @@ export default function AdminRewardsPage() {
   }, [state.rewardCampaigns]);
 
   const visibleEvents = eventsByStatus[statusFilter];
-  const selectedEvent = visibleEvents.find((event) => event.id === selectedEventId) ?? visibleEvents[0] ?? null;
+  const selectedEvent = visibleEvents.find((event) => event.id === selectedEventId) ?? null;
 
   useEffect(() => {
-    setSelectedEventId(visibleEvents[0]?.id ?? null);
+    setSelectedEventId(null);
     setEditingId(null);
   }, [statusFilter, visibleEvents]);
 
-  const classIdForForm = scopeId === "__all__" ? null : scopeId;
+  const classIdForForm = scopeId === "__all__" ? null : scopeId === "__default__" ? defaultClass?.id ?? null : scopeId;
   const config = state.rankingPeriodConfigs.find((c) => c.class_id === classIdForForm);
   const bounds = computePeriodBounds(config?.unit ?? "month", undefined, config?.custom_days ?? null, config?.custom_start ?? null, config?.custom_end ?? null);
 
@@ -313,28 +315,27 @@ export default function AdminRewardsPage() {
         {visibleEvents.length === 0 ? (
           <p className="rounded-xl bg-surface-card p-5 text-center text-caption text-text-secondary">해당 상태의 이벤트가 없습니다.</p>
         ) : (
-          <div className="grid gap-2 lg:grid-cols-3">
+          <div className="grid gap-2">
             {visibleEvents.map((event) => {
               const items = itemsForCampaign(state, event.id);
               const selected = selectedEvent?.id === event.id;
               return (
-                <button
+                <article
                   key={event.id}
-                  type="button"
-                  onClick={() => setSelectedEventId(event.id)}
-                  className={selected ? "rounded-xl border border-brand-amber bg-surface-card p-3 text-left" : "rounded-xl border border-border bg-surface-card p-3 text-left"}
+                  className={selected ? "overflow-hidden rounded-xl border border-brand-amber bg-surface-card" : "overflow-hidden rounded-xl border border-border bg-surface-card"}
                 >
-                  <p className="text-body font-bold">{eventTitle(event, state)}</p>
-                  <p className="mt-1 text-caption text-text-secondary">{event.period_start} ~ {event.period_end}</p>
-                  <p className="mt-1 text-caption text-text-muted">{eventScopeLabel(event, state)} · 상품 {items.length}개 · {distributionLabel(event)}</p>
-                </button>
+                  <button type="button" aria-expanded={selected} onClick={() => setSelectedEventId(selected ? null : event.id)} className="flex w-full items-center gap-3 px-4 py-3 text-left">
+                    <p className="min-w-0 flex-1 text-body font-bold">{eventTitle(event, state)} <span className="ml-2 text-caption font-normal text-text-secondary">{event.period_start} ~ {event.period_end}</span></p>
+                    <span className="text-caption text-text-muted">{eventScopeLabel(event, state)} · 상품 {items.length}개 · {distributionLabel(event)}</span>
+                    <span className={`text-lg text-text-secondary transition-transform ${selected ? "rotate-180" : ""}`} aria-hidden="true">⌄</span>
+                  </button>
+                  {selected && <div className="border-t border-border p-4"><EventDetail campaign={event} editingId={editingId} setEditingId={setEditingId} /></div>}
+                </article>
               );
             })}
           </div>
         )}
       </section>
-
-      {selectedEvent && <EventDetail campaign={selectedEvent} editingId={editingId} setEditingId={setEditingId} />}
 
       <section className="mt-6 rounded-card bg-surface-page p-5">
         <div className={createOpen ? "mb-4 flex items-center justify-between gap-3" : "flex items-center justify-between gap-3"}>
@@ -346,7 +347,8 @@ export default function AdminRewardsPage() {
         {createOpen && <>
         <label className="mb-1 block text-caption font-semibold text-text-secondary">적용 그룹</label>
         <select className="mb-3 w-full rounded-lg border border-border px-2.5 py-2 text-body" value={scopeId} onChange={(event) => setScopeId(event.target.value)}>
-          <option value="__all__">전체</option>
+          <option value="__default__">기본반 (상시)</option>
+          <option value="__all__">전체 학생</option>
           {groupClasses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
         <p className="mb-3 text-caption text-text-muted">현재 랭킹 주기: {bounds.period_start} ~ {bounds.period_end}</p>

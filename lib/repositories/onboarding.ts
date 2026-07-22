@@ -224,13 +224,13 @@ export async function completeStudentOnboarding(
       tenant_id: tenantId,
       student_id: input.userId,
       class_id: defaultClassId,
-      status: invite ? "approved" : "pending",
-      approved_at: invite ? new Date().toISOString() : null,
+      status: "approved",
+      approved_at: new Date().toISOString(),
       approver_id: teacherId,
     },
     { onConflict: "student_id,class_id" }
   );
   if (enrollmentResult.error) fail(enrollmentResult.error, "Unable to enroll the student in the default class.");
 
-  return { tenantId, classId: defaultClassId, enrollmentStatus: invite ? "approved" : "pending" };
+  return { tenantId, classId: defaultClassId, enrollmentStatus: "approved" };
 }

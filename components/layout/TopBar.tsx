@@ -31,6 +31,10 @@ export function StudentTopBar() {
   const [notifOpen, setNotifOpen] = useState(false);
 
   const notifItems = [
+    ...state.notices.map((notice) => ({ text: `새 공지: ${notice.title}`, date: notice.created_at })),
+    ...state.classes
+      .filter((cls) => !cls.is_default && cls.status === "active")
+      .map((cls) => ({ text: `새 특강반이 개설됐어요: ${cls.name}`, date: cls.created_at })),
     ...state.homeworkSubmissions
       .filter((h) => h.student_id === state.currentUserId && h.approval_status !== "pending")
       .map((h) => ({ text: `숙제 인증 요청이 ${h.approval_status === "approved" ? "승인" : "반려"}되었어요.`, date: h.submitted_at })),

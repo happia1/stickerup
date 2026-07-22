@@ -17,6 +17,7 @@ import { Card } from "@/components/ui/Card";
 import { Pill } from "@/components/ui/Pill";
 import { useToast } from "@/lib/toast/provider";
 import clsx from "@/lib/clsx";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const LOG_PAGE_SIZE = 6;
 const TYPE_LABEL = { attendance: "출석", homework: "숙제", praise: "칭찬" } as const;
@@ -30,6 +31,7 @@ export default function StudentMyPage() {
   const [name, setName] = useState(me?.name ?? "");
   const [age, setAge] = useState(String(me?.age ?? ""));
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
+  const [requesting, setRequesting] = useState(false);
   if (!me) return null;
 
   const approved = approvedClassesForStudent(state, me.id);
@@ -189,14 +191,28 @@ export default function StudentMyPage() {
           </div>
           <Button
             fullWidth
-            disabled={selectedClassIds.length === 0}
-            onClick={() => {
-              dispatch({ type: "REQUEST_ENROLLMENT", studentId: me.id, classIds: selectedClassIds });
-              showToast(`${selectedClassIds.length}개 반에 승인요청을 보냈어요.`);
-              setSelectedClassIds([]);
+            disabled={selectedClassIds.length === 0 || requesting}
+            onClick={async () => {
+              setRequesting(true);
+              try {
+                const client = getSupabaseBrowserClient();
+                const { data } = await client!.auth.getSession();
+                if (data.session) {
+                  const response = await fetch("/api/student/actions", { method: "POST", headers: { Authorization: `Bearer ${data.session.access_token}`, "Content-Type": "application/json" }, body: JSON.stringify({ action: "enrollment", classIds: selectedClassIds }) });
+                  const payload = await response.json();
+                  if (!response.ok) throw new Error(payload.error ?? "승인요청을 보내지 못했어요.");
+                }
+                dispatch({ type: "REQUEST_ENROLLMENT", studentId: me.id, classIds: selectedClassIds });
+                showToast(`${selectedClassIds.length}개 반에 승인요청을 보냈어요.`);
+                setSelectedClassIds([]);
+              } catch (error) {
+                showToast(error instanceof Error ? error.message : "승인요청을 보내지 못했어요.");
+              } finally {
+                setRequesting(false);
+              }
             }}
           >
-            승인요청하기
+            {requesting ? "요청 중..." : "승인요청하기"}
           </Button>
         </div>
       </Card>

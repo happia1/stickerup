@@ -20,6 +20,8 @@ export default function AdminClassesPage() {
   const [editingPeriodId, setEditingPeriodId] = useState<string | null>(null);
   const [editingStart, setEditingStart] = useState("");
   const [editingEnd, setEditingEnd] = useState("");
+  const defaultClass = state.classes.find((cls) => cls.is_default);
+  const specialClasses = state.classes.filter((cls) => !cls.is_default);
 
   function beginPeriodEdit(classId: string, start: string | null, end: string | null) {
     setEditingPeriodId(classId);
@@ -45,15 +47,27 @@ export default function AdminClassesPage() {
     <div>
       <div className="flex items-center justify-between mb-1">
         <h2 className="text-title">반 관리</h2>
-        <Button onClick={() => setShowForm((v) => !v)}>{showForm ? "닫기" : "+ 반 추가"}</Button>
+        <Button onClick={() => setShowForm((v) => !v)}>{showForm ? "닫기" : "+ 특강반 추가"}</Button>
       </div>
       <p className="text-caption text-text-secondary mb-5">
         기본반은 상시 운영, 특강반은 운영 기간이 끝나면 자동 해제돼요.
       </p>
 
+      <section className="mb-6 rounded-card border border-border bg-surface-page p-5">
+        <h3 className="text-subtitle">기본반 설정</h3>
+        <p className="mb-4 mt-1 text-caption text-text-secondary">모든 학생이 기본으로 소속되며 운영 기간은 상시입니다.</p>
+        {defaultClass ? (
+          <div className="grid items-end gap-3 sm:grid-cols-[1fr_220px_120px]">
+            <div><p className="text-caption text-text-secondary">반 이름</p><p className="mt-2 font-bold">{defaultClass.name}</p></div>
+            <label className="text-caption text-text-secondary">정규 출석 시각<input type="time" className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-body" value={defaultClass.attendance_time} onChange={(event) => dispatch({ type: "UPDATE_CLASS_ATTENDANCE_TIME", classId: defaultClass.id, attendanceTime: event.target.value })} /></label>
+            <div><p className="text-caption text-text-secondary">운영 기간</p><p className="mt-2 font-bold text-state-success">상시</p></div>
+          </div>
+        ) : <p className="text-caption text-state-danger">기본반이 없습니다. 데이터베이스 기본반 설정을 확인해 주세요.</p>}
+      </section>
+
       {showForm && (
         <div className="bg-surface-page rounded-card p-5 mb-6 max-w-lg">
-          <h4 className="text-body font-bold mb-3">새 반 추가</h4>
+          <h4 className="text-body font-bold mb-3">새 특강반 추가</h4>
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
               <label className="block text-caption font-semibold text-text-secondary mb-1">반 이름</label>
@@ -121,7 +135,7 @@ export default function AdminClassesPage() {
             </tr>
           </thead>
           <tbody>
-            {state.classes.map((c) => {
+            {specialClasses.map((c) => {
               const studentCount = state.enrollments.filter((e) => e.class_id === c.id && e.status === "approved").length;
               const config = state.rankingPeriodConfigs.find((r) => r.class_id === c.id);
               return (
