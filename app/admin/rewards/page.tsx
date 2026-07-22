@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAppDispatch, useAppState } from "@/lib/store/provider";
 import { campaignStatus, itemsForCampaign } from "@/lib/store/selectors";
 import { computePeriodBounds } from "@/lib/ranking";
@@ -263,6 +263,35 @@ export default function AdminRewardsPage() {
   const [prizes, setPrizes] = useState<Array<{ rank: number; productId: string; qty: number }>>([{rank:1,productId:"",qty:1},{rank:2,productId:"",qty:1},{rank:3,productId:"",qty:1}]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [catalogRefreshing, setCatalogRefreshing] = useState(false);
+  const [catalogError, setCatalogError] = useState(false);
+
+  const refreshCatalog = useCallback(async (showFailure = false) => {
+    const client = getSupabaseBrowserClient();
+    if (!client) return;
+    setCatalogRefreshing(true);
+    try {
+      const { data } = await client.auth.getSession();
+      if (!data.session) return;
+      const response = await fetch("/api/admin/products", { headers: { Authorization: `Bearer ${data.session.access_token}` }, cache: "no-store" });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? "경품 목록을 불러오지 못했습니다.");
+      dispatch({ type: "SET_PRODUCT_CATALOG", products: payload.products ?? [] });
+      try { localStorage.setItem(`stickerup:product-catalog:${state.currentUserId}`, JSON.stringify(payload.products ?? [])); } catch { /* storage can be unavailable */ }
+      setCatalogError(false);
+    } catch (error) {
+      setCatalogError(true);
+      if (showFailure) showToast(error instanceof Error ? error.message : "경품 목록을 불러오지 못했습니다.");
+    } finally { setCatalogRefreshing(false); }
+  }, [dispatch, showToast, state.currentUserId]);
+
+  useEffect(() => {
+    void refreshCatalog(false);
+    const timer = window.setInterval(() => void refreshCatalog(false), 60_000);
+    const refreshWhenVisible = () => { if (document.visibilityState === "visible") void refreshCatalog(false); };
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", refreshWhenVisible); };
+  }, [refreshCatalog]);
 
   const eventsByStatus = useMemo(() => {
     const grouped: Record<EventStatusFilter, RewardCampaign[]> = { scheduled: [], active: [], ended: [] };
@@ -361,7 +390,7 @@ export default function AdminRewardsPage() {
             {distType === "count" ? "인원 수" : "비율(%)"}
             <input type="number" className="mt-1 w-full rounded-lg border border-border px-2.5 py-2 text-body" value={distType === "count" ? distValue : Math.round(distValue * 100)} onChange={(event) => { const value = Number(event.target.value) || 0; setDistValue(distType === "count" ? value : value / 100); }} />
           </label>
-          <div className="col-span-2"><p className="mb-2 text-caption font-semibold text-text-secondary">순위별 상품</p>{prizes.map((prize,index)=><div key={prize.rank} className="mb-2 grid grid-cols-[36px_minmax(0,1fr)_52px_24px] items-center gap-1 sm:grid-cols-[64px_minmax(0,1fr)_80px_32px] sm:gap-2"><b className="text-micro sm:text-caption">{prize.rank}등</b><select value={prize.productId} onChange={e=>setPrizes(current=>current.map((item,i)=>i===index?{...item,productId:e.target.value}:item))} className="min-w-0 w-full rounded-lg border border-border px-1.5 py-2 text-caption sm:px-2.5 sm:text-body"><option value="">상품 선택</option>{state.productCatalog.map(product=><option key={product.id} value={product.id}>{product.title}</option>)}</select><input aria-label={`${prize.rank}등 수량`} type="number" min="1" value={prize.qty} onChange={e=>setPrizes(current=>current.map((item,i)=>i===index?{...item,qty:Math.max(1,Number(e.target.value)||1)}:item))} className="min-w-0 w-full rounded-lg border border-border px-1 py-2 text-caption sm:px-2 sm:text-body"/><button type="button" className="w-6 text-state-danger sm:w-8" onClick={()=>setPrizes(current=>current.filter((_,i)=>i!==index).map((item,i)=>({...item,rank:i+1})))}>×</button></div>)}<button type="button" className="text-caption text-brand-amber" onClick={()=>setPrizes(current=>[...current,{rank:current.length+1,productId:"",qty:1}])}>+ 다음 순위 상품 추가</button></div>
+          <div className="col-span-2"><div className="mb-2 flex items-center justify-between gap-2"><p className="text-caption font-semibold text-text-secondary">순위별 상품</p><button type="button" disabled={catalogRefreshing} onClick={()=>void refreshCatalog(true)} className="text-micro font-bold text-brand-amber disabled:opacity-50">{catalogRefreshing?"갱신 중...":"경품 목록 새로고침"}</button></div>{prizes.map((prize,index)=><div key={prize.rank} className="mb-2 grid grid-cols-[36px_minmax(0,1fr)_52px_24px] items-center gap-1 sm:grid-cols-[64px_minmax(0,1fr)_80px_32px] sm:gap-2"><b className="text-micro sm:text-caption">{prize.rank}등</b><select value={prize.productId} onChange={e=>setPrizes(current=>current.map((item,i)=>i===index?{...item,productId:e.target.value}:item))} className="min-w-0 w-full rounded-lg border border-border px-1.5 py-2 text-caption sm:px-2.5 sm:text-body"><option value="">{state.productCatalog.length?"상품 선택":catalogRefreshing?"상품 불러오는 중...":catalogError?"불러오기 실패 — 새로고침해 주세요":"등록된 경품이 없습니다"}</option>{state.productCatalog.map(product=><option key={product.id} value={product.id}>{product.title}</option>)}</select><input aria-label={`${prize.rank}등 수량`} type="number" min="1" value={prize.qty} onChange={e=>setPrizes(current=>current.map((item,i)=>i===index?{...item,qty:Math.max(1,Number(e.target.value)||1)}:item))} className="min-w-0 w-full rounded-lg border border-border px-1 py-2 text-caption sm:px-2 sm:text-body"/><button type="button" className="w-6 text-state-danger sm:w-8" onClick={()=>setPrizes(current=>current.filter((_,i)=>i!==index).map((item,i)=>({...item,rank:i+1})))}>×</button></div>)}<button type="button" className="text-caption text-brand-amber" onClick={()=>setPrizes(current=>[...current,{rank:current.length+1,productId:"",qty:1}])}>+ 다음 순위 상품 추가</button></div>
         </div>
         <div className="flex justify-end">
         <Button

@@ -57,7 +57,7 @@ export default function AdminClassesPage() {
         <h3 className="text-subtitle">기본반 설정</h3>
         <p className="mb-4 mt-1 text-caption text-text-secondary">모든 학생이 기본으로 소속되며 운영 기간은 상시입니다.</p>
         {defaultClass ? (
-          <div className="grid items-end gap-3 sm:grid-cols-[1fr_220px_120px]">
+          <div className="grid items-end gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(180px,220px)_minmax(90px,120px)]">
             <div><p className="text-caption text-text-secondary">반 이름</p><p className="mt-2 font-bold">{defaultClass.name}</p></div>
             <label className="text-caption text-text-secondary">정규 출석 시각<input type="time" className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-body" value={defaultClass.attendance_time} onChange={(event) => dispatch({ type: "UPDATE_CLASS_ATTENDANCE_TIME", classId: defaultClass.id, attendanceTime: event.target.value })} /></label>
             <div><p className="text-caption text-text-secondary">운영 기간</p><p className="mt-2 font-bold text-state-success">상시</p></div>
@@ -68,7 +68,7 @@ export default function AdminClassesPage() {
       {showForm && (
         <div className="bg-surface-page rounded-card p-5 mb-6 max-w-lg">
           <h4 className="text-body font-bold mb-3">새 특강반 추가</h4>
-          <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="block text-caption font-semibold text-text-secondary mb-1">반 이름</label>
               <input className="w-full border border-border rounded-lg px-2.5 py-2 text-body" value={name} onChange={(e) => setName(e.target.value)} placeholder="예: 물리 특강반" />
@@ -126,16 +126,16 @@ export default function AdminClassesPage() {
         <h3 className="text-subtitle">특강반 목록</h3>
         <Button onClick={() => setShowForm((value) => !value)}>{showForm ? "닫기" : "+ 특강반 추가"}</Button>
       </div>
-      <div className="border border-border rounded-xl overflow-hidden mb-6">
-        <table className="w-full text-body">
+      <div className="mb-6 overflow-x-auto rounded-xl border border-border">
+        <table className="min-w-[780px] table-fixed text-body">
           <thead>
             <tr className="text-caption text-text-secondary text-left border-b border-border">
-              <th className="p-2.5">반</th>
-              <th className="p-2.5">정규 출석 시각</th>
-              <th className="p-2.5">특강 기간</th>
-              <th className="p-2.5">랭킹 단위</th>
-              <th className="p-2.5">소속 학생 수</th>
-              <th className="p-2.5">상태</th>
+              <th className="w-28 p-2.5">반</th>
+              <th className="w-36 p-2.5">정규 출석 시각</th>
+              <th className="w-72 p-2.5">특강 기간</th>
+              <th className="w-24 p-2.5">랭킹 단위</th>
+              <th className="w-24 p-2.5">소속 학생 수</th>
+              <th className="w-20 p-2.5">상태</th>
             </tr>
           </thead>
           <tbody>
@@ -148,7 +148,7 @@ export default function AdminClassesPage() {
                   <td className="p-2.5">
                     <input
                       type="time"
-                      className="border border-border rounded-lg px-2 py-1 text-body"
+                      className="w-full min-w-0 rounded-lg border border-border px-2 py-1 text-body"
                       value={c.attendance_time}
                       onChange={(e) => dispatch({ type: "UPDATE_CLASS_ATTENDANCE_TIME", classId: c.id, attendanceTime: e.target.value })}
                     />
@@ -157,16 +157,16 @@ export default function AdminClassesPage() {
                     {c.is_default ? (
                       "상시"
                     ) : editingPeriodId === c.id ? (
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <input type="date" aria-label={`${c.name} 특강 시작일`} className="rounded-lg border border-border px-2 py-1 text-caption" value={editingStart} max={editingEnd || undefined} onChange={(e) => setEditingStart(e.target.value)} />
+                      <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                        <input type="date" aria-label={`${c.name} 특강 시작일`} className="min-w-0 flex-1 rounded-lg border border-border px-2 py-1 text-caption" value={editingStart} max={editingEnd || undefined} onChange={(e) => setEditingStart(e.target.value)} />
                         <span className="text-text-secondary">~</span>
-                        <input type="date" aria-label={`${c.name} 특강 종료일`} className="rounded-lg border border-border px-2 py-1 text-caption" value={editingEnd} min={editingStart || undefined} onChange={(e) => setEditingEnd(e.target.value)} />
+                        <input type="date" aria-label={`${c.name} 특강 종료일`} className="min-w-0 flex-1 rounded-lg border border-border px-2 py-1 text-caption" value={editingEnd} min={editingStart || undefined} onChange={(e) => setEditingEnd(e.target.value)} />
                         <button type="button" className="rounded-lg border border-state-success px-2 py-1 text-caption text-state-success" onClick={() => savePeriod(c.id)}>저장</button>
                         <button type="button" className="rounded-lg border border-border px-2 py-1 text-caption text-text-secondary" onClick={() => setEditingPeriodId(null)}>취소</button>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2">
-                        <span>{c.special_start && c.special_end ? `${c.special_start} ~ ${c.special_end}` : "기간 미설정"}</span>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className="min-w-0 flex-1 whitespace-nowrap">{c.special_start && c.special_end ? `${c.special_start} ~ ${c.special_end}` : "기간 미설정"}</span>
                         <button type="button" className="rounded-lg border border-border px-2 py-1 text-caption text-text-secondary hover:text-text-primary" onClick={() => beginPeriodEdit(c.id, c.special_start, c.special_end)}>수정</button>
                       </div>
                     )}

@@ -5,6 +5,7 @@ import type { RankingRow } from "@/lib/types";
 interface PodiumStudent {
   id: string;
   name: string;
+  profile_image_url?: string | null;
 }
 
 const MEDAL_BG: Record<string, string> = {
@@ -24,7 +25,7 @@ export function Podium({
   highlightStudentId?: string;
   maxRows?: number;
 }) {
-  const findName = (id: string) => students.find((s) => s.id === id)?.name ?? "알 수 없음";
+  const findStudent = (id: string) => students.find((student) => student.id === id);
   const visibleRows = rows.slice(0, maxRows);
 
   return (
@@ -35,6 +36,8 @@ export function Podium({
         <div className="space-y-2">
           {visibleRows.map((row) => {
             const isMe = row.student_id === highlightStudentId;
+            const student = findStudent(row.student_id);
+            const studentName = student?.name ?? "알 수 없음";
             return (
               <div
                 key={row.student_id}
@@ -51,9 +54,9 @@ export function Podium({
                 >
                   {row.rank}
                 </div>
-                <Avatar name={findName(row.student_id)} size={32} />
+                <Avatar name={studentName} size={32} imageUrl={student?.profile_image_url} />
                 <p className="flex-1 text-body text-text-primary truncate">
-                  {findName(row.student_id)}
+                  {studentName}
                   {isMe ? " (나)" : ""}
                 </p>
                 <p className="text-body font-extrabold text-text-primary">{row.total_count}장</p>

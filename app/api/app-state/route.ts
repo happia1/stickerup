@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     const ids=pendingHomework.data.map(item=>item.id);const existing=await db.from("sticker_ledger").select("source_id").eq("tenant_id",tenantId).eq("source_type","homework").in("source_id",ids);const existingIds=new Set((existing.data??[]).map(item=>item.source_id));const rows=pendingHomework.data.filter(item=>!existingIds.has(item.id)).map(item=>({tenant_id:tenantId,student_id:item.student_id,class_id:item.class_id,source_type:"homework",source_id:item.id,count:item.sticker_count,status:"active",actor_teacher_id:null,created_at:item.submitted_at}));if(rows.length)await db.from("sticker_ledger").insert(rows);await db.from("homework_submissions").update({approval_status:"approved",approved_at:new Date().toISOString(),approver_id:null}).in("id",ids);
   }
 
-  const [tenant, teachers, invites, students, classes, enrollments, ledger, homework, praise, ranking, campaigns, items, claims, notices] = await Promise.all([
+  const [tenant, teachers, invites, students, classes, enrollments, ledger, homework, praise, ranking, campaigns, items, claims, notices, products] = await Promise.all([
     db.from("tenants").select("*").eq("id", tenantId).single(),
     db.from("teachers").select("*").eq("tenant_id", tenantId),
     db.from("invite_links").select("*").eq("tenant_id", tenantId),
@@ -36,8 +36,9 @@ export async function GET(request: Request) {
     db.from("reward_items").select("*").eq("tenant_id", tenantId),
     db.from("reward_claims").select("*").eq("tenant_id", tenantId),
     db.from("notices").select("*").eq("tenant_id", tenantId),
+    db.from("product_catalog").select("*").eq("tenant_id", tenantId),
   ]);
-  const results = [tenant, teachers, invites, students, classes, enrollments, ledger, homework, praise, ranking, campaigns, items, claims, notices];
+  const results = [tenant, teachers, invites, students, classes, enrollments, ledger, homework, praise, ranking, campaigns, items, claims, notices, products];
   const error = results.find((result) => result.error)?.error;
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
@@ -58,5 +59,6 @@ export async function GET(request: Request) {
     rewardItems: items.data ?? [],
     rewardClaims: claims.data ?? [],
     notices: notices.data ?? [],
+    productCatalog: products.data ?? [],
   } });
 }

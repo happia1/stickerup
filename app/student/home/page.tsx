@@ -100,7 +100,7 @@ export default function StudentHomePage() {
       {connectionMessage && <p className="mb-3 text-caption text-text-muted">{connectionMessage}</p>}
       <FlapBanner notices={remoteData?.notices} />
       <div className="bg-surface-card rounded-card p-4 mb-3.5 flex items-center gap-3">
-        <Avatar name={me.name} size={44} />
+        <Avatar name={me.name} size={44} imageUrl={me.profile_image_url} />
         <div className="flex-1 min-w-0">
           <p className="text-subtitle">{me.name}</p>
           <p className="text-caption text-text-secondary truncate">{classes.map((c) => c.name).join(" · ")}</p>

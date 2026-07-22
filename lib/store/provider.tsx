@@ -67,10 +67,18 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       if (!accessToken || !userId) { if (active) setLoading(false); return; }
       if (lastSyncedUserRef.current === userId) return;
       lastSyncedUserRef.current = userId;
+      const productCacheKey = `stickerup:product-catalog:${userId}`;
+      try {
+        const cachedProducts = JSON.parse(localStorage.getItem(productCacheKey) ?? "null");
+        if (Array.isArray(cachedProducts) && cachedProducts.length) rawDispatch({ type: "SET_PRODUCT_CATALOG", products: cachedProducts });
+      } catch { /* ignore an invalid or unavailable local cache */ }
       const response = await fetch("/api/app-state", { headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store" });
       if (!response.ok) { lastSyncedUserRef.current = null; if (active) setLoading(false); return; }
       const payload = await response.json() as { state?: Partial<AppState> & Pick<AppState, "currentUserId" | "currentUserRole" | "tenant"> };
       if (active && payload.state) rawDispatch({ type: "HYDRATE_APP_STATE", state: payload.state });
+      if (payload.state?.productCatalog) {
+        try { localStorage.setItem(productCacheKey, JSON.stringify(payload.state.productCatalog)); } catch { /* storage can be unavailable */ }
+      }
       if (active) setLoading(false);
     }
 
