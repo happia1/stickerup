@@ -82,6 +82,7 @@ export async function POST(request: Request) {
   if (!auth.user) return NextResponse.json({ error: auth.error }, { status: 401 });
   if (!isDeveloperUser(auth.user)) return NextResponse.json({ error: "개발자 계정만 접근할 수 있습니다." }, { status: 403 });
   const body = await request.json();
+  const iframeInput = /<iframe\b/i.test(String(body.url ?? ""));
   let target: URL;
   try { target = new URL(inputUrl(body.url)); } catch { return NextResponse.json({ error: "올바른 상품 링크 또는 쿠팡 iframe 태그를 입력해 주세요." }, { status: 400 }); }
   if (!['http:', 'https:'].includes(target.protocol) || isUnsafeHost(target.hostname)) return NextResponse.json({ error: "외부 웹 상품 링크만 사용할 수 있습니다." }, { status: 400 });
@@ -108,7 +109,7 @@ export async function POST(request: Request) {
     if (!response) throw new Error("상품 페이지를 열 수 없습니다.");
     if (!response.ok) {
       const isCoupang = /(^|\.)coupang\.com$|(^|\.)coupa\.ng$/i.test(target.hostname);
-      throw new Error(isCoupang ? "쿠팡 일반 상품 링크는 외부 조회가 차단될 수 있습니다. 쿠팡 파트너스 iframe 태그를 붙여넣어 주세요." : "상품 페이지를 열 수 없습니다.");
+      throw new Error(isCoupang ? iframeInput ? "쿠팡이 이 iframe의 상품정보 자동 조회를 차단했습니다. 상품 정보를 직접 확인해 주세요." : "쿠팡 일반 상품 링크는 외부 조회가 차단될 수 있습니다. 쿠팡 파트너스 iframe 태그를 붙여넣어 주세요." : "상품 페이지를 열 수 없습니다.");
     }
     const finalUrl = currentUrl;
     if (isUnsafeHost(finalUrl.hostname)) throw new Error("허용되지 않는 주소입니다.");
