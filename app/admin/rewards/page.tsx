@@ -212,11 +212,12 @@ function EventDetail({ campaign, editingId, setEditingId }: { campaign: RewardCa
       </div>
 
       <div className="overflow-hidden rounded-xl border border-border">
-        <table className="w-full text-body">
+        <table className="w-full table-fixed text-body">
+          <colgroup><col className="w-10 sm:w-16"/><col/></colgroup>
           <thead>
             <tr className="border-b border-border text-left text-caption text-text-secondary">
-              <th className="p-2.5">순위</th>
-              <th className="p-2.5">상품명</th>
+              <th className="px-1.5 py-2 sm:p-2.5">순위</th>
+              <th className="px-1.5 py-2 sm:p-2.5">상품명</th>
             </tr>
           </thead>
           <tbody>
@@ -225,8 +226,8 @@ function EventDetail({ campaign, editingId, setEditingId }: { campaign: RewardCa
             ) : items.map((item) => {
               return (
                 <tr key={item.id} className="border-b border-border last:border-0">
-                  <td className="w-14 whitespace-nowrap p-2.5 font-bold text-brand-amber">{item.rank_order ? `${item.rank_order}등` : "-"}</td>
-                  <td className="min-w-0 p-2.5">
+                  <td className="whitespace-nowrap px-1.5 py-2 font-bold text-brand-amber sm:p-2.5">{item.rank_order ? `${item.rank_order}등` : "-"}</td>
+                  <td className="min-w-0 px-1.5 py-2 sm:p-2.5">
                     <div className="flex min-w-0 items-center gap-2">
                     {item.image_url && (
                       // eslint-disable-next-line @next/next/no-img-element
