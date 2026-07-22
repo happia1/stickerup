@@ -50,12 +50,26 @@ export function appReducer(state: AppState, action: Action): AppState {
         class_id: action.classId,
         completion_tier: action.tier,
         sticker_count: tierDef ? tierDef.count : 0,
-        approval_status: "pending" as const,
+        approval_status: "approved" as const,
         approver_id: null,
         submitted_at: nowISO(),
-        approved_at: null,
+        approved_at: nowISO(),
       };
-      return { ...state, homeworkSubmissions: [...state.homeworkSubmissions, submission] };
+      const entry = {
+        id: uid("led"),
+        tenant_id: state.tenant.id,
+        student_id: action.studentId,
+        class_id: action.classId,
+        source_type: "homework" as const,
+        source_id: submission.id,
+        count: submission.sticker_count,
+        status: "active" as const,
+        actor_teacher_id: null,
+        rollback_reason: null,
+        rollback_at: null,
+        created_at: nowISO(),
+      };
+      return { ...state, homeworkSubmissions: [...state.homeworkSubmissions, submission], ledger: [...state.ledger, entry] };
     }
 
     case "APPROVE_HOMEWORK": {

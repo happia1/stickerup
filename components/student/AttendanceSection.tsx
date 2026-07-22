@@ -74,7 +74,7 @@ export function AttendanceSection() {
             finally { setSubmitting(false); }
           }}
         >
-          출석 체크 버튼 누르기
+          체크하기
         </Button>
       </Card>
 

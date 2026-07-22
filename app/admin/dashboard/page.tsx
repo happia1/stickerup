@@ -85,8 +85,7 @@ export default function AdminDashboardPage() {
       <h2 className="mb-1 text-title">대시보드</h2>
       <p className="mb-5 text-caption text-text-secondary">오늘({todayStr}) 운영 현황을 확인해요.</p>
 
-      <div className="mb-6 grid grid-cols-4 gap-3">
-        <KpiCard label="숙제 승인 대기" value={`${counts.homework}건`} />
+      <div className="mb-6 grid grid-cols-3 gap-3">
         <KpiCard label="칭찬 승인 대기" value={`${counts.praise}건`} />
         <KpiCard label="반 승인 대기" value={`${counts.enrollment}건`} />
         <KpiCard label="누적 롤백" value={`${cancelled}건`} />

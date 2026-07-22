@@ -170,7 +170,7 @@ export function ddayLabel(dateStr: string, ref: Date = DEMO_NOW): string {
 /** 관리자 승인함: 전체 승인 대기 항목 개수 */
 export function pendingCounts(state: AppState) {
   return {
-    homework: state.homeworkSubmissions.filter((h) => h.approval_status === "pending").length,
+    homework: 0,
     praise: state.praiseRequests.filter((p) => p.approval_status === "pending").length,
     enrollment: state.enrollments.filter((e) => e.status === "pending").length,
   };

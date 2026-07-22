@@ -35,9 +35,6 @@ export function StudentTopBar() {
     ...state.classes
       .filter((cls) => !cls.is_default && cls.status === "active")
       .map((cls) => ({ text: `새 특강반이 개설됐어요: ${cls.name}`, date: cls.created_at })),
-    ...state.homeworkSubmissions
-      .filter((h) => h.student_id === state.currentUserId && h.approval_status !== "pending")
-      .map((h) => ({ text: `숙제 인증 요청이 ${h.approval_status === "approved" ? "승인" : "반려"}되었어요.`, date: h.submitted_at })),
     ...state.praiseRequests
       .filter((p) => p.student_id === state.currentUserId && p.approval_status !== "pending")
       .map((p) => ({ text: `칭찬 스티커 요청이 ${p.approval_status === "approved" ? "승인" : "반려"}되었어요.`, date: p.requested_at })),
@@ -72,9 +69,8 @@ export function AdminTopBar() {
   const counts = pendingCounts(state);
   const me = getTeacherById(state, state.currentUserId);
   const connectionCount = remoteConnectionCount ?? counts.enrollment;
-  const totalPending = counts.homework + counts.praise + connectionCount;
+  const totalPending = counts.praise + connectionCount;
   const notifItems = [
-    { label: "숙제 승인 대기", count: counts.homework, href: "/admin/approvals" },
     { label: "칭찬 승인 대기", count: counts.praise, href: "/admin/approvals" },
     { label: "연결 대기중인 학생", count: connectionCount, href: "/admin/students" },
   ];

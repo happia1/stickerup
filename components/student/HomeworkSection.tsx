@@ -26,11 +26,11 @@ export function HomeworkSection() {
   return (
     <div>
       <Card>
-        <h3 className="text-subtitle mb-1">숙제 인증 신청</h3>
+        <h3 className="text-subtitle mb-1">과제 체크</h3>
         <p className="text-caption text-text-secondary mb-3">
           과제 완료율을 선택해 주세요.
         </p>
-        <label className="block text-caption font-semibold text-text-secondary mb-1">신청할 반</label>
+        <label className="block text-caption font-semibold text-text-secondary mb-1">체크할 반</label>
         <select
           className="w-full border border-border rounded-lg px-2.5 py-2 text-body mb-3"
           value={classId}
@@ -63,17 +63,17 @@ export function HomeworkSection() {
           fullWidth
           disabled={!classId || submitting}
           onClick={async () => {
-            try { setSubmitting(true); await submitStudentAction({ action: "homework", classId, tier }); dispatch({ type: "SUBMIT_HOMEWORK", studentId: state.currentUserId, classId, tier }); showToast("숙제 인증 신청 완료 — 관리자 승인을 기다려주세요."); }
-            catch (error) { showToast(error instanceof Error ? error.message : "신청을 저장하지 못했습니다."); }
+            try { setSubmitting(true); await submitStudentAction({ action: "homework", classId, tier }); dispatch({ type: "SUBMIT_HOMEWORK", studentId: state.currentUserId, classId, tier }); const tierDef = state.homeworkPolicy.find((item) => item.tier === tier); showToast(`과제 체크 완료 — 스티커 ${tierDef?.count ?? 0}장 지급!`); }
+            catch (error) { showToast(error instanceof Error ? error.message : "과제 체크를 저장하지 못했습니다."); }
             finally { setSubmitting(false); }
           }}
         >
-          인증 신청하기
+          체크하기
         </Button>
       </Card>
 
       <Card>
-        <h3 className="text-subtitle mb-2">내 신청 내역</h3>
+        <h3 className="text-subtitle mb-2">내 과제 체크 내역</h3>
         {myHomeworks.length === 0 ? (
           <p className="text-caption text-text-muted">신청 내역이 없어요.</p>
         ) : (
@@ -89,7 +89,7 @@ export function HomeworkSection() {
                   <p className="text-caption text-text-muted">{fmtDate(h.submitted_at)}</p>
                 </div>
                 <Pill tone={h.approval_status === "pending" ? "wait" : h.approval_status === "approved" ? "ok" : "danger"}>
-                  {h.approval_status === "pending" ? "승인대기" : h.approval_status === "approved" ? "승인됨" : "반려됨"}
+                  {h.approval_status === "pending" ? "처리중" : h.approval_status === "approved" ? "지급완료" : "취소됨"}
                 </Pill>
               </div>
             );

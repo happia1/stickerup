@@ -20,14 +20,14 @@ export default function AdminApprovalsPage() {
     if (!response.ok) throw new Error(payload.error ?? "승인 요청을 처리하지 못했습니다.");
   }
 
-  const pendingHomework = state.homeworkSubmissions.filter((h) => h.approval_status === "pending");
+  const pendingHomework = state.homeworkSubmissions.filter(() => false);
   const pendingPraise = state.praiseRequests.filter((p) => p.approval_status === "pending");
 
   return (
     <div>
       <h2 className="text-title mb-1">승인함</h2>
       <p className="text-caption text-text-secondary mb-5">
-        학생이 신청한 숙제 인증과 칭찬 스티커 요청을 확인하고 승인/반려해요.
+        칭찬 스티커 요청을 확인하고 승인/반려해요. 출석과 과제 스티커는 학생 체크 즉시 자동 지급됩니다.
       </p>
 
       <div className="border border-border rounded-xl overflow-hidden">
