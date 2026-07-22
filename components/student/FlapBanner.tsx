@@ -32,11 +32,11 @@ export function FlapBanner({ notices: noticesFromData }: { notices?: Notice[] })
       <div
         role="button"
         onClick={() => setOpen(true)}
-        className="bg-surface-raised text-text-primary rounded-2xl px-3.5 py-3 mb-3.5 flex items-center gap-2 cursor-pointer"
+        className="bg-surface-raised text-text-primary rounded-2xl px-3.5 py-3.5 mb-3.5 flex min-h-14 items-center gap-2 cursor-pointer"
       >
         <span className="bg-brand-amber text-surface-page text-micro font-extrabold px-1.5 py-0.5 rounded-md flex-shrink-0">공지</span>
-        <div className="flex-1 overflow-hidden h-4">
-          <span key={animKey} className="animate-flap block text-body font-semibold whitespace-nowrap overflow-hidden text-ellipsis">
+        <div className="h-6 flex-1 overflow-hidden">
+          <span key={animKey} className="animate-flap block overflow-hidden text-ellipsis whitespace-nowrap text-body font-semibold leading-6">
             {notices[index % notices.length].title}
           </span>
         </div>
@@ -53,8 +53,8 @@ export function FlapBanner({ notices: noticesFromData }: { notices?: Notice[] })
               {n.pinned && <Pill tone="wait">고정</Pill>}
             </div>
             <p className="text-caption text-text-muted my-1">{fmtDate(n.created_at)}</p>
-            {n.image_url && <img src={n.image_url} alt={`${n.title} 첨부 이미지`} className="mb-3 max-h-72 w-full rounded-xl object-contain bg-surface-raised" />}
-            <p className="text-body leading-relaxed">{n.content}</p>
+            {n.image_url && <img src={n.image_url} alt={`${n.title} 첨부 이미지`} className="mb-3 aspect-square w-full rounded-xl bg-surface-raised object-cover" />}
+            <p className="whitespace-pre-wrap break-words text-body leading-relaxed">{n.content}</p>
           </div>
           ))}
         </div>

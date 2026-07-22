@@ -21,7 +21,7 @@ function ImageField({ value, onChange, inputId }: { value: string; onChange: (va
   return (
     <div className="mb-3">
       <p className="mb-1 text-caption font-semibold text-text-secondary">이미지 삽입 (선택)</p>
-      {value ? <div className="rounded-xl border border-border p-3"><img src={value} alt="공지 이미지 미리보기" className="max-h-56 w-full rounded-lg object-contain bg-surface-raised" /><div className="mt-2 flex gap-2"><label htmlFor={inputId} className="cursor-pointer rounded-lg border border-border px-3 py-1.5 text-caption">이미지 변경</label><button type="button" onClick={() => onChange("")} className="px-3 py-1.5 text-caption text-state-danger">이미지 삭제</button></div></div> : <label htmlFor={inputId} className="inline-flex cursor-pointer rounded-lg border border-border px-3 py-2 text-caption text-text-secondary">+ 이미지 선택</label>}
+      {value ? <div className="rounded-xl border border-border p-3"><img src={value} alt="공지 이미지 미리보기" className="aspect-square w-full rounded-lg bg-surface-raised object-cover" /><div className="mt-2 flex gap-2"><label htmlFor={inputId} className="cursor-pointer rounded-lg border border-border px-3 py-1.5 text-caption">이미지 변경</label><button type="button" onClick={() => onChange("")} className="px-3 py-1.5 text-caption text-state-danger">이미지 삭제</button></div></div> : <label htmlFor={inputId} className="inline-flex cursor-pointer rounded-lg border border-border px-3 py-2 text-caption text-text-secondary">+ 이미지 선택</label>}
       <input id={inputId} type="file" accept="image/*" className="sr-only" onChange={(event) => { selectImage(event.target.files?.[0]); event.target.value = ""; }} />
     </div>
   );
@@ -65,7 +65,7 @@ export default function AdminNoticesPage() {
           <thead><tr className="text-caption text-text-secondary text-left border-b border-border"><th className="p-2.5">제목</th><th className="p-2.5">내용</th><th className="p-2.5">등록일</th><th className="p-2.5">고정</th><th className="p-2.5"></th></tr></thead>
           <tbody>{sorted.map((notice) => <tr key={notice.id} tabIndex={0} role="button" onClick={() => openNotice(notice)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") openNotice(notice); }} className="cursor-pointer border-b last:border-0 border-border transition-colors hover:bg-surface-raised focus:bg-surface-raised focus:outline-none">
             <td className="p-2.5 font-semibold">{notice.title}{notice.image_url && <span className="ml-2 text-caption text-brand-amber">이미지</span>}</td>
-            <td className="p-2.5 max-w-[280px] truncate">{notice.content}</td><td className="p-2.5">{fmtDate(notice.created_at)}</td>
+            <td className="max-w-[280px] whitespace-pre-wrap break-words p-2.5">{notice.content}</td><td className="p-2.5">{fmtDate(notice.created_at)}</td>
             <td className="p-2.5"><label className="flex cursor-pointer items-center gap-1.5" onClick={(event) => event.stopPropagation()}><input type="checkbox" checked={notice.pinned} onChange={(event) => dispatch({ type: "SET_NOTICE_PIN", noticeId: notice.id, pinned: event.target.checked })} /><span className="text-caption text-text-secondary">고정</span></label></td>
             <td className="p-2.5"><button className="rounded-lg border border-border px-2 py-1 text-caption text-state-danger" onClick={(event) => { event.stopPropagation(); dispatch({ type: "DELETE_NOTICE", noticeId: notice.id }); showToast("공지사항이 삭제되었어요."); }}>삭제</button></td>
           </tr>)}</tbody>
