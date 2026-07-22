@@ -11,7 +11,27 @@ export async function POST(request: Request) {
   const student = await db.from("students").select("id, tenant_id").eq("id", auth.user.id).maybeSingle();
   if (student.error || !student.data) return NextResponse.json({ error: "학생 계정이 필요합니다." }, { status: 403 });
   const studentData = student.data;
-  const body = await request.json() as { action?: "attendance" | "homework" | "praise" | "enrollment"; classId?: string | null; classIds?: string[]; tier?: string; reason?: string };
+  const body = await request.json() as { action?: "attendance" | "homework" | "praise" | "enrollment" | "withdraw-enrollment" | "profile"; classId?: string | null; classIds?: string[]; enrollmentId?: string; tier?: string; reason?: string; name?: string; age?: number; profileImageUrl?: string | null };
+
+  if (body.action === "profile") {
+    const name = body.name?.trim();
+    if (!name) return NextResponse.json({ error: "이름을 입력해 주세요." }, { status: 400 });
+    if (body.profileImageUrl && !body.profileImageUrl.startsWith("data:image/")) return NextResponse.json({ error: "올바른 프로필 이미지를 선택해 주세요." }, { status: 400 });
+    const result = await db.from("students").update({ name, age: body.age || null, profile_image_url: body.profileImageUrl ?? null }).eq("id", studentData.id);
+    if (result.error) return NextResponse.json({ error: result.error.message }, { status: 400 });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (body.action === "withdraw-enrollment") {
+    if (!body.enrollmentId) return NextResponse.json({ error: "취소할 반 신청을 확인해 주세요." }, { status: 400 });
+    const enrollment = await db.from("enrollments").select("id, class_id, status").eq("id", body.enrollmentId).eq("student_id", studentData.id).maybeSingle();
+    if (!enrollment.data) return NextResponse.json({ error: "취소할 반 신청을 찾지 못했어요." }, { status: 404 });
+    const classRoom = await db.from("classes").select("is_default").eq("id", enrollment.data.class_id).eq("tenant_id", studentData.tenant_id).maybeSingle();
+    if (!classRoom.data || classRoom.data.is_default) return NextResponse.json({ error: "기본반은 신청 취소할 수 없어요." }, { status: 400 });
+    const result = await db.from("enrollments").delete().eq("id", enrollment.data.id).eq("student_id", studentData.id);
+    if (result.error) return NextResponse.json({ error: result.error.message }, { status: 400 });
+    return NextResponse.json({ ok: true });
+  }
 
   if (body.action === "enrollment") {
     const classIds = [...new Set(body.classIds ?? [])];

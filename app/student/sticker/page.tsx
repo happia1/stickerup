@@ -44,8 +44,8 @@ function DailyBreakdownCard({ date }: { date: string }) {
   return (
     <div className="bg-surface-card rounded-card p-4 mb-3.5">
       <div className="mb-3 grid grid-cols-2 gap-2">
-        <div><p className="text-caption text-text-secondary">{dailyLabel(date)} 받은 스티커</p><p className="text-display text-brand-amber">{breakdown.total}장</p></div>
-        <div className="border-l border-border pl-3"><p className="text-caption text-text-secondary">전체 스티커</p><p className="text-display text-text-primary">{allTimeTotal}장</p></div>
+        <div className="text-left"><p className="text-caption text-text-secondary">{dailyLabel(date)} 받은 스티커</p><p className="text-display text-brand-amber">{breakdown.total}장</p></div>
+        <div className="border-l border-border pl-3 text-right"><p className="text-caption text-text-secondary">전체 스티커</p><p className="text-display text-text-primary">{allTimeTotal}장</p></div>
       </div>
       <div className="grid grid-cols-3 gap-2">
         {rows.map((row) => (

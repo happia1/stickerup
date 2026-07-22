@@ -19,6 +19,29 @@ import clsx from "@/lib/clsx";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { setPreferredClass } from "@/lib/preferred-class";
 
+function resizeProfileImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("사진을 불러오지 못했어요."));
+    reader.onload = () => {
+      const image = new Image();
+      image.onerror = () => reject(new Error("사용할 수 없는 이미지예요."));
+      image.onload = () => {
+        const size = Math.min(image.naturalWidth, image.naturalHeight);
+        const canvas = document.createElement("canvas");
+        canvas.width = 512;
+        canvas.height = 512;
+        const context = canvas.getContext("2d");
+        if (!context) return reject(new Error("사진을 처리하지 못했어요."));
+        context.drawImage(image, (image.naturalWidth - size) / 2, (image.naturalHeight - size) / 2, size, size, 0, 0, 512, 512);
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      };
+      image.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function StudentMyPage() {
   const state = useAppState();
   const dispatch = useAppDispatch();
@@ -27,8 +50,11 @@ export default function StudentMyPage() {
   const [editingProfile, setEditingProfile] = useState(false);
   const [name, setName] = useState(me?.name ?? "");
   const [age, setAge] = useState(String(me?.age ?? ""));
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(me?.profile_image_url ?? null);
+  const [savingProfile, setSavingProfile] = useState(false);
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
   const [requesting, setRequesting] = useState(false);
+  const [withdrawingId, setWithdrawingId] = useState<string | null>(null);
   if (!me) return null;
 
   const approved = approvedClassesForStudent(state, me.id);
@@ -43,12 +69,26 @@ export default function StudentMyPage() {
   const toggleClass = (classId: string) => {
     setSelectedClassIds((prev) => (prev.includes(classId) ? prev.filter((id) => id !== classId) : [...prev, classId]));
   };
+  const postStudentAction = async (body: Record<string, unknown>) => {
+    const client = getSupabaseBrowserClient();
+    const { data } = await client!.auth.getSession();
+    if (!data.session) throw new Error("로그인 정보를 확인하지 못했어요. 다시 로그인해 주세요.");
+    const response = await fetch("/api/student/actions", { method: "POST", headers: { Authorization: `Bearer ${data.session.access_token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error ?? "요청을 처리하지 못했어요.");
+    return payload;
+  };
+  const selectProfileImage = async (file?: File) => {
+    if (!file) return;
+    try { setProfileImageUrl(await resizeProfileImage(file)); }
+    catch (error) { showToast(error instanceof Error ? error.message : "사진을 처리하지 못했어요."); }
+  };
 
   return (
     <div id="class-enrollment">
       <Card>
         <div className="flex items-center gap-3">
-          <Avatar name={editingProfile ? name || me.name : me.name} size={56} />
+          <Avatar name={editingProfile ? name || me.name : me.name} size={56} imageUrl={editingProfile ? profileImageUrl : me.profile_image_url} />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
               {editingProfile ? (
@@ -68,10 +108,11 @@ export default function StudentMyPage() {
                 onClick={() => {
                   setName(me.name);
                   setAge(String(me.age ?? ""));
+                  setProfileImageUrl(me.profile_image_url ?? null);
                   setEditingProfile((value) => !value);
                 }}
               >
-                ✎
+                <span className="inline-block -scale-x-100" aria-hidden="true">✎</span>
               </button>
             </div>
             {editingProfile ? (
@@ -92,16 +133,37 @@ export default function StudentMyPage() {
           </div>
         </div>
         {editingProfile && (
-          <div className="flex gap-2 mt-3">
+          <div className="mt-3 space-y-3">
+            <div className="flex flex-wrap gap-2">
+              <label className="cursor-pointer rounded-lg bg-surface-raised px-3 py-2 text-caption font-bold text-brand-amber">
+                앨범에서 선택
+                <input type="file" accept="image/*" className="hidden" onChange={(event) => { void selectProfileImage(event.target.files?.[0]); event.target.value = ""; }} />
+              </label>
+              <label className="cursor-pointer rounded-lg bg-surface-raised px-3 py-2 text-caption font-bold text-brand-amber">
+                카메라로 촬영
+                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(event) => { void selectProfileImage(event.target.files?.[0]); event.target.value = ""; }} />
+              </label>
+              {profileImageUrl && <button type="button" className="px-2 text-caption text-state-danger" onClick={() => setProfileImageUrl(null)}>사진 삭제</button>}
+            </div>
+            <div className="flex gap-2">
             <Button
               className="!py-2 !text-caption"
-              onClick={() => {
-                dispatch({ type: "UPDATE_STUDENT_PROFILE", studentId: me.id, name, age: Number(age) || 0, profileImageUrl: me.profile_image_url });
-                showToast("프로필이 저장되었어요.");
-                setEditingProfile(false);
+              disabled={savingProfile}
+              onClick={async () => {
+                try {
+                  setSavingProfile(true);
+                  const nextName = name.trim() || me.name;
+                  const nextAge = Number(age) || 0;
+                  await postStudentAction({ action: "profile", name: nextName, age: nextAge, profileImageUrl });
+                  dispatch({ type: "UPDATE_STUDENT_PROFILE", studentId: me.id, name: nextName, age: nextAge, profileImageUrl });
+                  showToast("프로필이 저장되었어요.");
+                  setEditingProfile(false);
+                } catch (error) {
+                  showToast(error instanceof Error ? error.message : "프로필을 저장하지 못했어요.");
+                } finally { setSavingProfile(false); }
               }}
             >
-              저장
+              {savingProfile ? "저장 중..." : "저장"}
             </Button>
             <Button
               variant="secondary"
@@ -109,14 +171,13 @@ export default function StudentMyPage() {
               onClick={() => {
                 setName(me.name);
                 setAge(String(me.age ?? ""));
+                setProfileImageUrl(me.profile_image_url ?? null);
                 setEditingProfile(false);
               }}
             >
               취소
             </Button>
-            <Button variant="secondary" className="!py-2 !text-caption" onClick={() => showToast("사진 업로드는 Supabase Storage 연동 후 지원돼요.")}>
-              사진 변경
-            </Button>
+            </div>
           </div>
         )}
         <div className="mt-3 pt-3 border-t border-border">
@@ -148,12 +209,31 @@ export default function StudentMyPage() {
         {pending.map((enrollment) => {
           const cls = getClassById(state, enrollment.class_id);
           return (
-            <div key={enrollment.id} className="flex items-center justify-between py-1.5">
+            <div key={enrollment.id} className="flex items-center justify-between gap-3 py-1.5">
               <div>
                 <p className="text-body">{cls?.name}</p>
                 <p className="text-caption text-text-muted">{fmtDateTime(enrollment.requested_at)} 요청</p>
               </div>
-              <Pill tone="wait">승인대기</Pill>
+              <div className="flex shrink-0 items-center gap-2">
+                <Pill tone="wait">승인대기</Pill>
+                <button
+                  type="button"
+                  disabled={withdrawingId === enrollment.id}
+                  className="rounded-lg border border-border px-2.5 py-1.5 text-caption font-bold text-state-danger disabled:opacity-50"
+                  onClick={async () => {
+                    try {
+                      setWithdrawingId(enrollment.id);
+                      await postStudentAction({ action: "withdraw-enrollment", enrollmentId: enrollment.id });
+                      dispatch({ type: "WITHDRAW_ENROLLMENT", enrollmentId: enrollment.id });
+                      showToast("반 승인 신청을 취소했어요.");
+                    } catch (error) {
+                      showToast(error instanceof Error ? error.message : "승인 신청을 취소하지 못했어요.");
+                    } finally { setWithdrawingId(null); }
+                  }}
+                >
+                  {withdrawingId === enrollment.id ? "취소 중" : "신청 취소"}
+                </button>
+              </div>
             </div>
           );
         })}

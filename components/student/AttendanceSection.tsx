@@ -21,6 +21,10 @@ const DEMO_SCENARIOS: { tier: AttendanceTier; label: string }[] = [
   { tier: "over_60", label: "1시간 초과" },
 ];
 
+function formatAttendanceTime(value: string): string {
+  return value.slice(0, 5);
+}
+
 export function AttendanceSection() {
   const state = useAppState();
   const dispatch = useAppDispatch();
@@ -49,7 +53,7 @@ export function AttendanceSection() {
         >
           {myClasses.map((c) => (
             <option key={c.id} value={c.id}>
-              {c.name} (정규 {c.attendance_time})
+              {c.name} (정규 {formatAttendanceTime(c.attendance_time)})
             </option>
           ))}
         </select>
