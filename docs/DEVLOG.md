@@ -525,3 +525,9 @@ pm run build는 기존 EISDIR/EPERM 환경 이슈로 실패
 - 고정 데모 날짜 때문에 새 기본반 이벤트가 예정 상태로 잘못 분류되던 로직을 실제 현재 날짜 기준으로 변경했다.
 - 검증: `npm.cmd run typecheck`, `git diff --check`, `npm.cmd run build` 통과. 기존 `<img>` 최적화 경고만 남아 있다.
 - 다음 할 일: Supabase에 `20260722_14_default_class_membership.sql` 적용 후 실제 학생 계정으로 기본반 이벤트와 특강 승인 요청을 확인한다.
+## [2026-07-22] 로그인 오류 복구 경로 500 방지
+
+- 학생 정보 로드 실패 화면의 로그인 버튼을 `/login?reauth=1&type=student`로 변경했다.
+- 오류 복구용 로그인 진입에서는 기존 로컬 Supabase 세션을 먼저 종료해, 잘못된 역할/프로필 세션의 자동 리디렉션과 재조회가 반복되지 않도록 했다.
+- 로그인 페이지의 `type`, `next`, `reauth` 쿼리 파라미터가 배열로 전달되는 경우에도 문자열 메서드 호출로 500이 발생하지 않도록 타입을 안전하게 처리했다.
+- 검증: `npm.cmd run typecheck`, `git diff --check`, `npm.cmd run build` 통과. 기존 이미지 최적화 경고만 남아 있다.

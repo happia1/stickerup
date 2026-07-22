@@ -10,7 +10,7 @@ import { getAuthEmailForIdentifier } from "@/lib/auth/identifier";
 type ProfileRole = "student" | "owner" | "assistant";
 type LoginAccountType = "student" | "teacher";
 
-export function LoginForm({ initialAccountType = null, redirectTo }: { initialAccountType?: LoginAccountType | null; redirectTo?: string } = {}) {
+export function LoginForm({ initialAccountType = null, redirectTo, forceReauth = false }: { initialAccountType?: LoginAccountType | null; redirectTo?: string; forceReauth?: boolean } = {}) {
   const router = useRouter();
   const [identifier, setIdentifier] = useState("");
   const [accountType, setAccountType] = useState<LoginAccountType | null>(initialAccountType);
@@ -27,6 +27,11 @@ export function LoginForm({ initialAccountType = null, redirectTo }: { initialAc
 
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
+
+    if (forceReauth) {
+      void supabase.auth.signOut({ scope: "local" });
+      return;
+    }
 
     let active = true;
     async function redirectIfAlreadySignedIn(client: NonNullable<ReturnType<typeof getSupabaseBrowserClient>>) {
@@ -51,7 +56,7 @@ export function LoginForm({ initialAccountType = null, redirectTo }: { initialAc
     return () => {
       active = false;
     };
-  }, [router, redirectTo]);
+  }, [router, redirectTo, forceReauth]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
