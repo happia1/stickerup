@@ -12,12 +12,14 @@ import { SupabaseModeNotice } from "@/components/supabase/SupabaseModeNotice";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { StudentHomeData } from "@/lib/data/student-home.types";
 import { TeacherConnectionCard } from "@/components/student/TeacherConnectionCard";
+import { PageSkeleton } from "@/components/ui/PageSkeleton";
 
 export default function StudentHomePage() {
   const router = useRouter();
   const state = useAppState();
   const [remoteData, setRemoteData] = useState<StudentHomeData | null>(null);
   const [connectionMessage, setConnectionMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const mockStudent = getStudentById(state, state.currentUserId);
 
   useEffect(() => {
@@ -30,14 +32,16 @@ export default function StudentHomePage() {
       const accessToken = sessionData.session?.access_token;
       if (!accessToken) {
         if (active) setConnectionMessage("로그인하면 최신 정보를 불러옵니다.");
+        if (active) setLoading(false);
         return;
       }
 
       try {
-        const profileResponse = await fetch("/api/auth/profile", {
-          headers: { Authorization: `Bearer ${accessToken}` },
-          cache: "no-store",
-        });
+        const headers = { Authorization: `Bearer ${accessToken}` };
+        const [profileResponse, response] = await Promise.all([
+          fetch("/api/auth/profile", { headers, cache: "no-store" }),
+          fetch("/api/student/home", { headers, cache: "no-store" }),
+        ]);
         const profile = await profileResponse.json() as { role?: "student" | "owner" | "assistant" | null; onboarded?: boolean; error?: string };
         if (!profileResponse.ok) throw new Error(profile.error ?? "계정 정보를 확인하지 못했습니다.");
         if (profile.role === "owner" || profile.role === "assistant") {
@@ -48,9 +52,6 @@ export default function StudentHomePage() {
           throw new Error("학생 가입 정보가 없습니다. 학생 계정으로 다시 로그인해 주세요.");
         }
 
-        const response = await fetch("/api/student/home", {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
         const payload = (await response.json()) as { data?: StudentHomeData; error?: string };
         if (!response.ok || !payload.data) {
           throw new Error(payload.error ?? "학생 홈 데이터를 불러오지 못했습니다.");
@@ -60,7 +61,7 @@ export default function StudentHomePage() {
         if (active) {
           setConnectionMessage(error instanceof Error ? error.message : "학생 홈 데이터를 불러오지 못했습니다.");
         }
-      }
+      } finally { if (active) setLoading(false); }
     }
 
     void loadStudentHome(client);
@@ -70,6 +71,7 @@ export default function StudentHomePage() {
   }, [router]);
 
   const me = remoteData?.student ?? mockStudent;
+  if (loading) return <PageSkeleton />;
   if (!me) {
     return (
       <div>

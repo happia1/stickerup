@@ -39,7 +39,7 @@ export default function AdminStudentsPage() {
   useEffect(() => { setFocusedStudentId(new URLSearchParams(window.location.search).get("student") ?? ""); }, []);
   useEffect(() => { if (focusedStudentId && students.length) document.getElementById(`student-${focusedStudentId}`)?.scrollIntoView({ behavior: "smooth", block: "center" }); }, [focusedStudentId, students]);
 
-  async function updateConnection(student: AdminStudentRow, action: "approve" | "disconnect" | "revoke_pending" | "delete") {
+  async function updateConnection(student: AdminStudentRow, action: "approve" | "disconnect" | "revoke_pending" | "delete" | "remove_class", classId?: string) {
     if (action === "disconnect" && !window.confirm(`${student.name} 학생과의 선생님 연결을 해지할까요? 반 승인 상태는 유지됩니다.`)) return;
     if (action === "revoke_pending" && !window.confirm(`${student.name} 학생의 연결 대기를 해지할까요?`)) return;
     if (action === "delete" && !window.confirm(`${student.name} 학생 계정과 모든 데이터를 완전히 삭제할까요? 이 작업은 되돌릴 수 없습니다.`)) return;
@@ -47,7 +47,7 @@ export default function AdminStudentsPage() {
       setProcessingId(student.id);
       const accessToken = await token();
       if (!accessToken) throw new Error("로그인이 필요합니다.");
-      const response = await fetch("/api/admin/students", { method: "PATCH", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify({ studentId: student.id, action }) });
+      const response = await fetch("/api/admin/students", { method: "PATCH", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify({ studentId: student.id, classId, action }) });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error);
       toast(action === "approve" ? `${student.name} 학생의 연결을 승인했어요.` : action === "delete" ? `${student.name} 학생을 삭제했어요.` : `${student.name} 학생의 연결 상태를 해지했어요.`);
@@ -70,7 +70,7 @@ export default function AdminStudentsPage() {
             {!loading && !students.length && <tr><td colSpan={6} className="p-5 text-center text-text-secondary">등록된 학생이 없습니다.</td></tr>}
             {students.map((student) => <tr id={`student-${student.id}`} key={student.id} className={`border-b last:border-0 border-border ${student.connectionStatus === "pending" ? "bg-state-warningBg/40" : ""} ${focusedStudentId === student.id ? "outline outline-2 outline-brand-amber outline-offset-[-2px]" : ""}`}>
               <td className="p-2.5 font-semibold">{student.name}{student.connectionStatus === "pending" && <span className="ml-2 rounded-full bg-brand-amber px-2 py-0.5 text-caption text-surface-page">대기</span>}</td>
-              <td className="p-2.5">{student.age ?? "-"}</td><td className="p-2.5">{student.classNames.join(", ") || "-"}</td><td className="p-2.5">{student.totalStickers}</td><td className="p-2.5">{STATUS_LABEL[student.connectionStatus]}</td>
+              <td className="p-2.5">{student.age ?? "-"}</td><td className="p-2.5"><div className="flex flex-wrap gap-1">{student.classMemberships.length ? student.classMemberships.map((membership)=><span key={membership.classId} className="inline-flex items-center gap-1 rounded-full bg-surface-raised px-2 py-1 text-caption">{membership.className}{!membership.isDefault&&<button type="button" aria-label={`${membership.className} 소속 해지`} className="text-state-danger" onClick={()=>{if(window.confirm(`${student.name} 학생의 ${membership.className} 소속을 해지할까요?`))void updateConnection(student,"remove_class",membership.classId);}}>×</button>}</span>) : "-"}</div></td><td className="p-2.5">{student.totalStickers}</td><td className="p-2.5">{STATUS_LABEL[student.connectionStatus]}</td>
               <td className="p-2.5"><div className="flex flex-wrap items-center gap-1.5">{student.connectionStatus === "connected" ? <button disabled={processingId === student.id} className="rounded-lg border border-state-danger px-2.5 py-1 text-caption text-state-danger disabled:opacity-50" onClick={() => updateConnection(student, "disconnect")}>연결 해지</button> : student.connectionStatus === "pending" ? <><button disabled={processingId === student.id} className="rounded-lg border border-state-success px-2.5 py-1 text-caption text-state-success disabled:opacity-50" onClick={() => updateConnection(student, "approve")}>연결 승인</button><button disabled={processingId === student.id} className="rounded-lg border border-border px-2.5 py-1 text-caption text-text-secondary disabled:opacity-50" onClick={() => updateConnection(student, "revoke_pending")}>대기 해지</button></> : <span className="text-caption text-text-muted">연결 요청 대기</span>}{canDeleteStudents && <button disabled={processingId === student.id} className="rounded-lg px-2.5 py-1 text-caption text-state-danger disabled:opacity-50" onClick={() => updateConnection(student, "delete")}>삭제</button>}</div></td>
             </tr>)}
           </tbody>

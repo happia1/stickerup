@@ -10,7 +10,6 @@ import {
   totalStickers,
 } from "@/lib/store/selectors";
 import { fmtDateTime } from "@/lib/format";
-import { Accordion } from "@/components/ui/Accordion";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -18,9 +17,6 @@ import { Pill } from "@/components/ui/Pill";
 import { useToast } from "@/lib/toast/provider";
 import clsx from "@/lib/clsx";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-
-const LOG_PAGE_SIZE = 6;
-const TYPE_LABEL = { attendance: "출석", homework: "숙제", praise: "칭찬" } as const;
 
 export default function StudentMyPage() {
   const state = useAppState();
@@ -42,9 +38,6 @@ export default function StudentMyPage() {
   const requestableClasses = state.classes.filter(
     (cls) => cls.status === "active" && !cls.is_default && !approvedIds.has(cls.id) && !pendingIds.has(cls.id)
   );
-  const logs = state.ledger
-    .filter((entry) => entry.student_id === me.id)
-    .sort((a, b) => b.created_at.localeCompare(a.created_at));
   const activeTotal = totalStickers(state, me.id);
   const toggleClass = (classId: string) => {
     setSelectedClassIds((prev) => (prev.includes(classId) ? prev.filter((id) => id !== classId) : [...prev, classId]));
@@ -217,33 +210,6 @@ export default function StudentMyPage() {
         </div>
       </Card>
 
-      <Card>
-        <Accordion label={`내 스티커 이력 (${logs.length})`}>
-          {logs.length === 0 ? (
-            <p className="text-caption text-text-muted">스티커 이력이 없어요.</p>
-          ) : (
-            logs.slice(0, LOG_PAGE_SIZE).map((entry) => {
-              const cls = getClassById(state, entry.class_id);
-              return (
-                <div key={entry.id} className="flex items-center justify-between py-1.5 border-b last:border-0 border-border">
-                  <div>
-                    <p className="text-body">
-                      {cls?.name} · {TYPE_LABEL[entry.source_type]}
-                    </p>
-                    <p className="text-caption text-text-muted">{fmtDateTime(entry.created_at)}</p>
-                  </div>
-                  <p className="text-body font-bold text-brand-amber">
-                    {entry.status === "rolled_back" ? "취소" : entry.count > 0 ? `+${entry.count}장` : "0장"}
-                  </p>
-                </div>
-              );
-            })
-          )}
-          {logs.length > LOG_PAGE_SIZE && (
-            <p className="text-caption text-text-muted text-center pt-3">최근 {LOG_PAGE_SIZE}건만 표시 중</p>
-          )}
-        </Accordion>
-      </Card>
     </div>
   );
 }

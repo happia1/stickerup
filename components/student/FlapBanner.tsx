@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useAppState } from "@/lib/store/provider";
-import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Pill } from "@/components/ui/Pill";
 import { fmtDate } from "@/lib/format";
 import type { Notice } from "@/lib/types";
@@ -44,8 +43,10 @@ export function FlapBanner({ notices: noticesFromData }: { notices?: Notice[] })
         <span className="opacity-70 text-caption flex-shrink-0">›</span>
       </div>
 
-      <BottomSheet open={open} onClose={() => setOpen(false)} title="공지사항">
-        {sorted.map((n) => (
+      {open && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-label="공지사항" onClick={() => setOpen(false)}>
+        <div className="max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-card bg-surface-page p-5 shadow-xl" onClick={(event) => event.stopPropagation()}>
+          <div className="mb-4 flex items-center justify-between"><h2 className="text-subtitle">공지사항</h2><button type="button" aria-label="닫기" className="text-xl text-text-secondary" onClick={() => setOpen(false)}>×</button></div>
+          {sorted.map((n) => (
           <div key={n.id} className="bg-surface-card border border-border rounded-card p-3 mb-2">
             <div className="flex justify-between gap-2">
               <p className="text-body font-bold">{n.title}</p>
@@ -55,8 +56,9 @@ export function FlapBanner({ notices: noticesFromData }: { notices?: Notice[] })
             {n.image_url && <img src={n.image_url} alt={`${n.title} 첨부 이미지`} className="mb-3 max-h-72 w-full rounded-xl object-contain bg-surface-raised" />}
             <p className="text-body leading-relaxed">{n.content}</p>
           </div>
-        ))}
-      </BottomSheet>
+          ))}
+        </div>
+      </div>}
     </>
   );
 }

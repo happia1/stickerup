@@ -6,6 +6,7 @@ export interface AdminStudentRow {
   age: number | null;
   connectionStatus: StudentConnectionStatus;
   classNames: string[];
+  classMemberships: Array<{ classId: string; className: string; isDefault: boolean }>;
   totalStickers: number;
   requestedAt: string | null;
 }

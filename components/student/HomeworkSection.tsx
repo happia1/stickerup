@@ -23,7 +23,8 @@ export function HomeworkSection() {
   useEffect(() => { if (!classId && myClasses[0]) setClassId(myClasses[0].id); }, [classId, myClasses]);
 
   const myHomeworks = state.homeworkSubmissions.filter((h) => h.student_id === state.currentUserId);
-  const checkedToday = myHomeworks.some((homework) => homework.class_id === classId && koreaDateKey(homework.submitted_at) === koreaDateKey());
+  const checkedHomework = myHomeworks.find((homework) => homework.class_id === classId && homework.approval_status === "approved" && koreaDateKey(homework.submitted_at) === koreaDateKey());
+  const checkedToday = Boolean(checkedHomework);
 
   return (
     <div>
@@ -44,7 +45,7 @@ export function HomeworkSection() {
             </option>
           ))}
         </select>
-        <label className="block text-caption font-semibold text-text-secondary mb-1">완료율 선택</label>
+        {checkedToday ? <div className="rounded-xl bg-state-successBg p-5 text-center"><p className="text-subtitle text-state-success">오늘 과제 체크 완료</p><p className="mt-1 text-body text-text-primary">스티커 {checkedHomework?.sticker_count ?? 0}장이 지급됐어요.</p><p className="mt-2 text-caption text-text-secondary">이 반의 과제는 내일 다시 체크할 수 있어요.</p></div> : <><label className="block text-caption font-semibold text-text-secondary mb-1">완료율 선택</label>
         <div className="grid grid-cols-3 gap-2 mb-3.5">
           {state.homeworkPolicy.map((t) => (
             <button
@@ -63,16 +64,16 @@ export function HomeworkSection() {
         </div>
         <Button
           fullWidth
-          disabled={!classId || submitting || checkedToday}
+          disabled={!classId || submitting}
           onClick={async () => {
             try { setSubmitting(true); await submitStudentAction({ action: "homework", classId, tier }); dispatch({ type: "SUBMIT_HOMEWORK", studentId: state.currentUserId, classId, tier }); const tierDef = state.homeworkPolicy.find((item) => item.tier === tier); showToast(`과제 체크 완료 — 스티커 ${tierDef?.count ?? 0}장 지급!`); }
             catch (error) { showToast(error instanceof Error ? error.message : "과제 체크를 저장하지 못했습니다."); }
             finally { setSubmitting(false); }
           }}
         >
-          {checkedToday ? "오늘 과제 체크 완료" : "체크하기"}
+          체크하기
         </Button>
-        {checkedToday && <p className="mt-2 text-center text-caption text-state-success">과제는 이 반에서 내일 다시 체크할 수 있어요.</p>}
+        </>}
       </Card>
 
       <Card>

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useReducer } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { AppState, Action } from "./types";
 import { appReducer } from "./reducer";
 import {
@@ -39,9 +39,12 @@ function buildInitialState(): AppState {
 
 const StateContext = createContext<AppState | null>(null);
 const DispatchContext = createContext<React.Dispatch<Action> | null>(null);
+const LoadingContext = createContext(true);
 
 export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   const [state, rawDispatch] = useReducer(appReducer, undefined, buildInitialState);
+  const [loading, setLoading] = useState(true);
+  const lastSyncedUserRef = useRef<string | null>(null);
   const stateValue = useMemo(() => state, [state]);
   const dispatch = useCallback<React.Dispatch<Action>>((action) => {
     rawDispatch(action);
@@ -57,28 +60,36 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const client = getSupabaseBrowserClient();
-    if (!client) return;
+    if (!client) { setLoading(false); return; }
     let active = true;
 
-    async function sync(accessToken?: string) {
-      if (!accessToken) return;
+    async function sync(accessToken?: string, userId?: string) {
+      if (!accessToken || !userId) { if (active) setLoading(false); return; }
+      if (lastSyncedUserRef.current === userId) return;
+      lastSyncedUserRef.current = userId;
       const response = await fetch("/api/app-state", { headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store" });
-      if (!response.ok) return;
+      if (!response.ok) { lastSyncedUserRef.current = null; if (active) setLoading(false); return; }
       const payload = await response.json() as { state?: Partial<AppState> & Pick<AppState, "currentUserId" | "currentUserRole" | "tenant"> };
       if (active && payload.state) rawDispatch({ type: "HYDRATE_APP_STATE", state: payload.state });
+      if (active) setLoading(false);
     }
 
-    void client.auth.getSession().then(({ data }) => sync(data.session?.access_token));
-    const { data: listener } = client.auth.onAuthStateChange((_event, session) => { void sync(session?.access_token); });
+    void client.auth.getSession().then(({ data }) => sync(data.session?.access_token, data.session?.user.id));
+    const { data: listener } = client.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") { lastSyncedUserRef.current = null; if (active) setLoading(false); return; }
+      void sync(session?.access_token, session?.user.id);
+    });
     return () => { active = false; listener.subscription.unsubscribe(); };
   }, []);
 
   return (
     <StateContext.Provider value={stateValue}>
-      <DispatchContext.Provider value={dispatch}>{children}</DispatchContext.Provider>
+      <DispatchContext.Provider value={dispatch}><LoadingContext.Provider value={loading}>{children}</LoadingContext.Provider></DispatchContext.Provider>
     </StateContext.Provider>
   );
 }
+
+export function useAppLoading() { return useContext(LoadingContext); }
 
 export function useAppState(): AppState {
   const ctx = useContext(StateContext);

@@ -18,10 +18,11 @@ import { useToast } from "@/lib/toast/provider";
 import type { RewardCampaign } from "@/lib/types";
 import type { StudentHomeData } from "@/lib/data/student-home.types";
 import type { AppState } from "@/lib/store/types";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 function claimLabel(meta: ReturnType<typeof getCampaignMeta>): { label: string; disabled: boolean } {
   if (meta.iHaveClaimed) return { label: "다른 상품 수령함", disabled: true };
-  if (meta.status === "ended") return { label: "이벤트 종료", disabled: true };
+  if (meta.status === "active") return { label: "랭킹 집계 중", disabled: true };
   if (meta.status === "scheduled") return { label: "시작 전", disabled: true };
   if (!meta.iAmEligible) return { label: "자격 미달", disabled: true };
   if (!meta.isMyTurn) return { label: "순서 대기중", disabled: true };
@@ -46,14 +47,14 @@ export function RewardBlock({ data }: { data?: StudentHomeData }) {
   const showToast = useToast();
   const [sheetOpen, setSheetOpen] = useState(false);
   const featured = featuredCampaignForStudent(state, state.currentUserId);
-  const isReadOnly = Boolean(data);
-
-  const handleClaim = (campaign: RewardCampaign, itemId: string, itemTitle: string) => {
-    if (isReadOnly) {
-      showToast("보상 신청은 현재 준비 중입니다.");
-      return;
-    }
+  const handleClaim = async (campaign: RewardCampaign, itemId: string, itemTitle: string) => {
     const meta = getCampaignMeta(state, campaign, state.currentUserId);
+    const session = await getSupabaseBrowserClient()?.auth.getSession();
+    const token = session?.data.session?.access_token;
+    if (!token) return showToast("로그인이 필요합니다.");
+    const response = await fetch("/api/student/reward-claims", { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify({ itemId }) });
+    const payload = await response.json();
+    if (!response.ok) return showToast(payload.error ?? "선물을 선택하지 못했습니다.");
     dispatch({ type: "CLAIM_REWARD", itemId, studentId: state.currentUserId, rank: meta.myRank ?? 0 });
     showToast(`"${itemTitle}" 선택 완료!`);
   };
@@ -74,7 +75,8 @@ export function RewardBlock({ data }: { data?: StudentHomeData }) {
               claimed={claimed}
               buttonLabel={label}
               disabled={disabled}
-              onClaim={() => handleClaim(campaign, item.id, item.title)}
+              onClaim={() => void handleClaim(campaign, item.id, item.title)}
+              imageUrl={item.image_url}
             />
           );
         })}

@@ -31,7 +31,8 @@ export function AttendanceSection() {
   useEffect(() => { if (!classId && myClasses[0]) setClassId(myClasses[0].id); }, [classId, myClasses]);
 
   const selectedClass = getClassById(state, classId);
-  const checkedToday = state.ledger.some((entry) => entry.student_id === state.currentUserId && entry.class_id === classId && entry.source_type === "attendance" && koreaDateKey(entry.created_at) === koreaDateKey());
+  const checkedEntry = state.ledger.find((entry) => entry.student_id === state.currentUserId && entry.class_id === classId && entry.source_type === "attendance" && entry.status === "active" && koreaDateKey(entry.created_at) === koreaDateKey());
+  const checkedToday = Boolean(checkedEntry);
 
   return (
     <div>
@@ -52,7 +53,7 @@ export function AttendanceSection() {
             </option>
           ))}
         </select>
-        <div className="grid grid-cols-3 gap-2 mb-3.5">
+        {checkedToday ? <div className="rounded-xl bg-state-successBg p-5 text-center"><p className="text-subtitle text-state-success">오늘 출석 체크 완료</p><p className="mt-1 text-body text-text-primary">스티커 {checkedEntry?.count ?? 0}장이 지급됐어요.</p></div> : <><div className="grid grid-cols-3 gap-2 mb-3.5">
           {DEMO_SCENARIOS.map((s) => (
             <button
               key={s.tier}
@@ -69,16 +70,16 @@ export function AttendanceSection() {
         </div>
         <Button
           fullWidth
-          disabled={!classId || submitting || checkedToday}
+          disabled={!classId || submitting}
           onClick={async () => {
             try { setSubmitting(true); await submitStudentAction({ action: "attendance", classId, tier: scenario }); dispatch({ type: "CHECK_IN", studentId: state.currentUserId, classId, tier: scenario }); const tierDef = ATTENDANCE_TIERS.find((t) => t.tier === scenario); showToast(`${selectedClass?.name} 출석 완료 — ${tierDef?.label}, ${tierDef?.count}장 지급!`); }
             catch (error) { showToast(error instanceof Error ? error.message : "출석을 저장하지 못했습니다."); }
             finally { setSubmitting(false); }
           }}
         >
-          {checkedToday ? "오늘 출석 체크 완료" : "체크하기"}
+          체크하기
         </Button>
-        {checkedToday && <p className="mt-2 text-center text-caption text-state-success">출석은 이 반에서 내일 다시 체크할 수 있어요.</p>}
+        </>}
       </Card>
 
       <Card>

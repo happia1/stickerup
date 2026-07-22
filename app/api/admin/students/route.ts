@@ -22,7 +22,7 @@ export async function GET(request: Request) {
   const { db, teacher } = context;
   const [students, classes, enrollments, ledger, connections] = await Promise.all([
     db.from("students").select("id, name, age, invited_by_teacher_id, created_at").eq("tenant_id", teacher.tenant_id),
-    db.from("classes").select("id, name").eq("tenant_id", teacher.tenant_id),
+    db.from("classes").select("id, name, is_default").eq("tenant_id", teacher.tenant_id),
     db.from("enrollments").select("student_id, class_id, status, requested_at").eq("tenant_id", teacher.tenant_id),
     db.from("sticker_ledger").select("student_id, count, status").eq("tenant_id", teacher.tenant_id),
     db.from("student_connection_requests").select("student_id, status, created_at").order("created_at", { ascending: false }),
@@ -34,16 +34,20 @@ export async function GET(request: Request) {
   const rows: AdminStudentRow[] = (students.data ?? []).map((student) => {
     const studentEnrollments = (enrollments.data ?? []).filter((row) => row.student_id === student.id);
     const pendingConnection = (connections.data ?? []).find((row) => row.student_id === student.id && row.status === "pending");
-    const hasPendingEnrollment = studentEnrollments.some((row) => row.status === "pending");
-    const connectionStatus = student.invited_by_teacher_id ? "connected" as const : pendingConnection || hasPendingEnrollment ? "pending" as const : "unconnected" as const;
+    const connectionStatus = student.invited_by_teacher_id ? "connected" as const : pendingConnection ? "pending" as const : "unconnected" as const;
+    const approvedMemberships = studentEnrollments.filter((row) => row.status === "approved").flatMap((row) => {
+      const classInfo = (classes.data ?? []).find((candidate) => candidate.id === row.class_id);
+      return classInfo ? [{ classId: classInfo.id, className: classInfo.name, isDefault: classInfo.is_default }] : [];
+    });
     return {
       id: student.id,
       name: student.name,
       age: student.age,
       connectionStatus,
       classNames: studentEnrollments.filter((row) => row.status === "approved").map((row) => classNameById.get(row.class_id)).filter((name): name is string => Boolean(name)),
+      classMemberships: approvedMemberships,
       totalStickers: (ledger.data ?? []).filter((row) => row.student_id === student.id && row.status === "active").reduce((sum, row) => sum + row.count, 0),
-      requestedAt: pendingConnection?.created_at ?? studentEnrollments.find((row) => row.status === "pending")?.requested_at ?? student.created_at,
+      requestedAt: pendingConnection?.created_at ?? student.created_at,
     };
   }).sort((a, b) => Number(b.connectionStatus === "pending") - Number(a.connectionStatus === "pending") || (b.requestedAt ?? "").localeCompare(a.requestedAt ?? ""));
 
@@ -53,14 +57,20 @@ export async function GET(request: Request) {
 export async function PATCH(request: Request) {
   const context = await getContext(request); if ("error" in context) return context.error;
   const { db, teacher } = context;
-  const body = await request.json() as { studentId?: string; action?: "approve" | "disconnect" | "revoke_pending" | "delete" };
-  if (!body.studentId || !body.action || !["approve", "disconnect", "revoke_pending", "delete"].includes(body.action)) {
+  const body = await request.json() as { studentId?: string; classId?: string; action?: "approve" | "disconnect" | "revoke_pending" | "delete" | "remove_class" };
+  if (!body.studentId || !body.action || !["approve", "disconnect", "revoke_pending", "delete", "remove_class"].includes(body.action)) {
     return NextResponse.json({ error: "학생과 처리 작업을 확인해주세요." }, { status: 400 });
   }
   const student = await db.from("students").select("id").eq("id", body.studentId).eq("tenant_id", teacher.tenant_id).maybeSingle();
   if (student.error || !student.data) return NextResponse.json({ error: "학생을 찾을 수 없습니다." }, { status: 404 });
 
-  if (body.action === "delete") {
+  if (body.action === "remove_class") {
+    if (!body.classId) return NextResponse.json({ error: "해지할 반을 확인해주세요." }, { status: 400 });
+    const classInfo = await db.from("classes").select("is_default").eq("id", body.classId).eq("tenant_id", teacher.tenant_id).maybeSingle();
+    if (!classInfo.data || classInfo.data.is_default) return NextResponse.json({ error: "기본반 소속은 해지할 수 없습니다." }, { status: 400 });
+    const removed = await db.from("enrollments").delete().eq("student_id", student.data.id).eq("class_id", body.classId).eq("tenant_id", teacher.tenant_id);
+    if (removed.error) return NextResponse.json({ error: removed.error.message }, { status: 400 });
+  } else if (body.action === "delete") {
     if (teacher.role !== "owner") return NextResponse.json({ error: "관리자만 학생을 삭제할 수 있습니다." }, { status: 403 });
     const deleted = await db.auth.admin.deleteUser(student.data.id);
     if (deleted.error) return NextResponse.json({ error: deleted.error.message }, { status: 400 });

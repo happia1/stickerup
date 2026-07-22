@@ -1,6 +1,7 @@
 import { AdminSidebar } from "@/components/layout/AdminSidebar";
 import { AdminTopBar } from "@/components/layout/TopBar";
 import { AuthEntryNotice } from "@/components/supabase/AuthEntryNotice";
+import { AppDataGate } from "@/components/layout/AppDataGate";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -9,7 +10,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="flex min-w-0 flex-1 flex-col">
         <AdminTopBar />
         <AuthEntryNotice />
-        <main className="admin-content flex-1 min-w-0 overflow-x-auto p-4 sm:p-5 md:p-6 lg:p-7">{children}</main>
+        <main className="admin-content flex-1 min-w-0 overflow-x-auto p-4 sm:p-5 md:p-6 lg:p-7"><AppDataGate>{children}</AppDataGate></main>
       </div>
     </div>
   );

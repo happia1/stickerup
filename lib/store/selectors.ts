@@ -135,7 +135,7 @@ export function getCampaignMeta(state: AppState, campaign: RewardCampaign, stude
 
   const iAmEligible = !!(myRank && myRank <= eligibleCount);
   const iHaveClaimed = claimedStudentIds.has(studentId);
-  const isMyTurn = status === "active" && iAmEligible && !iHaveClaimed && nextTurnId === studentId;
+  const isMyTurn = status === "ended" && iAmEligible && !iHaveClaimed && nextTurnId === studentId;
 
   return { status, rows, eligibleCount, myRank, iAmEligible, iHaveClaimed, isMyTurn };
 }
@@ -153,9 +153,10 @@ export function claimsForItem(state: AppState, itemId: string) {
 export function featuredCampaignForStudent(state: AppState, studentId: string): RewardCampaign | null {
   const myClassIds = new Set(approvedClassesForStudent(state, studentId).map((c) => c.id));
   const visible = state.rewardCampaigns.filter((c) => c.class_id === null || myClassIds.has(c.class_id));
+  const claimable = visible.find((c) => campaignStatus(c) === "ended" && !getCampaignMeta(state, c, studentId).iHaveClaimed);
+  if (claimable) return claimable;
   const active = visible.find((c) => campaignStatus(c) === "active");
-  if (active) return active;
-  return visible.find((c) => campaignStatus(c) === "scheduled") ?? null;
+  return active ?? visible.find((c) => campaignStatus(c) === "scheduled") ?? null;
 }
 
 export function ddayLabel(dateStr: string, ref: Date = DEMO_NOW): string {
