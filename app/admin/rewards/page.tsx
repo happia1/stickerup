@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Pill } from "@/components/ui/Pill";
 import { useToast } from "@/lib/toast/provider";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { uploadProductImage } from "@/lib/client/upload-product-image";
 import type { ProductCatalogItem, RewardCampaign } from "@/lib/types";
 
 /* eslint-disable @next/next/no-img-element, react-hooks/exhaustive-deps */
@@ -21,38 +22,36 @@ const STATUS_LABEL: Record<EventStatusFilter, string> = {
   ended: "완료",
 };
 
-function readImageAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
 function ImageUploadField({ value, onChange }: { value: string | null; onChange: (dataUrl: string | null) => void }) {
+  const toast = useToast();
+  const [uploading, setUploading] = useState(false);
   return (
     <div className="flex items-center gap-2">
       {value ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={value} alt="상품 이미지" className="h-10 w-10 rounded-lg border border-border object-cover" />
+        <img src={value} onError={event=>{event.currentTarget.onerror=null;event.currentTarget.src="/images/placeholder-product.svg";}} alt="상품 이미지" className="h-10 w-10 rounded-lg border border-border object-cover" />
       ) : (
         <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-dashed border-border text-text-muted">+</div>
       )}
       <label className="cursor-pointer text-caption text-brand-amber">
-        {value ? "이미지 변경" : "이미지 등록"}
+        {uploading ? "업로드 중..." : value ? "이미지 변경" : "이미지 등록"}
         <input
           type="file"
-          accept="image/*"
+          accept="image/jpeg,image/png,image/webp,image/gif"
           className="hidden"
+          disabled={uploading}
           onChange={async (event) => {
             const file = event.target.files?.[0];
+            event.target.value = "";
             if (!file) return;
-            onChange(await readImageAsDataUrl(file));
+            setUploading(true);
+            try { onChange(await uploadProductImage(file)); }
+            catch (error) { toast(error instanceof Error ? error.message : "이미지를 등록하지 못했습니다."); }
+            finally { setUploading(false); }
           }}
         />
       </label>
-      {value && (
+      {value && !uploading && (
         <button type="button" className="text-caption text-state-danger" onClick={() => onChange(null)}>
           제거
         </button>
