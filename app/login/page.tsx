@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { LoginForm } from "@/components/auth/LoginForm";
 
-export default function LoginPage({ searchParams }: { searchParams?: { type?: string | string[]; next?: string | string[]; reauth?: string | string[] } }) {
+export default function LoginPage({ searchParams }: { searchParams?: { type?: string | string[]; next?: string | string[]; reauth?: string | string[]; reason?: string | string[] } }) {
   const next = typeof searchParams?.next === "string" ? searchParams.next : undefined;
   const redirectTo = next?.startsWith("/") && !next.startsWith("//") ? next : undefined;
   const accountType = searchParams?.type === "teacher" ? "teacher" : searchParams?.type === "student" ? "student" : null;
@@ -11,6 +11,7 @@ export default function LoginPage({ searchParams }: { searchParams?: { type?: st
       <Link href="/" className="text-caption text-text-secondary">&lt; 이전</Link>
       <div className="mt-8 rounded-card bg-surface-card p-5">
         <p className="text-display">로그인</p>
+        {searchParams?.reason==="session_expired"&&<p className="mt-2 text-caption text-text-secondary">로그인 정보가 만료되어 안전하게 로그아웃됐습니다. 다시 로그인해 주세요.</p>}
         <LoginForm initialAccountType={accountType} redirectTo={redirectTo} forceReauth={forceReauth} />
       </div>
     </main>

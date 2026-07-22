@@ -12,8 +12,6 @@ import {
 } from "@/lib/store/selectors";
 import { RewardCard } from "@/components/ui/RewardCard";
 import { Button } from "@/components/ui/Button";
-import { BottomSheet } from "@/components/ui/BottomSheet";
-import { Pill } from "@/components/ui/Pill";
 import { useToast } from "@/lib/toast/provider";
 import type { RewardCampaign } from "@/lib/types";
 import type { StudentHomeData } from "@/lib/data/student-home.types";
@@ -36,6 +34,7 @@ function campaignTitle(campaign: RewardCampaign, state: AppState) {
 }
 
 function campaignDescription(campaign: RewardCampaign, state: AppState) {
+  if(campaign.description?.trim())return campaign.description;
   const cls = campaign.class_id ? state.classes.find((item) => item.id === campaign.class_id) : null;
   const scope = cls ? cls.name : "전체 학생";
   return `${scope} 랭킹 결과에 따라 원하는 보상을 선택할 수 있어요.`;
@@ -58,6 +57,7 @@ export function RewardBlock({ data }: { data?: StudentHomeData }) {
   const dispatch = useAppDispatch();
   const showToast = useToast();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [expandedId,setExpandedId]=useState<string|null>(null);
   const featured = featuredCampaignForStudent(state, state.currentUserId);
 
   const handleClaim = async (campaign: RewardCampaign, itemId: string, itemTitle: string) => {
@@ -109,41 +109,18 @@ export function RewardBlock({ data }: { data?: StudentHomeData }) {
       </div>
       {featured ? (
         <>
-          <p className="mb-1 text-caption text-text-secondary">{campaignDescription(featured, state)}</p>
           <p className="mb-3 text-micro text-text-muted">
             {campaignStatus(featured) === "scheduled"
               ? `${ddayLabel(featured.period_start)} 시작 예정`
               : `${ddayLabel(featured.period_end)} 마감`}
           </p>
           {renderCampaignItems(featured)}
+          <p className="mt-2 text-caption text-text-secondary">{campaignDescription(featured, state)}</p>
         </>
       ) : (
         <p className="text-caption text-text-muted">진행 중이거나 예정된 보상 이벤트가 없어요.</p>
       )}
-      <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title="전체 보상 이벤트">
-        {allVisible.map((campaign) => (
-          <div key={campaign.id} className="mb-3 rounded-card bg-surface-card p-3">
-            <div className="mb-1.5 flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-body font-bold">{campaignTitle(campaign, state)}</p>
-                <p className="mt-0.5 text-caption text-text-secondary">{campaignDescription(campaign, state)}</p>
-              </div>
-              <Pill tone={campaignStatus(campaign) === "active" ? "ok" : campaignStatus(campaign) === "ended" ? "danger" : "wait"}>
-                {campaignStatus(campaign) === "active"
-                  ? `${ddayLabel(campaign.period_end)} 마감`
-                  : campaignStatus(campaign) === "ended"
-                    ? "종료"
-                    : ddayLabel(campaign.period_start)}
-              </Pill>
-            </div>
-            {campaignStatus(campaign) === "scheduled" ? (
-              <p className="text-caption text-text-muted">이벤트 시작 전이에요.</p>
-            ) : (
-              renderCampaignItems(campaign)
-            )}
-          </div>
-        ))}
-      </BottomSheet>
+      {sheetOpen&&<div className="fixed inset-0 z-50 overflow-y-auto bg-surface-page p-4"><div className="mx-auto max-w-app"><button onClick={()=>setSheetOpen(false)} className="mb-5 flex items-center gap-2 text-body font-bold"><span aria-hidden="true">←</span> 돌아가기</button><h2 className="mb-4 text-title">전체 이벤트</h2><div className="space-y-2">{allVisible.map(campaign=>{const expanded=expandedId===campaign.id;const cls=campaign.class_id?state.classes.find(item=>item.id===campaign.class_id)?.name:"전체";const remaining=campaignStatus(campaign)==="active"?`${ddayLabel(campaign.period_end)} 마감`:campaignStatus(campaign)==="ended"?"종료":`${ddayLabel(campaign.period_start)} 시작`;return <article key={campaign.id} className="rounded-card border border-border bg-surface-card"><button onClick={()=>setExpandedId(expanded?null:campaign.id)} className="flex w-full items-center gap-3 p-4 text-left"><span className="min-w-0 flex-1 font-bold">{campaignTitle(campaign,state)}</span><span className="text-caption text-text-secondary">{cls}</span><span className="text-caption text-text-muted">{remaining}</span><span className={expanded?"rotate-180":""}>⌄</span></button>{expanded&&<div className="border-t border-border p-4">{campaignStatus(campaign)==="scheduled"?<p className="text-caption text-text-muted">이벤트 시작 전이에요.</p>:renderCampaignItems(campaign)}<p className="mt-3 text-caption text-text-secondary">{campaignDescription(campaign,state)}</p></div>}</article>})}</div></div></div>}
     </div>
   );
 }

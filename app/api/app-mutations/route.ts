@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     const result = existing.data ? await db.from("ranking_period_config").update(values).eq("id", existing.data.id) : await db.from("ranking_period_config").insert({ tenant_id: tenantId, class_id: action.classId, ...values });
     if (result.error) return NextResponse.json({ error: result.error.message }, { status: 400 });
   } else if (action.type === "ADD_REWARD_CAMPAIGN") {
-    const campaign = await db.from("reward_campaigns").insert({ tenant_id: tenantId, title: action.title, class_id: action.classId, period_start: action.periodStart, period_end: action.periodEnd, target_distribution: { type: action.distributionType, value: action.distributionValue }, status: "active" }).select("id").single();
+    const campaign = await db.from("reward_campaigns").insert({ tenant_id: tenantId, title: action.title, description: action.description || null, class_id: action.classId, period_start: action.periodStart, period_end: action.periodEnd, target_distribution: { type: action.distributionType, value: action.distributionValue }, status: "active" }).select("id").single();
     if (campaign.error) return NextResponse.json({ error: campaign.error.message }, { status: 400 });
     const productIds = action.prizes.map((prize) => prize.productId);
     const products = await db.from("product_catalog").select("id, title, image_url, purchase_url").eq("tenant_id", tenantId).in("id", productIds);
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     const rows = action.prizes.flatMap((prize) => { const product = products.data?.find((item) => item.id === prize.productId); return product ? [{ tenant_id: tenantId, campaign_id: campaign.data.id, product_id: product.id, rank_order: prize.rank, title: product.title, image_url: product.image_url, link_url: product.purchase_url, qty: prize.qty }] : []; });
     if (rows.length) { const items = await db.from("reward_items").insert(rows); if (items.error) return NextResponse.json({ error: items.error.message }, { status: 400 }); }
   } else if (action.type === "UPDATE_REWARD_CAMPAIGN") {
-    const result = await db.from("reward_campaigns").update({ title: action.title, period_start: action.periodStart, period_end: action.periodEnd, target_distribution: { type: action.distributionType, value: action.distributionValue } }).eq("id", action.campaignId).eq("tenant_id", tenantId);
+    const result = await db.from("reward_campaigns").update({ title: action.title, description: action.description || null, period_start: action.periodStart, period_end: action.periodEnd, target_distribution: { type: action.distributionType, value: action.distributionValue } }).eq("id", action.campaignId).eq("tenant_id", tenantId);
     if (result.error) return NextResponse.json({ error: result.error.message }, { status: 400 });
   } else if (action.type === "UPDATE_TEACHER_PROFILE") {
     if (action.teacherId !== teacher.data.id) return NextResponse.json({ error: "본인 프로필만 수정할 수 있습니다." }, { status: 403 });

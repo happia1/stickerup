@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { getSupabaseBrowserConfigError, getSupabaseProjectUrl } from "./config";
 
 const rememberLoginKey = "stickerup:remember-login";
+let browserClient: ReturnType<typeof createSupabaseBrowserClient> | null = null;
 
 export function getRememberLoginPreference(): boolean {
   if (typeof window === "undefined") return true;
@@ -37,5 +38,6 @@ export function createSupabaseBrowserClient() {
 
 export function getSupabaseBrowserClient() {
   if (getSupabaseBrowserConfigError()) return null;
-  return createSupabaseBrowserClient();
+  if (!browserClient) browserClient = createSupabaseBrowserClient();
+  return browserClient;
 }

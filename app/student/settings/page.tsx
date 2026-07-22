@@ -36,8 +36,8 @@ export default function StudentSettingsPage() {
             <span className="block text-body text-left">알림 받기</span>
             <span className="block text-caption text-text-muted text-left">숙제·칭찬 승인, 스티커 롤백 알림</span>
           </span>
-          <span className={clsx("w-11 h-6 rounded-full relative transition-colors", notifications ? "bg-brand-amber" : "bg-surface-raised")}>
-            <span className={clsx("absolute top-0.5 w-5 h-5 rounded-full bg-surface-page transition-transform", notifications ? "translate-x-[22px]" : "translate-x-0.5")} />
+          <span className={clsx("relative h-6 w-11 shrink-0 overflow-hidden rounded-full transition-colors", notifications ? "bg-brand-amber" : "bg-surface-raised")}>
+            <span className={clsx("absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-surface-page transition-transform", notifications ? "translate-x-5" : "translate-x-0")} />
           </span>
         </button>
       </Card>

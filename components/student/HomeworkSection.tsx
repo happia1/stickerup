@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAppState, useAppDispatch } from "@/lib/store/provider";
 import { approvedClassesForStudent } from "@/lib/store/selectors";
 import type { HomeworkTier } from "@/lib/types";
@@ -12,16 +12,16 @@ import clsx from "@/lib/clsx";
 import { submitStudentAction } from "@/lib/student-action-client";
 import { koreaDateKey } from "@/lib/korea-date";
 import { Accordion } from "@/components/ui/Accordion";
+import { usePreferredClass } from "@/lib/preferred-class";
 
 export function HomeworkSection() {
   const state = useAppState();
   const dispatch = useAppDispatch();
   const showToast = useToast();
   const myClasses = approvedClassesForStudent(state, state.currentUserId);
-  const [classId, setClassId] = useState(myClasses[0]?.id ?? "");
+  const [classId, setClassId] = usePreferredClass(state.currentUserId, myClasses);
   const [tier, setTier] = useState<HomeworkTier>("complete");
   const [submitting, setSubmitting] = useState(false);
-  useEffect(() => { if (!classId && myClasses[0]) setClassId(myClasses[0].id); }, [classId, myClasses]);
 
   const myHomeworks = state.homeworkSubmissions.filter((h) => h.student_id === state.currentUserId);
   const checkedHomework = myHomeworks.find((homework) => homework.class_id === classId && homework.approval_status === "approved" && koreaDateKey(homework.submitted_at) === koreaDateKey());

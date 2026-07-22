@@ -107,7 +107,10 @@ export function LoginForm({ initialAccountType = null, redirectTo, forceReauth =
 
       router.push(profile.role === "student" ? "/student/home" : redirectTo ?? "/admin/dashboard");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "로그인을 완료하지 못했습니다.");
+      const raw=error instanceof Error?error.message:"";
+      if (/invalid login credentials|invalid.*password/i.test(raw)) setMessage("아이디 또는 비밀번호를 다시 확인해 주세요.");
+      else if (/user not found|no user/i.test(raw)) setMessage("사용자 정보가 없습니다.");
+      else setMessage(raw || "로그인을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.");
     } finally {
       setSubmitting(false);
     }

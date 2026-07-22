@@ -9,7 +9,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <AdminSidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <AdminTopBar />
-        <AuthEntryNotice />
+        <AuthEntryNotice accountType="teacher" />
         <main className="admin-content flex-1 min-w-0 overflow-x-auto p-4 sm:p-5 md:p-6 lg:p-7"><AppDataGate>{children}</AppDataGate></main>
       </div>
     </div>

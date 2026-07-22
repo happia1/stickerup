@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useAppDispatch, useAppState } from "@/lib/store/provider";
-import { campaignStatus, claimsForItem, itemsForCampaign } from "@/lib/store/selectors";
+import { campaignStatus, itemsForCampaign } from "@/lib/store/selectors";
 import { computePeriodBounds } from "@/lib/ranking";
 import { Button } from "@/components/ui/Button";
 import { Pill } from "@/components/ui/Pill";
@@ -101,6 +101,7 @@ function EditEventForm({ campaign, onClose }: { campaign: RewardCampaign; onClos
   const items = itemsForCampaign(state, campaign.id);
   const [distType, setDistType] = useState(campaign.target_distribution.type);
   const [title, setTitle] = useState(campaign.title ?? "");
+  const [eventDescription, setEventDescription] = useState(campaign.description ?? "");
   const [distValue, setDistValue] = useState(campaign.target_distribution.value);
   const [periodStart, setPeriodStart] = useState(campaign.period_start);
   const [periodEnd, setPeriodEnd] = useState(campaign.period_end);
@@ -113,6 +114,7 @@ function EditEventForm({ campaign, onClose }: { campaign: RewardCampaign; onClos
       <p className="mb-3 text-body font-bold">이벤트 수정</p>
       <div className="mb-3 grid grid-cols-2 gap-3">
         <label className="col-span-2 block text-caption font-semibold text-text-secondary">이벤트명<input className="mt-1 w-full rounded-lg border border-border px-2.5 py-2 text-body" value={title} onChange={(event) => setTitle(event.target.value)} /></label>
+        <label className="col-span-2 block text-caption font-semibold text-text-secondary">이벤트 설명<textarea className="mt-1 min-h-20 w-full rounded-lg border border-border px-2.5 py-2 text-body" value={eventDescription} onChange={(event) => setEventDescription(event.target.value)} /></label>
         <label className="block text-caption font-semibold text-text-secondary">
           대상 기준
           <select
@@ -162,7 +164,7 @@ function EditEventForm({ campaign, onClose }: { campaign: RewardCampaign; onClos
         <Button
           className="!py-1.5 !text-caption"
           onClick={() => {
-            dispatch({ type: "UPDATE_REWARD_CAMPAIGN", campaignId: campaign.id, title, distributionType: distType, distributionValue: distValue, periodStart, periodEnd });
+            dispatch({ type: "UPDATE_REWARD_CAMPAIGN", campaignId: campaign.id, title, description: eventDescription, distributionType: distType, distributionValue: distValue, periodStart, periodEnd });
             Object.entries(itemDrafts).forEach(([itemId, draft]) => dispatch({ type: "UPDATE_REWARD_ITEM", itemId, title: draft.title, qty: draft.qty, imageUrl: draft.imageUrl }));
             showToast("이벤트가 수정되었어요.");
             onClose();
@@ -182,8 +184,9 @@ function EventDetail({ campaign, editingId, setEditingId }: { campaign: RewardCa
   const state = useAppState();
   const items = itemsForCampaign(state, campaign.id);
   const status = campaignStatus(campaign) as EventStatusFilter;
-  const claimedTotal = items.reduce((sum, item) => sum + claimsForItem(state, item.id).length, 0);
   const qtyTotal = items.reduce((sum, item) => sum + item.qty, 0);
+
+  if (editingId === campaign.id) return <EditEventForm campaign={campaign} onClose={() => setEditingId(null)} />;
 
   return (
     <section className="rounded-card bg-surface-page p-5">
@@ -202,7 +205,7 @@ function EventDetail({ campaign, editingId, setEditingId }: { campaign: RewardCa
         </div>
       </div>
 
-      <div className="mb-3 grid grid-cols-3 gap-2">
+      <div className="mb-3 grid grid-cols-2 gap-2">
         <div className="rounded-xl bg-surface-card p-3">
           <p className="text-caption text-text-secondary">보상 대상</p>
           <p className="text-body font-bold">{distributionLabel(campaign)}</p>
@@ -210,10 +213,6 @@ function EventDetail({ campaign, editingId, setEditingId }: { campaign: RewardCa
         <div className="rounded-xl bg-surface-card p-3">
           <p className="text-caption text-text-secondary">총 상품 수량</p>
           <p className="text-body font-bold">{qtyTotal}개</p>
-        </div>
-        <div className="rounded-xl bg-surface-card p-3">
-          <p className="text-caption text-text-secondary">선택 완료</p>
-          <p className="text-body font-bold">{claimedTotal}개</p>
         </div>
       </div>
 
@@ -223,15 +222,12 @@ function EventDetail({ campaign, editingId, setEditingId }: { campaign: RewardCa
             <tr className="border-b border-border text-left text-caption text-text-secondary">
               <th className="p-2.5">순위 / 상품</th>
               <th className="p-2.5">수량</th>
-              <th className="p-2.5">선택 완료</th>
-              <th className="p-2.5">남은 수량</th>
             </tr>
           </thead>
           <tbody>
             {items.length === 0 ? (
-              <tr><td colSpan={4} className="p-5 text-center text-caption text-text-secondary">등록된 상품이 없습니다.</td></tr>
+              <tr><td colSpan={2} className="p-5 text-center text-caption text-text-secondary">등록된 상품이 없습니다.</td></tr>
             ) : items.map((item) => {
-              const claims = claimsForItem(state, item.id);
               const catalogProduct = state.productCatalog.find((product) => product.id === item.product_id) as (ProductCatalogItem & { category?: string | null }) | undefined;
               return (
                 <tr key={item.id} className="border-b border-border last:border-0">
@@ -244,8 +240,6 @@ function EventDetail({ campaign, editingId, setEditingId }: { campaign: RewardCa
                     {item.link_url && <a href={item.link_url} target="_blank" rel="noreferrer" className="ml-2 text-caption text-brand-amber">구매 바로가기</a>}
                   </td>
                   <td className="p-2.5">{item.qty}</td>
-                  <td className="p-2.5">{claims.map((claim) => state.students.find((student) => student.id === claim.student_id)?.name).filter(Boolean).join(", ") || "-"}</td>
-                  <td className="p-2.5">{item.qty - claims.length}</td>
                 </tr>
               );
             })}
@@ -253,7 +247,6 @@ function EventDetail({ campaign, editingId, setEditingId }: { campaign: RewardCa
         </table>
       </div>
 
-      {editingId === campaign.id && <EditEventForm campaign={campaign} onClose={() => setEditingId(null)} />}
     </section>
   );
 }
@@ -270,6 +263,7 @@ export default function AdminRewardsPage() {
   const [scopeId, setScopeId] = useState<string>("__default__");
   const [distType, setDistType] = useState<"count" | "ratio">("count");
   const [eventName, setEventName] = useState("");
+  const [eventDescription, setEventDescription] = useState("");
   const [distValue, setDistValue] = useState(3);
   const [prizes, setPrizes] = useState<Array<{ rank: number; productId: string; qty: number }>>([{rank:1,productId:"",qty:1},{rank:2,productId:"",qty:1},{rank:3,productId:"",qty:1}]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -351,6 +345,7 @@ export default function AdminRewardsPage() {
         {createOpen && <>
         <label className="mb-1 block text-caption font-semibold text-text-secondary">이벤트명</label>
         <input value={eventName} onChange={(event) => setEventName(event.target.value)} placeholder="예: 7월 출석왕 이벤트" className="mb-3 w-full rounded-lg border border-border px-2.5 py-2 text-body" />
+        <label className="mb-1 block text-caption font-semibold text-text-secondary">이벤트 설명</label><textarea value={eventDescription} onChange={(event) => setEventDescription(event.target.value)} placeholder="학생에게 보여줄 이벤트 설명" className="mb-3 min-h-20 w-full rounded-lg border border-border px-2.5 py-2 text-body" />
         <label className="mb-1 block text-caption font-semibold text-text-secondary">적용 그룹</label>
         <select className="mb-3 w-full rounded-lg border border-border px-2.5 py-2 text-body" value={scopeId} onChange={(event) => setScopeId(event.target.value)}>
           <option value="__default__">기본반 (상시)</option>
@@ -382,11 +377,12 @@ export default function AdminRewardsPage() {
               return;
             }
             if (!eventName.trim()) { showToast("이벤트명을 입력해 주세요."); return; }
-            dispatch({ type: "ADD_REWARD_CAMPAIGN", title: eventName.trim(), classId: classIdForForm, periodStart: bounds.period_start, periodEnd: bounds.period_end, distributionType: distType, distributionValue: distValue, prizes: selectedPrizes });
+            dispatch({ type: "ADD_REWARD_CAMPAIGN", title: eventName.trim(), description: eventDescription.trim(), classId: classIdForForm, periodStart: bounds.period_start, periodEnd: bounds.period_end, distributionType: distType, distributionValue: distValue, prizes: selectedPrizes });
             showToast("이벤트가 생성되었어요.");
             setStatusFilter("active");
             setPrizes([{rank:1,productId:"",qty:1},{rank:2,productId:"",qty:1},{rank:3,productId:"",qty:1}]);
             setEventName("");
+            setEventDescription("");
             setCreateOpen(false);
           }}
         >

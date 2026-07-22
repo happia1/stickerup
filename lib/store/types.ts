@@ -53,8 +53,8 @@ export type Action =
   | { type: "SET_NOTICE_PIN"; noticeId: string; pinned: boolean }
   | { type: "DELETE_NOTICE"; noticeId: string }
   | { type: "SET_RANKING_UNIT"; classId: string | null; unit: RankingUnit; customDays?: number | null; customStart?: string | null; customEnd?: string | null }
-  | { type: "ADD_REWARD_CAMPAIGN"; title: string; classId: string | null; periodStart: string; periodEnd: string; distributionType: "ratio" | "count"; distributionValue: number; prizes: Array<{ rank: number; productId: string; qty: number }> }
-  | { type: "UPDATE_REWARD_CAMPAIGN"; campaignId: string; title: string; distributionType: "ratio" | "count"; distributionValue: number; periodStart: string; periodEnd: string }
+  | { type: "ADD_REWARD_CAMPAIGN"; title: string; description: string; classId: string | null; periodStart: string; periodEnd: string; distributionType: "ratio" | "count"; distributionValue: number; prizes: Array<{ rank: number; productId: string; qty: number }> }
+  | { type: "UPDATE_REWARD_CAMPAIGN"; campaignId: string; title: string; description: string; distributionType: "ratio" | "count"; distributionValue: number; periodStart: string; periodEnd: string }
   | { type: "UPDATE_REWARD_ITEM"; itemId: string; title: string; qty: number; imageUrl: string | null }
   | { type: "ADD_CATALOG_PRODUCT"; title: string; imageUrl: string | null; purchaseUrl: string | null; description: string | null }
   | { type: "UPDATE_CATALOG_PRODUCT"; productId: string; title: string; imageUrl: string | null; purchaseUrl: string | null; description: string | null }

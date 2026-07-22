@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { BottomSheet } from "@/components/ui/BottomSheet";
 import { useAppState } from "@/lib/store/provider";
 import { getTeacherById, pendingCounts } from "@/lib/store/selectors";
 import { fmtDate } from "@/lib/format";
@@ -25,6 +24,8 @@ function SettingsIcon() {
     </svg>
   );
 }
+
+function NotificationModal({open,title,onClose,children}:{open:boolean;title:string;onClose:()=>void;children:React.ReactNode}){if(!open)return null;return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" onClick={onClose}><div className="max-h-[75vh] w-full max-w-md overflow-y-auto rounded-card bg-surface-page p-5 shadow-xl" onClick={event=>event.stopPropagation()}><div className="mb-4 flex items-center justify-between"><h2 className="text-subtitle">{title}</h2><button aria-label="닫기" onClick={onClose} className="text-xl text-text-secondary">×</button></div>{children}</div></div>}
 
 export function StudentTopBar() {
   const state = useAppState();
@@ -50,14 +51,14 @@ export function StudentTopBar() {
         <button aria-label="알림" className="text-text-primary" onClick={() => setNotifOpen(true)}><BellIcon /></button>
         <Link href="/student/settings" aria-label="설정" className="text-text-primary"><SettingsIcon /></Link>
       </div>
-      <BottomSheet open={notifOpen} onClose={() => setNotifOpen(false)} title="알림">
-        {notifItems.length === 0 ? <p className="text-caption text-text-muted">새로운 알림이 없습니다.</p> : notifItems.map((item, idx) => (
+      <NotificationModal open={notifOpen} onClose={() => setNotifOpen(false)} title="알림">
+        {notifItems.length === 0 ? <p className="py-8 text-center text-caption text-text-muted">새 알림이 없습니다.</p> : notifItems.map((item, idx) => (
           <div key={idx} className="mb-2 rounded-card border border-border bg-surface-card p-3">
             <p className="text-body">{item.text}</p>
             <p className="mt-1 text-caption text-text-muted">{fmtDate(item.date)}</p>
           </div>
         ))}
-      </BottomSheet>
+      </NotificationModal>
     </div>
   );
 }
@@ -103,14 +104,14 @@ export function AdminTopBar() {
         <Link href="/admin/settings" aria-label="관리자 설정" className="text-text-primary"><SettingsIcon /></Link>
       </div>
 
-      <BottomSheet open={notifOpen} onClose={() => setNotifOpen(false)} title="관리자 알림">
+      <NotificationModal open={notifOpen} onClose={() => setNotifOpen(false)} title="관리자 알림">
         {totalPending === 0 ? <p className="text-caption text-text-muted">확인할 승인 대기 항목이 없습니다.</p> : notifItems.map((item) => (
           <Link key={item.label} href={item.href} onClick={() => setNotifOpen(false)} className="mb-2 flex items-center justify-between rounded-card border border-border bg-surface-card p-3">
             <span className="text-body">{item.label}</span>
             <span className="text-body font-bold text-brand-amber">{item.count}건</span>
           </Link>
         ))}
-      </BottomSheet>
+      </NotificationModal>
     </div>
   );
 }

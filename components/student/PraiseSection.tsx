@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useAppState, useAppDispatch } from "@/lib/store/provider";
-import { getDefaultClass } from "@/lib/store/selectors";
+import { approvedClassesForStudent } from "@/lib/store/selectors";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Accordion } from "@/components/ui/Accordion";
@@ -9,6 +9,7 @@ import { Pill } from "@/components/ui/Pill";
 import { fmtDate } from "@/lib/format";
 import { useToast } from "@/lib/toast/provider";
 import { submitStudentAction } from "@/lib/student-action-client";
+import { usePreferredClass } from "@/lib/preferred-class";
 
 export function PraiseSection() {
   const state = useAppState();
@@ -18,7 +19,8 @@ export function PraiseSection() {
   const [submitting, setSubmitting] = useState(false);
 
   const myRequests = state.praiseRequests.filter((p) => p.student_id === state.currentUserId);
-  const defaultClass = getDefaultClass(state);
+  const myClasses = approvedClassesForStudent(state, state.currentUserId);
+  const [classId,setClassId] = usePreferredClass(state.currentUserId, myClasses);
 
   return (
     <div>
@@ -27,6 +29,7 @@ export function PraiseSection() {
         <p className="text-caption text-text-secondary mb-3">
           칭찬 받은 사유와 함께 스티커를 요청할 수 있어요.
         </p>
+        <label className="mb-1 block text-caption font-semibold text-text-secondary">요청할 반</label><select value={classId} onChange={event=>setClassId(event.target.value)} className="mb-3 w-full rounded-lg border border-border px-2.5 py-2 text-body">{myClasses.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select>
         <label className="block text-caption font-semibold text-text-secondary mb-1">사유</label>
         <textarea
           className="w-full border border-border rounded-lg px-2.5 py-2 text-body mb-3.5 min-h-[64px]"
@@ -41,8 +44,8 @@ export function PraiseSection() {
             const requestReason = reason.trim() || "칭찬 스티커 요청";
             try {
               setSubmitting(true);
-              await submitStudentAction({ action: "praise", classId: defaultClass?.id ?? null, reason: requestReason });
-              dispatch({ type: "SUBMIT_PRAISE", studentId: state.currentUserId, classId: defaultClass?.id ?? null, reason: requestReason });
+              await submitStudentAction({ action: "praise", classId: classId || null, reason: requestReason });
+              dispatch({ type: "SUBMIT_PRAISE", studentId: state.currentUserId, classId: classId || null, reason: requestReason });
               setReason("");
               showToast("칭찬 스티커 요청을 보냈어요.");
             } catch (error) { showToast(error instanceof Error ? error.message : "요청을 보내지 못했습니다."); }

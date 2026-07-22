@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAppState, useAppDispatch } from "@/lib/store/provider";
 import { approvedClassesForStudent, getClassById } from "@/lib/store/selectors";
 import { ATTENDANCE_TIERS } from "@/lib/types";
@@ -11,6 +11,7 @@ import { useToast } from "@/lib/toast/provider";
 import clsx from "@/lib/clsx";
 import { submitStudentAction } from "@/lib/student-action-client";
 import { koreaDateKey } from "@/lib/korea-date";
+import { usePreferredClass } from "@/lib/preferred-class";
 
 const DEMO_SCENARIOS: { tier: AttendanceTier; label: string }[] = [
   { tier: "on_time", label: "정시 이전" },
@@ -25,10 +26,9 @@ export function AttendanceSection() {
   const dispatch = useAppDispatch();
   const showToast = useToast();
   const myClasses = approvedClassesForStudent(state, state.currentUserId);
-  const [classId, setClassId] = useState(myClasses[0]?.id ?? "");
+  const [classId, setClassId] = usePreferredClass(state.currentUserId, myClasses);
   const [scenario, setScenario] = useState<AttendanceTier>("on_time");
   const [submitting, setSubmitting] = useState(false);
-  useEffect(() => { if (!classId && myClasses[0]) setClassId(myClasses[0].id); }, [classId, myClasses]);
 
   const selectedClass = getClassById(state, classId);
   const checkedEntry = state.ledger.find((entry) => entry.student_id === state.currentUserId && entry.class_id === classId && entry.source_type === "attendance" && entry.status === "active" && koreaDateKey(entry.created_at) === koreaDateKey());

@@ -17,6 +17,7 @@ import { Pill } from "@/components/ui/Pill";
 import { useToast } from "@/lib/toast/provider";
 import clsx from "@/lib/clsx";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { setPreferredClass } from "@/lib/preferred-class";
 
 export default function StudentMyPage() {
   const state = useAppState();
@@ -44,7 +45,7 @@ export default function StudentMyPage() {
   };
 
   return (
-    <div>
+    <div id="class-enrollment">
       <Card>
         <div className="flex items-center gap-3">
           <Avatar name={editingProfile ? name || me.name : me.name} size={56} />
@@ -196,7 +197,8 @@ export default function StudentMyPage() {
                   if (!response.ok) throw new Error(payload.error ?? "승인요청을 보내지 못했어요.");
                 }
                 dispatch({ type: "REQUEST_ENROLLMENT", studentId: me.id, classIds: selectedClassIds });
-                showToast(`${selectedClassIds.length}개 반에 승인요청을 보냈어요.`);
+                setPreferredClass(me.id, selectedClassIds[0]);
+                showToast(`${selectedClassIds.length}개 특강반에 등록했고 기본 반으로 설정했어요.`);
                 setSelectedClassIds([]);
               } catch (error) {
                 showToast(error instanceof Error ? error.message : "승인요청을 보내지 못했어요.");

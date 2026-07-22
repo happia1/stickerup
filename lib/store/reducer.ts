@@ -311,6 +311,7 @@ export function appReducer(state: AppState, action: Action): AppState {
         id: uid("camp"),
         tenant_id: state.tenant.id,
         title: action.title,
+        description: action.description,
         class_id: action.classId,
         period_start: action.periodStart,
         period_end: action.periodEnd,
@@ -370,8 +371,9 @@ export function appReducer(state: AppState, action: Action): AppState {
         rewardCampaigns: state.rewardCampaigns.map((c) =>
           c.id === action.campaignId
             ? {
-                ...c,
-                title: action.title,
+              ...c,
+              title: action.title,
+              description: action.description,
                 target_distribution: { type: action.distributionType, value: action.distributionValue },
                 period_start: action.periodStart,
                 period_end: action.periodEnd,

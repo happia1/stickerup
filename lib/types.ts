@@ -162,6 +162,7 @@ export interface RewardCampaign {
   id: string;
   tenant_id: string;
   title?: string | null;
+  description?: string | null;
   class_id: string | null; // null = ?袁⑷퍥 ????
   period_start: string;
   period_end: string;
