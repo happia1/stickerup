@@ -8,12 +8,14 @@ import { Accordion } from "@/components/ui/Accordion";
 import { Pill } from "@/components/ui/Pill";
 import { fmtDate } from "@/lib/format";
 import { useToast } from "@/lib/toast/provider";
+import { submitStudentAction } from "@/lib/student-action-client";
 
 export function PraiseSection() {
   const state = useAppState();
   const dispatch = useAppDispatch();
   const showToast = useToast();
   const [reason, setReason] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const myRequests = state.praiseRequests.filter((p) => p.student_id === state.currentUserId);
   const defaultClass = getDefaultClass(state);
@@ -34,15 +36,17 @@ export function PraiseSection() {
         />
         <Button
           fullWidth
-          onClick={() => {
-            dispatch({
-              type: "SUBMIT_PRAISE",
-              studentId: state.currentUserId,
-              classId: defaultClass?.id ?? null,
-              reason: reason.trim() || "칭찬 스티커 요청",
-            });
-            setReason("");
-            showToast("칭찬 스티커 요청을 보냈어요.");
+          disabled={submitting}
+          onClick={async () => {
+            const requestReason = reason.trim() || "칭찬 스티커 요청";
+            try {
+              setSubmitting(true);
+              await submitStudentAction({ action: "praise", classId: defaultClass?.id ?? null, reason: requestReason });
+              dispatch({ type: "SUBMIT_PRAISE", studentId: state.currentUserId, classId: defaultClass?.id ?? null, reason: requestReason });
+              setReason("");
+              showToast("칭찬 스티커 요청을 보냈어요.");
+            } catch (error) { showToast(error instanceof Error ? error.message : "요청을 보내지 못했습니다."); }
+            finally { setSubmitting(false); }
           }}
         >
           스티커 주세요 🙌

@@ -29,6 +29,7 @@ export interface AppState {
 }
 
 export type Action =
+  | { type: "HYDRATE_APP_STATE"; state: Partial<AppState> & Pick<AppState, "currentUserId" | "currentUserRole" | "tenant"> }
   | { type: "SWITCH_USER"; userId: string; role: Role }
   | { type: "CHECK_IN"; studentId: string; classId: string; tier: string }
   | { type: "SUBMIT_HOMEWORK"; studentId: string; classId: string; tier: string }

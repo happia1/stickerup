@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppState, useAppDispatch } from "@/lib/store/provider";
 import { approvedClassesForStudent } from "@/lib/store/selectors";
 import type { HomeworkTier } from "@/lib/types";
@@ -9,6 +9,7 @@ import { Pill } from "@/components/ui/Pill";
 import { fmtDate } from "@/lib/format";
 import { useToast } from "@/lib/toast/provider";
 import clsx from "@/lib/clsx";
+import { submitStudentAction } from "@/lib/student-action-client";
 
 export function HomeworkSection() {
   const state = useAppState();
@@ -17,6 +18,8 @@ export function HomeworkSection() {
   const myClasses = approvedClassesForStudent(state, state.currentUserId);
   const [classId, setClassId] = useState(myClasses[0]?.id ?? "");
   const [tier, setTier] = useState<HomeworkTier>("complete");
+  const [submitting, setSubmitting] = useState(false);
+  useEffect(() => { if (!classId && myClasses[0]) setClassId(myClasses[0].id); }, [classId, myClasses]);
 
   const myHomeworks = state.homeworkSubmissions.filter((h) => h.student_id === state.currentUserId);
 
@@ -58,10 +61,11 @@ export function HomeworkSection() {
         </div>
         <Button
           fullWidth
-          disabled={!classId}
-          onClick={() => {
-            dispatch({ type: "SUBMIT_HOMEWORK", studentId: state.currentUserId, classId, tier });
-            showToast("숙제 인증 신청 완료 — 관리자 승인을 기다려주세요.");
+          disabled={!classId || submitting}
+          onClick={async () => {
+            try { setSubmitting(true); await submitStudentAction({ action: "homework", classId, tier }); dispatch({ type: "SUBMIT_HOMEWORK", studentId: state.currentUserId, classId, tier }); showToast("숙제 인증 신청 완료 — 관리자 승인을 기다려주세요."); }
+            catch (error) { showToast(error instanceof Error ? error.message : "신청을 저장하지 못했습니다."); }
+            finally { setSubmitting(false); }
           }}
         >
           인증 신청하기

@@ -2,12 +2,23 @@
 import { useState } from "react";
 import { useAppState, useAppDispatch } from "@/lib/store/provider";
 import { useToast } from "@/lib/toast/provider";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function AdminApprovalsPage() {
   const state = useAppState();
   const dispatch = useAppDispatch();
   const showToast = useToast();
   const [praiseCounts, setPraiseCounts] = useState<Record<string, number>>({});
+  const [processingId, setProcessingId] = useState<string | null>(null);
+
+  async function persist(type: "homework" | "praise", requestId: string, action: "approve" | "reject", count?: number) {
+    const client = getSupabaseBrowserClient();
+    const { data } = await client!.auth.getSession();
+    if (!data.session) throw new Error("로그인이 필요합니다.");
+    const response = await fetch("/api/admin/approvals", { method: "PATCH", headers: { Authorization: `Bearer ${data.session.access_token}`, "Content-Type": "application/json" }, body: JSON.stringify({ type, requestId, action, count }) });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error ?? "승인 요청을 처리하지 못했습니다.");
+  }
 
   const pendingHomework = state.homeworkSubmissions.filter((h) => h.approval_status === "pending");
   const pendingPraise = state.praiseRequests.filter((p) => p.approval_status === "pending");
@@ -48,16 +59,19 @@ export default function AdminApprovalsPage() {
                   <td className="p-2.5 flex gap-1.5">
                     <button
                       className="border border-state-success text-state-success rounded-lg px-2 py-1 text-caption"
-                      onClick={() => {
-                        dispatch({ type: "APPROVE_HOMEWORK", submissionId: h.id, approverId: state.currentUserId });
-                        showToast("승인 완료 — 스티커가 지급되었어요.");
+                      disabled={processingId === h.id}
+                      onClick={async () => {
+                        try { setProcessingId(h.id); await persist("homework", h.id, "approve"); dispatch({ type: "APPROVE_HOMEWORK", submissionId: h.id, approverId: state.currentUserId }); showToast("승인 완료 — 스티커가 지급되었어요."); }
+                        catch (error) { showToast(error instanceof Error ? error.message : "승인하지 못했습니다."); }
+                        finally { setProcessingId(null); }
                       }}
                     >
                       승인
                     </button>
                     <button
                       className="border border-state-danger text-state-danger rounded-lg px-2 py-1 text-caption"
-                      onClick={() => dispatch({ type: "REJECT_HOMEWORK", submissionId: h.id })}
+                      disabled={processingId === h.id}
+                      onClick={async () => { try { setProcessingId(h.id); await persist("homework", h.id, "reject"); dispatch({ type: "REJECT_HOMEWORK", submissionId: h.id }); } catch (error) { showToast(error instanceof Error ? error.message : "반려하지 못했습니다."); } finally { setProcessingId(null); } }}
                     >
                       반려
                     </button>
@@ -85,21 +99,25 @@ export default function AdminApprovalsPage() {
                     />
                     <button
                       className="border border-state-success text-state-success rounded-lg px-2 py-1 text-caption"
-                      onClick={() => {
-                        dispatch({
+                      disabled={processingId === p.id}
+                      onClick={async () => {
+                        const count = praiseCounts[p.id] ?? 2;
+                        try { setProcessingId(p.id); await persist("praise", p.id, "approve", count); dispatch({
                           type: "APPROVE_PRAISE",
                           requestId: p.id,
                           approverId: state.currentUserId,
-                          count: praiseCounts[p.id] ?? 2,
-                        });
-                        showToast("승인 완료 — 스티커가 지급되었어요.");
+                          count,
+                        }); showToast("승인 완료 — 스티커가 지급되었어요."); }
+                        catch (error) { showToast(error instanceof Error ? error.message : "승인하지 못했습니다."); }
+                        finally { setProcessingId(null); }
                       }}
                     >
                       승인
                     </button>
                     <button
                       className="border border-state-danger text-state-danger rounded-lg px-2 py-1 text-caption"
-                      onClick={() => dispatch({ type: "REJECT_PRAISE", requestId: p.id })}
+                      disabled={processingId === p.id}
+                      onClick={async () => { try { setProcessingId(p.id); await persist("praise", p.id, "reject"); dispatch({ type: "REJECT_PRAISE", requestId: p.id }); } catch (error) { showToast(error instanceof Error ? error.message : "반려하지 못했습니다."); } finally { setProcessingId(null); } }}
                     >
                       반려
                     </button>

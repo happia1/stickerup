@@ -1,0 +1,47 @@
+import { NextResponse } from "next/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getRequestUser } from "@/lib/supabase/server-auth";
+import { DEFAULT_ATTENDANCE_TIERS, DEFAULT_HOMEWORK_TIERS } from "@/lib/types";
+
+export async function POST(request: Request) {
+  const auth = await getRequestUser(request);
+  if (!auth.user) return NextResponse.json({ error: auth.error }, { status: 401 });
+  const db = createSupabaseAdminClient();
+  const student = await db.from("students").select("id, tenant_id").eq("id", auth.user.id).maybeSingle();
+  if (student.error || !student.data) return NextResponse.json({ error: "학생 계정이 필요합니다." }, { status: 403 });
+  const body = await request.json() as { action?: "attendance" | "homework" | "praise"; classId?: string | null; tier?: string; reason?: string };
+
+  if (body.classId) {
+    const enrollment = await db.from("enrollments").select("id").eq("student_id", student.data.id).eq("class_id", body.classId).eq("status", "approved").maybeSingle();
+    if (!enrollment.data) return NextResponse.json({ error: "승인된 반을 선택해주세요." }, { status: 400 });
+  }
+
+  if (body.action === "praise") {
+    const reason = body.reason?.trim();
+    if (!reason) return NextResponse.json({ error: "칭찬 사유를 입력해주세요." }, { status: 400 });
+    const result = await db.from("praise_requests").insert({ tenant_id: student.data.tenant_id, student_id: student.data.id, class_id: body.classId ?? null, reason, approval_status: "pending" }).select("*").single();
+    if (result.error) return NextResponse.json({ error: result.error.message }, { status: 400 });
+    return NextResponse.json({ request: result.data });
+  }
+
+  if (!body.classId || !body.tier) return NextResponse.json({ error: "반과 평가 기준을 선택해주세요." }, { status: 400 });
+  if (body.action === "homework") {
+    const tier = DEFAULT_HOMEWORK_TIERS.find((item) => item.tier === body.tier);
+    if (!tier) return NextResponse.json({ error: "숙제 완료율을 확인해주세요." }, { status: 400 });
+    const result = await db.from("homework_submissions").insert({ tenant_id: student.data.tenant_id, student_id: student.data.id, class_id: body.classId, completion_tier: tier.tier, sticker_count: tier.count, approval_status: "pending" }).select("*").single();
+    if (result.error) return NextResponse.json({ error: result.error.message }, { status: 400 });
+    return NextResponse.json({ submission: result.data });
+  }
+
+  if (body.action === "attendance") {
+    const tier = DEFAULT_ATTENDANCE_TIERS.find((item) => item.tier === body.tier);
+    if (!tier) return NextResponse.json({ error: "출석 기준을 확인해주세요." }, { status: 400 });
+    const attendance = await db.from("attendance_records").insert({ tenant_id: student.data.tenant_id, student_id: student.data.id, class_id: body.classId, tier: tier.tier, sticker_count: tier.count }).select("id, created_at").single();
+    if (attendance.error) return NextResponse.json({ error: attendance.error.message }, { status: 400 });
+    const ledger = await db.from("sticker_ledger").insert({ tenant_id: student.data.tenant_id, student_id: student.data.id, class_id: body.classId, source_type: "attendance", source_id: attendance.data.id, count: tier.count, status: "active" });
+    if (ledger.error) return NextResponse.json({ error: ledger.error.message }, { status: 400 });
+    return NextResponse.json({ attendance: attendance.data });
+  }
+
+  return NextResponse.json({ error: "지원하지 않는 요청입니다." }, { status: 400 });
+}

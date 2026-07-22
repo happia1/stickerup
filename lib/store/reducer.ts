@@ -14,6 +14,9 @@ function nowISO(): string {
 
 export function appReducer(state: AppState, action: Action): AppState {
   switch (action.type) {
+    case "HYDRATE_APP_STATE":
+      return { ...state, ...action.state };
+
     case "SWITCH_USER": {
       return { ...state, currentUserId: action.userId, currentUserRole: action.role };
     }

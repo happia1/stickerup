@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppState, useAppDispatch } from "@/lib/store/provider";
 import { approvedClassesForStudent, getClassById } from "@/lib/store/selectors";
 import { ATTENDANCE_TIERS } from "@/lib/types";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Accordion } from "@/components/ui/Accordion";
 import { useToast } from "@/lib/toast/provider";
 import clsx from "@/lib/clsx";
+import { submitStudentAction } from "@/lib/student-action-client";
 
 const DEMO_SCENARIOS: { tier: AttendanceTier; label: string }[] = [
   { tier: "on_time", label: "정시 이전" },
@@ -25,6 +26,8 @@ export function AttendanceSection() {
   const myClasses = approvedClassesForStudent(state, state.currentUserId);
   const [classId, setClassId] = useState(myClasses[0]?.id ?? "");
   const [scenario, setScenario] = useState<AttendanceTier>("on_time");
+  const [submitting, setSubmitting] = useState(false);
+  useEffect(() => { if (!classId && myClasses[0]) setClassId(myClasses[0].id); }, [classId, myClasses]);
 
   const selectedClass = getClassById(state, classId);
 
@@ -64,11 +67,11 @@ export function AttendanceSection() {
         </div>
         <Button
           fullWidth
-          disabled={!classId}
-          onClick={() => {
-            dispatch({ type: "CHECK_IN", studentId: state.currentUserId, classId, tier: scenario });
-            const tierDef = ATTENDANCE_TIERS.find((t) => t.tier === scenario);
-            showToast(`${selectedClass?.name} 출석 완료 — ${tierDef?.label}, ${tierDef?.count}장 지급!`);
+          disabled={!classId || submitting}
+          onClick={async () => {
+            try { setSubmitting(true); await submitStudentAction({ action: "attendance", classId, tier: scenario }); dispatch({ type: "CHECK_IN", studentId: state.currentUserId, classId, tier: scenario }); const tierDef = ATTENDANCE_TIERS.find((t) => t.tier === scenario); showToast(`${selectedClass?.name} 출석 완료 — ${tierDef?.label}, ${tierDef?.count}장 지급!`); }
+            catch (error) { showToast(error instanceof Error ? error.message : "출석을 저장하지 못했습니다."); }
+            finally { setSubmitting(false); }
           }}
         >
           출석 체크 버튼 누르기
