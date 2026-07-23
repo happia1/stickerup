@@ -20,10 +20,10 @@ export async function POST(request: Request) {
     if (ranking.error) return NextResponse.json({ error: ranking.error.message }, { status: 400 });
   } else if (action.type === "UPDATE_CLASS_NAME") {
     const name = action.name.trim();
-    if (!name) return NextResponse.json({ error: "특강반 이름을 입력해 주세요." }, { status: 400 });
-    const result = await db.from("classes").update({ name, updated_at: new Date().toISOString() }).eq("id", action.classId).eq("tenant_id", tenantId).eq("is_default", false).select("id").maybeSingle();
+    if (!name) return NextResponse.json({ error: "반 이름을 입력해 주세요." }, { status: 400 });
+    const result = await db.from("classes").update({ name, updated_at: new Date().toISOString() }).eq("id", action.classId).eq("tenant_id", tenantId).select("id").maybeSingle();
     if (result.error) return NextResponse.json({ error: result.error.message }, { status: 400 });
-    if (!result.data) return NextResponse.json({ error: "수정할 특강반을 찾을 수 없습니다." }, { status: 404 });
+    if (!result.data) return NextResponse.json({ error: "수정할 반을 찾을 수 없습니다." }, { status: 404 });
   } else if (action.type === "UPDATE_CLASS_SPECIAL_PERIOD") {
     const result = await db.from("classes").update({ special_start: action.specialStart, special_end: action.specialEnd, status: "active", updated_at: new Date().toISOString() }).eq("id", action.classId).eq("tenant_id", tenantId);
     if (result.error) return NextResponse.json({ error: result.error.message }, { status: 400 });

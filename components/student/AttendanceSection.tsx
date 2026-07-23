@@ -37,7 +37,7 @@ export function AttendanceSection() {
           fullWidth
           disabled={!regularClass || submitting}
           onClick={async () => {
-            if (!regularClass) return showToast("정규반 정보를 찾을 수 없어요.");
+            if (!regularClass) return showToast("기본 소속 반 정보를 찾을 수 없어요.");
             try {
               setSubmitting(true);
               await submitStudentAction({ action: "attendance", tier: "on_time" });

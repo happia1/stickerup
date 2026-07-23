@@ -207,7 +207,7 @@ export default function StudentMyPage() {
         )}
         {approved.map((cls) => (
           <div key={cls.id} className="flex items-center justify-between py-1.5">
-            <p className="min-w-0 truncate text-body">{cls.name} <span className="text-caption text-text-muted">· {cls.is_default ? "정규반" : "특강반"}</span></p>
+            <p className="min-w-0 truncate text-body">{cls.name} <span className="text-caption text-text-muted">· {cls.is_default ? "기본 소속 반" : "특강반"}</span></p>
             <Pill tone="ok">승인됨</Pill>
           </div>
         ))}

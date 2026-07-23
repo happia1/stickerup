@@ -2,6 +2,7 @@ import type { AppState } from "./types";
 import { getRanking, computePeriodBounds } from "@/lib/ranking";
 import type { ClassRoom, RankingRow, RewardCampaign, RankingUnit } from "@/lib/types";
 import { koreaDateKey } from "@/lib/korea-date";
+import { effectiveActiveLedger } from "@/lib/sticker-ledger";
 
 export function getStudentById(state: AppState, id: string) {
   return state.students.find((s) => s.id === id) ?? null;
@@ -19,7 +20,7 @@ export function getDefaultClass(state: AppState): ClassRoom | null {
   return state.classes.find((c) => c.is_default) ?? null;
 }
 
-/** 학생이 승인된 상태로 소속된 반 목록 (정규반 포함) */
+/** 학생이 승인된 상태로 소속된 반 목록 (기본 소속 반 포함) */
 export function approvedClassesForStudent(state: AppState, studentId: string): ClassRoom[] {
   const classIds = state.enrollments
     .filter((e) => e.student_id === studentId && e.status === "approved")
@@ -37,9 +38,9 @@ export function totalStickers(
   studentId: string,
   opts: { classId?: string | null; start?: string | null; end?: string | null } = {}
 ): number {
-  return state.ledger
+  return effectiveActiveLedger(state.ledger)
     .filter((l) => {
-      if (l.student_id !== studentId || l.status !== "active") return false;
+      if (l.student_id !== studentId) return false;
       if (opts.classId && l.source_type === "homework" && l.class_id !== opts.classId) return false;
       const ledgerDay = koreaDateKey(l.created_at);
       if (opts.start && ledgerDay < opts.start) return false;
@@ -74,7 +75,7 @@ export function rankingPeriodLabel(state: AppState, classId: string | null): { u
   return { unit, start: period_start, end: period_end };
 }
 
-/** 그룹 우선 노출: 학생이 소속된 특강반(정규반 제외) 중 가장 먼저 승인된 반을 기본값으로,
+/** 그룹 우선 노출: 학생이 소속된 특강반(기본 소속 반 제외) 중 가장 먼저 승인된 반을 기본값으로,
  *  없으면 전체(null) 랭킹을 기본값으로 반환한다. (PRD 4.9) */
 export function defaultRankingScopeForStudent(state: AppState, studentId: string): string | null {
   const nonDefault = state.enrollments
@@ -130,8 +131,8 @@ export interface DailyBreakdown {
 }
 
 export function dailyBreakdown(state: AppState, studentId: string, date: string): DailyBreakdown {
-  const entries = state.ledger.filter(
-    (l) => l.student_id === studentId && l.status === "active" && l.created_at.slice(0, 10) === date
+  const entries = effectiveActiveLedger(state.ledger).filter(
+    (l) => l.student_id === studentId && koreaDateKey(l.created_at) === date
   );
   const sumByType = (type: "attendance" | "homework" | "praise") =>
     entries.filter((l) => l.source_type === type).reduce((sum, l) => sum + l.count, 0);
@@ -143,8 +144,8 @@ export function dailyBreakdown(state: AppState, studentId: string, date: string)
 
 export function activeDatesForStudent(state: AppState, studentId: string): Set<string> {
   return new Set(
-    state.ledger
-      .filter((l) => l.student_id === studentId && l.status === "active")
-      .map((l) => l.created_at.slice(0, 10))
+    effectiveActiveLedger(state.ledger)
+      .filter((l) => l.student_id === studentId)
+      .map((l) => koreaDateKey(l.created_at))
   );
 }

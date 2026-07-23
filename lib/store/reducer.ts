@@ -320,7 +320,7 @@ export function appReducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         classes: state.classes.map((c) =>
-          c.id === action.classId && !c.is_default ? { ...c, name: action.name, updated_at: nowISO() } : c
+          c.id === action.classId ? { ...c, name: action.name, updated_at: nowISO() } : c
         ),
       };
     }

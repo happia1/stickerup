@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     const enrollment = await db.from("enrollments").select("id, class_id, status").eq("id", body.enrollmentId).eq("student_id", studentData.id).maybeSingle();
     if (!enrollment.data) return NextResponse.json({ error: "취소할 반 신청을 찾지 못했어요." }, { status: 404 });
     const classRoom = await db.from("classes").select("is_default").eq("id", enrollment.data.class_id).eq("tenant_id", studentData.tenant_id).maybeSingle();
-    if (!classRoom.data || classRoom.data.is_default) return NextResponse.json({ error: "정규반은 신청 취소할 수 없어요." }, { status: 400 });
+    if (!classRoom.data || classRoom.data.is_default) return NextResponse.json({ error: "기본 소속 반은 신청 취소할 수 없어요." }, { status: 400 });
     const result = await db.from("enrollments").delete().eq("id", enrollment.data.id).eq("student_id", studentData.id);
     if (result.error) return NextResponse.json({ error: result.error.message }, { status: 400 });
     return NextResponse.json({ ok: true });
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
     const tier = DEFAULT_ATTENDANCE_TIERS.find((item) => item.tier === "on_time")!;
     const checkDate = koreaDateKey();
     const regularClass = await db.from("classes").select("id").eq("tenant_id", studentData.tenant_id).eq("is_default", true).eq("status", "active").maybeSingle();
-    if (!regularClass.data) return NextResponse.json({ error: "정규반 정보를 찾을 수 없어요." }, { status: 400 });
+    if (!regularClass.data) return NextResponse.json({ error: "기본 소속 반 정보를 찾을 수 없어요." }, { status: 400 });
     const duplicate = await db.from("attendance_records").select("id").eq("student_id", student.data.id).eq("check_date", checkDate).limit(1).maybeSingle();
     if (duplicate.error) return NextResponse.json({ error: duplicate.error.message }, { status: 400 });
     if (duplicate.data) return NextResponse.json({ error: "출석은 하루에 한 번만 체크할 수 있어요." }, { status: 409 });

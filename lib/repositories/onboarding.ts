@@ -55,7 +55,7 @@ async function getDefaultClassId(supabase: SupabaseClient, tenantId: string): Pr
 
   const fallbackClass = await supabase
     .from("classes")
-    .insert({ tenant_id: tenantId, name: "정규반", is_default: true, ranking_unit: "month" })
+    .insert({ tenant_id: tenantId, name: "기본반", is_default: true, ranking_unit: "month" })
     .select("id")
     .single();
   if (fallbackClass.error || !fallbackClass.data) fail(fallbackClass.error, "Unable to create the default class.");

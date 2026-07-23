@@ -1,5 +1,5 @@
 update public.classes
-set name = '정규반', attendance_time = '00:00'
+set attendance_time = '00:00'
 where is_default = true;
 
 create or replace function public.fn_create_default_class_for_tenant()
@@ -8,7 +8,7 @@ language plpgsql
 as $$
 begin
   insert into public.classes (tenant_id, name, attendance_time, is_default, ranking_unit, status)
-  values (new.id, '정규반', '00:00', true, 'month', 'active');
+  values (new.id, '기본반', '00:00', true, 'month', 'active');
   return new;
 end;
 $$;

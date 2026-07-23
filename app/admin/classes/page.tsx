@@ -46,11 +46,11 @@ export default function AdminClassesPage() {
 
   function saveClassName(classId: string) {
     const nextName = editingName.trim();
-    if (!nextName) return showToast("특강반 이름을 입력해 주세요.");
+    if (!nextName) return showToast("반 이름을 입력해 주세요.");
     dispatch({ type: "UPDATE_CLASS_NAME", classId, name: nextName });
     setEditingNameId(null);
     setEditingName("");
-    showToast("특강반 이름을 수정했어요.");
+    showToast("반 이름을 수정했어요.");
   }
 
   return (
@@ -60,18 +60,29 @@ export default function AdminClassesPage() {
         <Button onClick={() => setShowForm((v) => !v)}>{showForm ? "닫기" : "+ 특강반 추가"}</Button>
       </div>
       <p className="text-caption text-text-secondary mb-5">
-        정규반은 상시 운영하며, 학생은 여러 특강반에 동시에 소속될 수 있어요.
+        모든 학생은 기본 소속 반에 들어가며, 학생은 여러 특강반에 동시에 소속될 수 있어요.
       </p>
 
       <section className="mb-6 rounded-card border border-border bg-surface-page p-5">
-        <h3 className="text-subtitle">정규반 설정</h3>
-        <p className="mb-4 mt-1 text-caption text-text-secondary">모든 학생이 정규반에 기본으로 소속되며 운영 기간은 상시입니다.</p>
+        <h3 className="text-subtitle">기본 소속 반 설정</h3>
+        <p className="mb-4 mt-1 text-caption text-text-secondary">관리자가 이름을 정하지 않으면 기본반으로 표시되며 운영 기간은 상시입니다.</p>
         {defaultClass ? (
           <div className="grid items-end gap-4 sm:grid-cols-2">
-            <div><p className="text-caption text-text-secondary">반 이름</p><p className="mt-2 font-bold">{defaultClass.name}</p></div>
+            <div>
+              <p className="text-caption text-text-secondary">반 이름</p>
+              {editingNameId === defaultClass.id ? (
+                <div className="mt-2 flex items-center gap-1">
+                  <input autoFocus value={editingName} onChange={(event) => setEditingName(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") saveClassName(defaultClass.id); if (event.key === "Escape") setEditingNameId(null); }} aria-label="기본 소속 반 이름 수정" className="min-w-0 flex-1 rounded-lg border border-border px-2 py-1 text-body" />
+                  <button type="button" onClick={() => saveClassName(defaultClass.id)} className="rounded-lg border border-state-success px-2 py-1 text-caption text-state-success">저장</button>
+                  <button type="button" onClick={() => setEditingNameId(null)} className="px-1 py-1 text-caption text-text-muted">취소</button>
+                </div>
+              ) : (
+                <div className="mt-2 flex items-center gap-2"><p className="font-bold">{defaultClass.name}</p><button type="button" onClick={() => { setEditingNameId(defaultClass.id); setEditingName(defaultClass.name); }} className="rounded-lg border border-border px-2 py-1 text-caption text-text-secondary">이름 수정</button></div>
+              )}
+            </div>
             <div><p className="text-caption text-text-secondary">운영 기간</p><p className="mt-2 font-bold text-state-success">상시</p></div>
           </div>
-        ) : <p className="text-caption text-state-danger">정규반이 없습니다. 데이터베이스 정규반 설정을 확인해 주세요.</p>}
+        ) : <p className="text-caption text-state-danger">기본 소속 반이 없습니다. 데이터베이스 설정을 확인해 주세요.</p>}
       </section>
 
       {showForm && (

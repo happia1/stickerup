@@ -28,7 +28,7 @@ create table teachers (
 
 alter table tenants
   add constraint tenants_owner_teacher_id_fkey
-  foreign key (owner_teacher_id) references teachers (id) deferrable initially deferred;
+  foreign key (owner_teacher_id) references teachers (id) on delete set null deferrable initially deferred;
 
 create table invite_links (
   id uuid primary key default gen_random_uuid(),

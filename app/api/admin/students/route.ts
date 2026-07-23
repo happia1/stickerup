@@ -3,6 +3,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getRequestUser } from "@/lib/supabase/server-auth";
 import type { AdminStudentRow } from "@/lib/data/admin-students.types";
 import type { TeacherPermissions } from "@/lib/types";
+import { effectiveActiveLedger } from "@/lib/sticker-ledger";
 
 async function getContext(request: Request) {
   const auth = await getRequestUser(request);
@@ -24,7 +25,7 @@ export async function GET(request: Request) {
     db.from("students").select("id, name, birth_date, invited_by_teacher_id, created_at").eq("tenant_id", teacher.tenant_id),
     db.from("classes").select("id, name, is_default").eq("tenant_id", teacher.tenant_id),
     db.from("enrollments").select("student_id, class_id, status, requested_at").eq("tenant_id", teacher.tenant_id),
-    db.from("sticker_ledger").select("student_id, count, status").eq("tenant_id", teacher.tenant_id),
+    db.from("sticker_ledger").select("student_id, source_type, count, status, created_at").eq("tenant_id", teacher.tenant_id),
     db.from("student_connection_requests").select("student_id, status, created_at").order("created_at", { ascending: false }),
     db.from("prize_product_likes").select("student_id, product_id").eq("tenant_id", teacher.tenant_id),
     db.from("product_catalog").select("id, title, image_url").eq("tenant_id", teacher.tenant_id),
@@ -34,6 +35,7 @@ export async function GET(request: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
   const classNameById = new Map((classes.data ?? []).map((row) => [row.id, row.name]));
+  const effectiveLedger = effectiveActiveLedger(ledger.data ?? []);
   const productById = new Map((products.data ?? []).map((row) => [row.id, row]));
   const rows: AdminStudentRow[] = (students.data ?? []).map((student) => {
     const studentEnrollments = (enrollments.data ?? []).filter((row) => row.student_id === student.id);
@@ -50,7 +52,7 @@ export async function GET(request: Request) {
       connectionStatus,
       classNames: studentEnrollments.filter((row) => row.status === "approved").map((row) => classNameById.get(row.class_id)).filter((name): name is string => Boolean(name)),
       classMemberships: approvedMemberships,
-      totalStickers: (ledger.data ?? []).filter((row) => row.student_id === student.id && row.status === "active").reduce((sum, row) => sum + row.count, 0),
+      totalStickers: effectiveLedger.filter((row) => row.student_id === student.id).reduce((sum, row) => sum + row.count, 0),
       requestedAt: pendingConnection?.created_at ?? student.created_at,
       wantedPrizes: (prizeLikes.data ?? []).filter((row) => row.student_id === student.id).flatMap((row) => {
         const product = productById.get(row.product_id);
@@ -75,7 +77,7 @@ export async function PATCH(request: Request) {
   if (body.action === "remove_class") {
     if (!body.classId) return NextResponse.json({ error: "해지할 반을 확인해주세요." }, { status: 400 });
     const classInfo = await db.from("classes").select("is_default").eq("id", body.classId).eq("tenant_id", teacher.tenant_id).maybeSingle();
-    if (!classInfo.data || classInfo.data.is_default) return NextResponse.json({ error: "정규반 소속은 해지할 수 없습니다." }, { status: 400 });
+    if (!classInfo.data || classInfo.data.is_default) return NextResponse.json({ error: "기본 소속 반은 해지할 수 없습니다." }, { status: 400 });
     const removed = await db.from("enrollments").delete().eq("student_id", student.data.id).eq("class_id", body.classId).eq("tenant_id", teacher.tenant_id);
     if (removed.error) return NextResponse.json({ error: removed.error.message }, { status: 400 });
   } else if (body.action === "delete") {

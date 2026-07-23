@@ -40,6 +40,7 @@ export default function AdminRankingSettingsPage() {
   const globalBounds = computePeriodBounds(globalUnit, undefined, globalCustomDays, globalConfig?.custom_start ?? null, globalConfig?.custom_end ?? null);
 
   const groupClasses = state.classes.filter((c) => !c.is_default && c.status === "active");
+  const defaultClass = state.classes.find((c) => c.is_default);
 
   return (
     <div>
@@ -120,6 +121,32 @@ export default function AdminRankingSettingsPage() {
           </tbody>
         </table>
       </div>
+
+      <section className="mt-6 rounded-card border border-border bg-surface-page p-5">
+        <h3 className="text-subtitle">랭킹 집계 공식</h3>
+        <p className="mt-1 text-caption text-text-secondary">
+          선택한 단위기간 안의 활성 스티커 기록을 아래 기준으로 합산해요.
+        </p>
+
+        <div className="mt-4 space-y-2 text-body">
+          <div className="grid gap-1 rounded-lg bg-surface-raised p-3 sm:grid-cols-[110px_1fr] sm:items-center">
+            <strong>전체 랭킹</strong>
+            <span>하루 1회 출석 + 모든 특강반 과제 + 모든 칭찬</span>
+          </div>
+          <div className="grid gap-1 rounded-lg bg-surface-raised p-3 sm:grid-cols-[110px_1fr] sm:items-center">
+            <strong>{defaultClass?.name ?? "기본반"} 랭킹</strong>
+            <span>하루 1회 출석 + 모든 칭찬</span>
+          </div>
+          <div className="grid gap-1 rounded-lg bg-surface-raised p-3 sm:grid-cols-[110px_1fr] sm:items-center">
+            <strong>특강반 랭킹</strong>
+            <span>하루 1회 출석 + 해당 특강반 과제 + 모든 칭찬</span>
+          </div>
+        </div>
+
+        <p className="mt-3 text-caption leading-relaxed text-text-secondary">
+          출석은 소속 반 수와 관계없이 한국 날짜 기준 하루의 첫 활성 기록 한 건만 집계하며, 취소·롤백된 기록은 제외해요.
+        </p>
+      </section>
     </div>
   );
 }
