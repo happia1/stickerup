@@ -64,23 +64,29 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     if (!client) { setLoading(false); return; }
     let active = true;
 
-    async function sync(accessToken?: string, userId?: string) {
+    async function sync(accessToken?: string, userId?: string, force = false) {
       if (!accessToken || !userId) { if (active) setLoading(false); return; }
-      if (lastSyncedUserRef.current === userId) return;
+      if (!force && lastSyncedUserRef.current === userId) return;
       lastSyncedUserRef.current = userId;
       const productCacheKey = `stickerup:product-catalog:${userId}`;
       try {
         const cachedProducts = JSON.parse(localStorage.getItem(productCacheKey) ?? "null");
         if (Array.isArray(cachedProducts) && cachedProducts.length) rawDispatch({ type: "SET_PRODUCT_CATALOG", products: cachedProducts });
       } catch { /* ignore an invalid or unavailable local cache */ }
-      const response = await fetch("/api/app-state", { headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store" });
-      if (!response.ok) { lastSyncedUserRef.current = null; if (active) setLoading(false); return; }
-      const payload = await response.json() as { state?: Partial<AppState> & Pick<AppState, "currentUserId" | "currentUserRole" | "tenant"> };
-      if (active && payload.state) rawDispatch({ type: "HYDRATE_APP_STATE", state: payload.state });
-      if (payload.state?.productCatalog) {
-        try { localStorage.setItem(productCacheKey, JSON.stringify(payload.state.productCatalog)); } catch { /* storage can be unavailable */ }
+      try {
+        const response = await fetch("/api/app-state", { headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store" });
+        if (!response.ok) { lastSyncedUserRef.current = null; return; }
+        const payload = await response.json() as { state?: Partial<AppState> & Pick<AppState, "currentUserId" | "currentUserRole" | "tenant"> };
+        if (active && payload.state) rawDispatch({ type: "HYDRATE_APP_STATE", state: payload.state });
+        if (payload.state?.productCatalog) {
+          try { localStorage.setItem(productCacheKey, JSON.stringify(payload.state.productCatalog)); } catch { /* storage can be unavailable */ }
+        }
+      } catch (error) {
+        lastSyncedUserRef.current = null;
+        console.warn("앱 정보를 불러오지 못했습니다. 네트워크 연결 또는 서버 상태를 확인해 주세요.", error);
+      } finally {
+        if (active) setLoading(false);
       }
-      if (active) setLoading(false);
     }
 
     void client.auth.getSession().then(({ data }) => sync(data.session?.access_token, data.session?.user.id));
@@ -88,7 +94,10 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       if (event === "SIGNED_OUT") { lastSyncedUserRef.current = null; if (active) setLoading(false); return; }
       void sync(session?.access_token, session?.user.id);
     });
-    return () => { active = false; listener.subscription.unsubscribe(); };
+    const refreshTimer = window.setInterval(() => {
+      void client.auth.getSession().then(({ data }) => sync(data.session?.access_token, data.session?.user.id, true)).catch(() => undefined);
+    }, 15000);
+    return () => { active = false; window.clearInterval(refreshTimer); listener.subscription.unsubscribe(); };
   }, []);
 
   return (

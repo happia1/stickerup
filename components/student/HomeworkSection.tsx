@@ -18,13 +18,15 @@ export function HomeworkSection() {
   const state = useAppState();
   const dispatch = useAppDispatch();
   const showToast = useToast();
-  const myClasses = approvedClassesForStudent(state, state.currentUserId);
+  const myClasses = approvedClassesForStudent(state, state.currentUserId).filter((item) => !item.is_default);
   const [classId, setClassId] = usePreferredClass(state.currentUserId, myClasses);
-  const [tier, setTier] = useState<HomeworkTier>("complete");
+  const [tier, setTier] = useState<HomeworkTier>("p90");
   const [submitting, setSubmitting] = useState(false);
 
   const myHomeworks = state.homeworkSubmissions.filter((h) => h.student_id === state.currentUserId);
   const checkedHomework = myHomeworks.find((homework) => homework.class_id === classId && homework.approval_status === "approved" && koreaDateKey(homework.submitted_at) === koreaDateKey());
+  const pendingHomework = myHomeworks.find((homework) => homework.class_id === classId && homework.approval_status === "pending" && koreaDateKey(homework.submitted_at) === koreaDateKey());
+  const rejectedHomework = myHomeworks.find((homework) => homework.class_id === classId && homework.approval_status === "rejected" && koreaDateKey(homework.submitted_at) === koreaDateKey());
   const checkedToday = Boolean(checkedHomework);
 
   return (
@@ -43,7 +45,7 @@ export function HomeworkSection() {
             </option>
           ))}
         </select>
-        {checkedToday ? <div className="rounded-xl bg-state-successBg p-5 text-center"><p className="text-subtitle text-state-success">오늘 과제 체크 완료</p><p className="mt-1 text-body text-text-primary">스티커 {checkedHomework?.sticker_count ?? 0}장이 지급됐어요.</p><p className="mt-2 text-caption text-text-secondary">이 반의 과제는 내일 다시 체크할 수 있어요.</p></div> : <><label className="block text-caption font-semibold text-text-secondary mb-1">완료율 선택</label>
+        {pendingHomework ? <div className="rounded-xl bg-state-warningBg p-5 text-center"><p className="text-subtitle text-brand-amber">승인 요청 중</p><p className="mt-1 text-body text-text-secondary">관리자가 확인하면 스티커가 지급돼요.</p></div> : checkedToday ? <div className="rounded-xl bg-state-successBg p-5 text-center"><p className="text-subtitle text-state-success">오늘 과제 체크 완료</p><p className="mt-1 text-body text-text-primary">스티커 {checkedHomework?.sticker_count ?? 0}장이 지급됐어요.</p><p className="mt-2 text-caption text-text-secondary">이 반의 과제는 내일 다시 체크할 수 있어요.</p></div> : rejectedHomework ? <div className="rounded-xl bg-state-dangerBg p-5 text-center"><p className="text-subtitle text-state-danger">과제 요청이 반려됐어요.</p></div> : <><label className="block text-caption font-semibold text-text-secondary mb-1">완료율 선택</label>
         <div className="grid grid-cols-3 gap-2 mb-3.5">
           {state.homeworkPolicy.map((t) => (
             <button
@@ -64,12 +66,12 @@ export function HomeworkSection() {
           fullWidth
           disabled={!classId || submitting}
           onClick={async () => {
-            try { setSubmitting(true); await submitStudentAction({ action: "homework", classId, tier }); dispatch({ type: "SUBMIT_HOMEWORK", studentId: state.currentUserId, classId, tier }); const tierDef = state.homeworkPolicy.find((item) => item.tier === tier); showToast(`과제 체크 완료 — 스티커 ${tierDef?.count ?? 0}장 지급!`); }
+            try { setSubmitting(true); await submitStudentAction({ action: "homework", classId, tier }); dispatch({ type: "SUBMIT_HOMEWORK", studentId: state.currentUserId, classId, tier }); showToast("과제 승인 요청을 보냈어요."); }
             catch (error) { showToast(error instanceof Error ? error.message : "과제 체크를 저장하지 못했습니다."); }
             finally { setSubmitting(false); }
           }}
         >
-          체크하기
+          {submitting ? "요청 중..." : "과제 승인 요청하기"}
         </Button>
         </>}
       </Card>

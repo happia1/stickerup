@@ -15,12 +15,7 @@ export function AttendanceSection() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedTier, setSelectedTier] = useState("on_time");
   const regularClass = state.classes.find((item) => item.is_default);
-  const checkedEntry = state.ledger.find((entry) =>
-    entry.student_id === state.currentUserId &&
-    entry.source_type === "attendance" &&
-    entry.status === "active" &&
-    koreaDateKey(entry.created_at) === koreaDateKey()
-  );
+  const todayAttendance = state.attendanceRecords.find((entry) => entry.student_id === state.currentUserId && koreaDateKey(entry.created_at) === koreaDateKey());
 
   return (
     <Card>
@@ -28,11 +23,18 @@ export function AttendanceSection() {
         <h3 className="shrink-0 text-subtitle">출석 체크</h3>
         <p className="min-w-0 text-micro text-text-secondary">반과 관계없이 하루에 한 번 체크해요.</p>
       </div>
-      {checkedEntry ? (
+      {todayAttendance?.approval_status === "pending" ? (
+        <div className="rounded-xl bg-state-warningBg p-5 text-center">
+          <p className="text-subtitle text-brand-amber">승인 요청 중</p>
+          <p className="mt-1 text-body text-text-secondary">관리자가 확인하면 스티커가 지급돼요.</p>
+        </div>
+      ) : todayAttendance?.approval_status === "approved" ? (
         <div className="rounded-xl bg-state-successBg p-5 text-center">
           <p className="text-subtitle text-state-success">오늘 출석 체크 완료</p>
-          <p className="mt-1 text-body text-text-primary">스티커 {checkedEntry.count}장이 지급됐어요.</p>
+          <p className="mt-1 text-body text-text-primary">스티커 {todayAttendance.sticker_count}장이 지급됐어요.</p>
         </div>
+      ) : todayAttendance?.approval_status === "rejected" ? (
+        <div className="rounded-xl bg-state-dangerBg p-5 text-center"><p className="text-subtitle text-state-danger">출석 요청이 반려됐어요.</p></div>
       ) : (
         <>
           <div className="mb-3 grid grid-cols-2 gap-2">
@@ -57,7 +59,7 @@ export function AttendanceSection() {
                 setSubmitting(true);
                 await submitStudentAction({ action: "attendance", tier: selectedTier });
                 dispatch({ type: "CHECK_IN", studentId: state.currentUserId, classId: regularClass.id, tier: selectedTier });
-                showToast("오늘 출석 체크가 완료됐어요.");
+                showToast("출석 승인 요청을 보냈어요.");
               } catch (error) {
                 showToast(error instanceof Error ? error.message : "출석을 저장하지 못했어요.");
               } finally {
@@ -65,7 +67,7 @@ export function AttendanceSection() {
               }
             }}
           >
-            {submitting ? "처리 중..." : "출석 체크하기"}
+            {submitting ? "요청 중..." : "출석 승인 요청하기"}
           </Button>
         </>
       )}

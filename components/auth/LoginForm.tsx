@@ -110,6 +110,7 @@ export function LoginForm({ initialAccountType = null, redirectTo, forceReauth =
       const raw=error instanceof Error?error.message:"";
       if (/invalid login credentials|invalid.*password/i.test(raw)) setMessage("아이디 또는 비밀번호를 다시 확인해 주세요.");
       else if (/user not found|no user/i.test(raw)) setMessage("사용자 정보가 없습니다.");
+      else if (/failed to fetch|networkerror|load failed/i.test(raw)) setMessage("서버에 연결하지 못했습니다. 인터넷 연결 또는 서버 상태를 확인한 뒤 다시 시도해 주세요.");
       else setMessage(raw || "로그인을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.");
     } finally {
       setSubmitting(false);
