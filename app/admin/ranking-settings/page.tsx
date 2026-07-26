@@ -72,7 +72,7 @@ export default function AdminRankingSettingsPage() {
 
       <div className="bg-state-warningBg text-state-warningText rounded-card p-4 mb-6 text-body">
         학생이 하나 이상의 특강반(그룹)에 소속된 경우, 홈 화면 랭킹은 전체 랭킹이 아니라{" "}
-        <b>가장 먼저 승인된 그룹의 랭킹을 기본으로 우선 노출</b>해요. 그룹이 없는 학생은 전체 랭킹이 기본 노출돼요.
+        특강반이 있으면 <b>가장 먼저 등록한 특강반의 랭킹</b>이 먼저 보여요. 특강반이 없으면 <b>전체 랭킹</b>이 보여요.
       </div>
 
       <p className="text-subtitle mb-2">그룹별 랭킹 단위기간 설정하기</p>

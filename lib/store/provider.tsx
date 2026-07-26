@@ -46,17 +46,29 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   const [state, rawDispatch] = useReducer(appReducer, undefined, buildInitialState);
   const [loading, setLoading] = useState(true);
   const lastSyncedUserRef = useRef<string | null>(null);
+  const pendingMutationsRef = useRef(0);
+  const mutationVersionRef = useRef(0);
   const stateValue = useMemo(() => state, [state]);
   const dispatch = useCallback<React.Dispatch<Action>>((action) => {
     rawDispatch(action);
     const persistedActions = new Set(["ADD_CLASS", "UPDATE_CLASS_NAME", "UPDATE_CLASS_SPECIAL_PERIOD", "ADD_NOTICE", "UPDATE_NOTICE", "SET_NOTICE_PIN", "DELETE_NOTICE", "SET_RANKING_UNIT", "ADD_REWARD_CAMPAIGN", "DELETE_REWARD_CAMPAIGN", "UPDATE_TEACHER_PROFILE", "ROLLBACK_LEDGER"]);
     if (!persistedActions.has(action.type)) return;
+    mutationVersionRef.current += 1;
+    pendingMutationsRef.current += 1;
     const client = getSupabaseBrowserClient();
-    void client?.auth.getSession().then(async ({ data }) => {
-      if (!data.session) return;
-      const response = await fetch("/api/app-mutations", { method: "POST", headers: { Authorization: `Bearer ${data.session.access_token}`, "Content-Type": "application/json" }, body: JSON.stringify({ action }) });
-      if (!response.ok) console.error("Unable to persist app action", await response.text());
-    });
+    if (!client) { pendingMutationsRef.current -= 1; return; }
+    void (async () => {
+      try {
+        const { data } = await client.auth.getSession();
+        if (!data.session) return;
+        const response = await fetch("/api/app-mutations", { method: "POST", headers: { Authorization: `Bearer ${data.session.access_token}`, "Content-Type": "application/json" }, body: JSON.stringify({ action }) });
+        if (!response.ok) console.error("Unable to persist app action", await response.text());
+      } catch (error) {
+        console.error("Unable to persist app action", error);
+      } finally {
+        pendingMutationsRef.current = Math.max(0, pendingMutationsRef.current - 1);
+      }
+    })();
   }, []);
 
   useEffect(() => {
@@ -66,7 +78,9 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
 
     async function sync(accessToken?: string, userId?: string, force = false) {
       if (!accessToken || !userId) { if (active) setLoading(false); return; }
+      if (pendingMutationsRef.current > 0) return;
       if (!force && lastSyncedUserRef.current === userId) return;
+      const syncMutationVersion = mutationVersionRef.current;
       lastSyncedUserRef.current = userId;
       const productCacheKey = `stickerup:product-catalog:${userId}`;
       try {
@@ -77,7 +91,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
         const response = await fetch("/api/app-state", { headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store" });
         if (!response.ok) { lastSyncedUserRef.current = null; return; }
         const payload = await response.json() as { state?: Partial<AppState> & Pick<AppState, "currentUserId" | "currentUserRole" | "tenant"> };
-        if (active && payload.state) rawDispatch({ type: "HYDRATE_APP_STATE", state: payload.state });
+        if (active && payload.state && pendingMutationsRef.current === 0 && mutationVersionRef.current === syncMutationVersion) rawDispatch({ type: "HYDRATE_APP_STATE", state: payload.state });
         if (payload.state?.productCatalog) {
           try { localStorage.setItem(productCacheKey, JSON.stringify(payload.state.productCatalog)); } catch { /* storage can be unavailable */ }
         }
