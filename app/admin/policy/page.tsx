@@ -1,64 +1,54 @@
 "use client";
-import { useState } from "react";
-import { useAppState, useAppDispatch } from "@/lib/store/provider";
-import { HOMEWORK_MODE_LABEL, HOMEWORK_MODE_PRESETS } from "@/lib/types";
-import type { GradingMode, TierConfig } from "@/lib/types";
-import { TierEditor } from "@/components/admin/TierEditor";
-import { Button } from "@/components/ui/Button";
-import { useToast } from "@/lib/toast/provider";
+
+import { useAppState } from "@/lib/store/provider";
+import type { TierConfig } from "@/lib/types";
+
+function PolicyTable({ tiers }: { tiers: TierConfig[] }) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-border">
+      <table className="w-full table-fixed text-body">
+        <thead>
+          <tr className="border-b border-border text-left text-caption text-text-secondary">
+            <th className="p-2.5">구간</th>
+            <th className="p-2.5">기준</th>
+            <th className="w-20 p-2.5 text-right">지급</th>
+          </tr>
+        </thead>
+        <tbody>
+          {tiers.map((tier) => (
+            <tr key={tier.tier} className="border-b border-border last:border-0">
+              <td className="p-2.5 font-semibold">{tier.label}</td>
+              <td className="p-2.5 text-text-secondary">{tier.rangeText}</td>
+              <td className="p-2.5 text-right font-bold text-brand-amber">{tier.count}점</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 export default function AdminPolicyPage() {
   const state = useAppState();
-  const dispatch = useAppDispatch();
-  const showToast = useToast();
-  const [mode, setMode] = useState<GradingMode>(state.homeworkGradingMode);
-  const [homeworkKey, setHomeworkKey] = useState(0); // 프리셋 적용 시 TierEditor 초기화용
 
   return (
     <div>
-      <h2 className="text-title mb-1">스티커 정책 설정</h2>
-      <p className="text-caption text-text-secondary mb-5">
-        출석은 학생당 하루 한 번으로 고정되며, 과제 완료 단계별 지급 기준만 설정할 수 있어요.
+      <h2 className="mb-1 text-title">스티커 정책 설정</h2>
+      <p className="mb-5 text-caption text-text-secondary">
+        출석은 학생당 하루 한 번, 과제는 승인된 특강반마다 하루 한 번 지급돼요.
       </p>
 
-      <div className="mb-6 rounded-xl bg-surface-page p-4"><p className="text-subtitle">출석 지급 기준</p><p className="mt-1 text-caption text-text-secondary">반과 출석 시간에 관계없이 학생당 하루 한 번 출석 스티커가 지급돼요.</p></div>
+      <section className="mb-6 rounded-card bg-surface-page p-4">
+        <h3 className="mb-1 text-subtitle">출석 지급 기준 설정</h3>
+        <p className="mb-3 text-caption text-text-secondary">학생이 선택한 출석 구간에 따라 점수가 자동 지급돼요.</p>
+        <PolicyTable tiers={state.attendancePolicy} />
+      </section>
 
-      <p className="text-subtitle mb-2">숙제 완료율별 지급 수</p>
-      <p className="text-caption text-text-secondary mb-2">
-        완료율 구간을 어떤 방식으로 나눌지 먼저 선택하고, 필요하면 구간을 자유롭게 추가·삭제·수정하세요.
-      </p>
-      <div className="flex items-center gap-2.5 mb-3">
-        <select
-          className="border border-border rounded-lg px-2.5 py-2 text-body"
-          value={mode}
-          onChange={(e) => setMode(e.target.value as GradingMode)}
-        >
-          {Object.entries(HOMEWORK_MODE_LABEL).map(([v, l]) => (
-            <option key={v} value={v}>
-              {l}
-            </option>
-          ))}
-        </select>
-        <Button
-          variant="secondary"
-          className="!text-caption !py-1.5"
-          onClick={() => {
-            dispatch({ type: "SET_HOMEWORK_POLICY", tiers: HOMEWORK_MODE_PRESETS[mode].map((t: TierConfig) => ({ ...t })), mode });
-            setHomeworkKey((k) => k + 1);
-            showToast(`${HOMEWORK_MODE_LABEL[mode]} 기본 구성을 불러왔어요. 필요하면 수정 후 다시 저장하세요.`);
-          }}
-        >
-          이 방식의 기본 구성 불러오기
-        </Button>
-      </div>
-      <TierEditor
-        key={homeworkKey}
-        tiers={state.homeworkPolicy}
-        onSave={(tiers) => {
-          dispatch({ type: "SET_HOMEWORK_POLICY", tiers, mode });
-          showToast("숙제 정책이 반영되었어요.");
-        }}
-      />
+      <section className="rounded-card bg-surface-page p-4">
+        <h3 className="mb-1 text-subtitle">과제율별 지급 수 설정</h3>
+        <p className="mb-3 text-caption text-text-secondary">과제 완료율 구간에 따라 점수가 자동 지급돼요.</p>
+        <PolicyTable tiers={state.homeworkPolicy} />
+      </section>
     </div>
   );
 }

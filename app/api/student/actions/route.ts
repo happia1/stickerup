@@ -83,7 +83,8 @@ export async function POST(request: Request) {
   }
 
   if (body.action === "attendance") {
-    const tier = DEFAULT_ATTENDANCE_TIERS.find((item) => item.tier === "on_time")!;
+    const tier = DEFAULT_ATTENDANCE_TIERS.find((item) => item.tier === body.tier);
+    if (!tier) return NextResponse.json({ error: "출석 지급 기준을 선택해 주세요." }, { status: 400 });
     const checkDate = koreaDateKey();
     const regularClass = await db.from("classes").select("id").eq("tenant_id", studentData.tenant_id).eq("is_default", true).eq("status", "active").maybeSingle();
     if (!regularClass.data) return NextResponse.json({ error: "기본 소속 반 정보를 찾을 수 없어요." }, { status: 400 });

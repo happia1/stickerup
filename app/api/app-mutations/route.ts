@@ -57,8 +57,9 @@ export async function POST(request: Request) {
     const campaign = await db.from("reward_campaigns").insert({ tenant_id: tenantId, title: action.title, description: action.description || null, class_id: action.classId, period_start: action.periodStart, period_end: action.periodEnd, target_distribution: { type: action.distributionType, value: action.distributionValue }, status: "active" }).select("id").single();
     if (campaign.error) return NextResponse.json({ error: campaign.error.message }, { status: 400 });
   } else if (action.type === "UPDATE_REWARD_CAMPAIGN") {
-    const result = await db.from("reward_campaigns").update({ title: action.title, description: action.description || null, period_start: action.periodStart, period_end: action.periodEnd, target_distribution: { type: action.distributionType, value: action.distributionValue } }).eq("id", action.campaignId).eq("tenant_id", tenantId);
+    const result = await db.from("reward_campaigns").update({ title: action.title, description: action.description || null, period_start: action.periodStart, period_end: action.periodEnd, target_distribution: { type: action.distributionType, value: action.distributionValue } }).eq("id", action.campaignId).eq("tenant_id", tenantId).select("id").maybeSingle();
     if (result.error) return NextResponse.json({ error: result.error.message }, { status: 400 });
+    if (!result.data) return NextResponse.json({ error: "수정할 이벤트를 찾지 못했습니다." }, { status: 404 });
   } else if (action.type === "DELETE_REWARD_CAMPAIGN") {
     const result = await db.from("reward_campaigns").delete().eq("id", action.campaignId).eq("tenant_id", tenantId);
     if (result.error) return NextResponse.json({ error: result.error.message }, { status: 400 });

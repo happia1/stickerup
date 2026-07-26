@@ -241,12 +241,10 @@ export interface TierConfig {
 }
 
 export const DEFAULT_ATTENDANCE_TIERS: TierConfig[] = [
-  { tier: "on_time", label: "On time", rangeText: "Before class time", count: 5 },
-  { tier: "within_10", label: "Within 10 min", rangeText: "0~10 min late", count: 4 },
-  { tier: "within_30", label: "Within 30 min", rangeText: "10~30 min late", count: 3 },
-  { tier: "within_60", label: "Within 1 hour", rangeText: "30~60 min late", count: 2 },
-  { tier: "over_60", label: "Over 1 hour", rangeText: "Over 60 min late", count: 1 },
-  { tier: "absent", label: "Absent", rangeText: "No check-in", count: 0 },
+  { tier: "on_time", label: "정시 이전", rangeText: "정시 이전", count: 5 },
+  { tier: "within_10", label: "10분 지각", rangeText: "정시 후 10분 이내", count: 4 },
+  { tier: "within_30", label: "30분 지각", rangeText: "정시 후 11~30분", count: 3 },
+  { tier: "within_60", label: "1시간 지각", rangeText: "정시 후 31~60분", count: 2 },
 ];
 
 export const ATTENDANCE_TIERS = DEFAULT_ATTENDANCE_TIERS.map(({ tier, label, count }) => ({ tier, label, count }));
@@ -266,10 +264,11 @@ export const HOMEWORK_MODE_PRESETS: Record<GradingMode, TierConfig[]> = {
     { tier: "none", label: "Incomplete", rangeText: "0%", count: 0 },
   ],
   percent: [
-    { tier: "p90", label: "90%+", rangeText: "90~100%", count: 5 },
-    { tier: "p70", label: "70~89%", rangeText: "70~89%", count: 4 },
-    { tier: "p40", label: "40~69%", rangeText: "40~69%", count: 2 },
-    { tier: "p0", label: "Under 40%", rangeText: "0~39%", count: 0 },
+    { tier: "p90", label: "90% 이상", rangeText: "90~100%", count: 5 },
+    { tier: "p70", label: "70~90%", rangeText: "70~89%", count: 4 },
+    { tier: "p50", label: "50~70%", rangeText: "50~69%", count: 3 },
+    { tier: "p30", label: "30~50%", rangeText: "30~49%", count: 2 },
+    { tier: "p10", label: "10~30%", rangeText: "10~29%", count: 1 },
   ],
   quantile: [
     { tier: "q1", label: "Q1", rangeText: "Top 0~25%", count: 5 },
@@ -279,7 +278,7 @@ export const HOMEWORK_MODE_PRESETS: Record<GradingMode, TierConfig[]> = {
   ],
 };
 
-export const DEFAULT_HOMEWORK_TIERS: TierConfig[] = HOMEWORK_MODE_PRESETS.manual;
+export const DEFAULT_HOMEWORK_TIERS: TierConfig[] = HOMEWORK_MODE_PRESETS.percent;
 
 export const RANKING_UNIT_LABEL: Record<RankingUnit, string> = {
   day: "Daily",

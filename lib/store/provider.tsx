@@ -33,7 +33,7 @@ function buildInitialState(): AppState {
     notices: seedNotices,
     attendancePolicy: DEFAULT_ATTENDANCE_TIERS.map((t) => ({ ...t })),
     homeworkPolicy: DEFAULT_HOMEWORK_TIERS.map((t) => ({ ...t })),
-    homeworkGradingMode: "manual",
+    homeworkGradingMode: "percent",
   };
 }
 
@@ -48,7 +48,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   const stateValue = useMemo(() => state, [state]);
   const dispatch = useCallback<React.Dispatch<Action>>((action) => {
     rawDispatch(action);
-    const persistedActions = new Set(["ADD_CLASS", "UPDATE_CLASS_NAME", "UPDATE_CLASS_SPECIAL_PERIOD", "ADD_NOTICE", "UPDATE_NOTICE", "SET_NOTICE_PIN", "DELETE_NOTICE", "SET_RANKING_UNIT", "ADD_REWARD_CAMPAIGN", "UPDATE_REWARD_CAMPAIGN", "DELETE_REWARD_CAMPAIGN", "UPDATE_TEACHER_PROFILE", "ROLLBACK_LEDGER"]);
+    const persistedActions = new Set(["ADD_CLASS", "UPDATE_CLASS_NAME", "UPDATE_CLASS_SPECIAL_PERIOD", "ADD_NOTICE", "UPDATE_NOTICE", "SET_NOTICE_PIN", "DELETE_NOTICE", "SET_RANKING_UNIT", "ADD_REWARD_CAMPAIGN", "DELETE_REWARD_CAMPAIGN", "UPDATE_TEACHER_PROFILE", "ROLLBACK_LEDGER"]);
     if (!persistedActions.has(action.type)) return;
     const client = getSupabaseBrowserClient();
     void client?.auth.getSession().then(async ({ data }) => {
