@@ -40,6 +40,7 @@ export default function AdminNoticesPage() {
   const [editContent, setEditContent] = useState("");
   const [editImageUrl, setEditImageUrl] = useState("");
   const [editPinned, setEditPinned] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const sorted = [...state.notices].sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.created_at.localeCompare(a.created_at));
   const editingNotice = state.notices.find((notice) => notice.id === editingId) ?? null;
@@ -60,16 +61,31 @@ export default function AdminNoticesPage() {
       <h2 className="text-title mb-1">공지사항 게시판</h2>
       <p className="text-caption text-text-secondary mb-5">여기에 등록한 공지는 학생 앱 홈 화면 상단의 플랩 배너에 순환 노출돼요.</p>
 
-      <div className="border border-border rounded-xl overflow-hidden mb-5">
-        <table className="w-full text-body">
-          <thead><tr className="text-caption text-text-secondary text-left border-b border-border"><th className="p-2.5">제목</th><th className="p-2.5">내용</th><th className="p-2.5">등록일</th><th className="p-2.5">고정</th><th className="p-2.5"></th></tr></thead>
-          <tbody>{sorted.map((notice) => <tr key={notice.id} tabIndex={0} role="button" onClick={() => openNotice(notice)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") openNotice(notice); }} className="cursor-pointer border-b last:border-0 border-border transition-colors hover:bg-surface-raised focus:bg-surface-raised focus:outline-none">
-            <td className="p-2.5 font-semibold">{notice.title}{notice.image_url && <span className="ml-2 text-caption text-brand-amber">이미지</span>}</td>
-            <td className="max-w-[280px] whitespace-pre-wrap break-words p-2.5">{notice.content}</td><td className="p-2.5">{fmtDate(notice.created_at)}</td>
-            <td className="p-2.5"><label className="flex cursor-pointer items-center gap-1.5" onClick={(event) => event.stopPropagation()}><input type="checkbox" checked={notice.pinned} onChange={(event) => dispatch({ type: "SET_NOTICE_PIN", noticeId: notice.id, pinned: event.target.checked })} /><span className="text-caption text-text-secondary">고정</span></label></td>
-            <td className="p-2.5"><button className="rounded-lg border border-border px-2 py-1 text-caption text-state-danger" onClick={(event) => { event.stopPropagation(); dispatch({ type: "DELETE_NOTICE", noticeId: notice.id }); showToast("공지사항이 삭제되었어요."); }}>삭제</button></td>
-          </tr>)}</tbody>
-        </table>
+      <div className="mb-5 overflow-hidden rounded-xl border border-border">
+        {sorted.map((notice) => {
+          const expanded = expandedId === notice.id;
+          return (
+            <article key={notice.id} className="border-b border-border last:border-0">
+              <div className="flex items-center gap-2 p-3">
+                <button type="button" aria-expanded={expanded} onClick={() => setExpandedId(expanded ? null : notice.id)} className="min-w-0 flex-1 text-left">
+                  <span className="flex items-center gap-2"><span className="truncate text-body font-semibold">{notice.title}</span>{notice.pinned && <span className="shrink-0 rounded-full bg-state-warningBg px-2 py-0.5 text-micro font-bold text-brand-amber">고정</span>}{notice.image_url && <span className="shrink-0 text-micro text-text-muted">이미지</span>}</span>
+                  <span className="mt-1 block text-caption text-text-muted">{fmtDate(notice.created_at)}</span>
+                </button>
+                <span aria-hidden="true" className={`text-caption text-text-secondary transition-transform ${expanded ? "rotate-180" : ""}`}>⌄</span>
+                <button type="button" onClick={() => openNotice(notice)} className="rounded-lg border border-border px-2 py-1 text-caption text-brand-amber">수정</button>
+                <button type="button" className="rounded-lg px-2 py-1 text-caption text-state-danger" onClick={() => { dispatch({ type: "DELETE_NOTICE", noticeId: notice.id }); if (expanded) setExpandedId(null); showToast("공지사항이 삭제되었어요."); }}>삭제</button>
+              </div>
+              {expanded && (
+                <div className="border-t border-border bg-surface-raised p-4">
+                  <p className="whitespace-pre-wrap break-words text-body leading-relaxed">{notice.content}</p>
+                  {notice.image_url && <img src={notice.image_url} alt={`${notice.title} 공지 이미지`} className="mt-4 aspect-square w-full max-w-md rounded-xl bg-surface-page object-cover" />}
+                  <label className="mt-4 flex w-fit cursor-pointer items-center gap-1.5"><input type="checkbox" checked={notice.pinned} onChange={(event) => dispatch({ type: "SET_NOTICE_PIN", noticeId: notice.id, pinned: event.target.checked })} /><span className="text-caption text-text-secondary">상단 고정</span></label>
+                </div>
+              )}
+            </article>
+          );
+        })}
+        {sorted.length === 0 && <p className="p-6 text-center text-caption text-text-muted">등록된 공지사항이 없어요.</p>}
       </div>
 
       <div className="bg-surface-page rounded-card p-5 max-w-lg">
