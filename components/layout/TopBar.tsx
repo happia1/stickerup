@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAppState } from "@/lib/store/provider";
 import { getTeacherById, pendingCounts } from "@/lib/store/selectors";
+import { Avatar } from "@/components/ui/Avatar";
 import { fmtDate } from "@/lib/format";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -96,7 +97,7 @@ export function AdminTopBar() {
       <span className="text-subtitle font-extrabold">StickerUp Admin</span>
       <div className="flex items-center gap-4 text-caption text-text-secondary">
         <span>승인 대기 {totalPending}건</span>
-        <span className="font-bold text-text-primary">{me?.name ?? "관리자"}</span>
+        <span className="flex items-center gap-2 font-bold text-text-primary"><Avatar name={me?.name ?? "관리자"} size={30} imageUrl={me?.profile_image_url} />{me?.name ?? "관리자"}</span>
         <button aria-label="관리자 알림" className="relative text-text-primary" onClick={() => setNotifOpen(true)}>
           <BellIcon />
           {totalPending > 0 && <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-brand-amber" />}

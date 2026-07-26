@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -24,9 +24,21 @@ export default function AdminSettingsPage() {
   const dispatch = useAppDispatch();
   const showToast = useToast();
   const me = getTeacherById(state, state.currentUserId);
+  const loadedTeacherId = me?.id;
+  const loadedTeacherName = me?.name;
+  const loadedProfileImageUrl = me?.profile_image_url;
   const [name, setName] = useState(me?.name ?? "");
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(me?.profile_image_url ?? null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    if (!loadedTeacherId || !loadedTeacherName) return;
+    setName(loadedTeacherName);
+    setProfileImageUrl(loadedProfileImageUrl ?? null);
+    setSelectedImage(null);
+  }, [loadedTeacherId, loadedTeacherName, loadedProfileImageUrl]);
 
   async function handleLogout() {
     const supabase = getSupabaseBrowserClient();
@@ -62,6 +74,39 @@ export default function AdminSettingsPage() {
     } catch (error) {
       showToast(error instanceof Error ? error.message : "관리자 프로필을 삭제하지 못했습니다.");
       setDeleting(false);
+    }
+  }
+
+  async function handleSaveProfile() {
+    const nextName = name.trim() || me?.name;
+    if (!me || !nextName || saving) return;
+    const supabase = getSupabaseBrowserClient();
+    const session = (await supabase?.auth.getSession())?.data.session;
+    if (!session) return showToast("로그인 상태를 확인한 뒤 다시 시도해 주세요.");
+
+    try {
+      setSaving(true);
+      let savedImageUrl = profileImageUrl;
+      if (selectedImage) {
+        const formData = new FormData();
+        formData.append("file", selectedImage);
+        const uploadResponse = await fetch("/api/uploads/profile-image", { method: "POST", headers: { Authorization: `Bearer ${session.access_token}` }, body: formData });
+        const uploadPayload = await uploadResponse.json().catch(() => null) as { imageUrl?: string; error?: string } | null;
+        if (!uploadResponse.ok || !uploadPayload?.imageUrl) throw new Error(uploadPayload?.error ?? "프로필 사진을 업로드하지 못했습니다.");
+        savedImageUrl = uploadPayload.imageUrl;
+      }
+
+      const response = await fetch("/api/admin/profile", { method: "PATCH", headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" }, body: JSON.stringify({ name: nextName, profileImageUrl: savedImageUrl }) });
+      const payload = await response.json().catch(() => null) as { teacher?: { name: string; profile_image_url: string | null }; error?: string } | null;
+      if (!response.ok || !payload?.teacher) throw new Error(payload?.error ?? "프로필을 저장하지 못했습니다.");
+      setProfileImageUrl(payload.teacher.profile_image_url);
+      setSelectedImage(null);
+      dispatch({ type: "UPDATE_TEACHER_PROFILE", teacherId: me.id, name: payload.teacher.name, profileImageUrl: payload.teacher.profile_image_url });
+      showToast("프로필이 저장되었습니다.");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "프로필을 저장하지 못했습니다.");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -101,16 +146,17 @@ export default function AdminSettingsPage() {
                 onChange={async (event) => {
                   const file = event.target.files?.[0];
                   if (!file) return;
+                  setSelectedImage(file);
                   setProfileImageUrl(await readImageAsDataUrl(file));
                 }}
               />
             </label>
             {profileImageUrl && (
-              <button type="button" className="ml-2 text-caption text-state-danger" onClick={() => setProfileImageUrl(null)}>
+              <button type="button" className="ml-2 text-caption text-state-danger" onClick={() => { setProfileImageUrl(null); setSelectedImage(null); }}>
                 제거
               </button>
             )}
-            <p className="mt-2 text-caption text-text-muted">현재는 앱 내 미리보기로 저장돼요. 추후 Supabase Storage와 연결합니다.</p>
+            <p className="mt-2 text-caption text-text-muted">프로필 저장 후 모든 관리자 화면에 동일하게 적용돼요.</p>
           </div>
         </div>
 
@@ -124,15 +170,13 @@ export default function AdminSettingsPage() {
         </label>
         <div className="mb-4 rounded-xl bg-surface-raised p-3 text-caption text-text-secondary">
           <p>역할: <b className="text-text-primary">{me.role === "owner" ? "관리자" : "보조 선생님"}</b></p>
-          <p>이메일: <b className="text-text-primary">{me.email}</b></p>
+          <p>학원: <b className="text-text-primary">{state.tenant.name}</b></p>
         </div>
         <Button
-          onClick={() => {
-            dispatch({ type: "UPDATE_TEACHER_PROFILE", teacherId: me.id, name: name.trim() || me.name, profileImageUrl });
-            showToast("프로필이 저장되었습니다.");
-          }}
+          disabled={saving}
+          onClick={handleSaveProfile}
         >
-          프로필 저장
+          {saving ? "저장 중..." : "프로필 저장"}
         </Button>
       </Card>
 

@@ -51,7 +51,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   const stateValue = useMemo(() => state, [state]);
   const dispatch = useCallback<React.Dispatch<Action>>((action) => {
     rawDispatch(action);
-    const persistedActions = new Set(["ADD_CLASS", "UPDATE_CLASS_NAME", "UPDATE_CLASS_SPECIAL_PERIOD", "ADD_NOTICE", "UPDATE_NOTICE", "SET_NOTICE_PIN", "DELETE_NOTICE", "SET_RANKING_UNIT", "ADD_REWARD_CAMPAIGN", "DELETE_REWARD_CAMPAIGN", "UPDATE_TEACHER_PROFILE", "ROLLBACK_LEDGER"]);
+    const persistedActions = new Set(["ADD_CLASS", "UPDATE_CLASS_NAME", "UPDATE_CLASS_SPECIAL_PERIOD", "ADD_NOTICE", "UPDATE_NOTICE", "SET_NOTICE_PIN", "DELETE_NOTICE", "SET_RANKING_UNIT", "ADD_REWARD_CAMPAIGN", "DELETE_REWARD_CAMPAIGN", "ROLLBACK_LEDGER"]);
     if (!persistedActions.has(action.type)) return;
     mutationVersionRef.current += 1;
     pendingMutationsRef.current += 1;
