@@ -9,6 +9,7 @@ import type {
   ClassRoom,
   Enrollment,
   StickerLedgerEntry,
+  AttendanceRecord,
   HomeworkSubmission,
   PraiseRequest,
   RankingPeriodConfig,
@@ -46,6 +47,7 @@ export const seedStudents: Student[] = [];
 export const seedClasses: ClassRoom[] = [];
 export const seedEnrollments: Enrollment[] = [];
 export const seedLedger: StickerLedgerEntry[] = [];
+export const seedAttendanceRecords: AttendanceRecord[] = [];
 export const seedHomeworkSubmissions: HomeworkSubmission[] = [];
 export const seedPraiseRequests: PraiseRequest[] = [];
 export const seedRankingPeriodConfigs: RankingPeriodConfig[] = [];

@@ -11,7 +11,7 @@ export default function AdminApprovalsPage() {
   const [praiseCounts, setPraiseCounts] = useState<Record<string, number>>({});
   const [processingId, setProcessingId] = useState<string | null>(null);
 
-  async function persist(type: "homework" | "praise", requestId: string, action: "approve" | "reject", count?: number) {
+  async function persist(type: "attendance" | "homework" | "praise", requestId: string, action: "approve" | "reject", count?: number) {
     const client = getSupabaseBrowserClient();
     const { data } = await client!.auth.getSession();
     if (!data.session) throw new Error("로그인이 필요합니다.");
@@ -20,14 +20,15 @@ export default function AdminApprovalsPage() {
     if (!response.ok) throw new Error(payload.error ?? "승인 요청을 처리하지 못했습니다.");
   }
 
-  const pendingHomework = state.homeworkSubmissions.filter(() => false);
+  const pendingAttendance = state.attendanceRecords.filter((item) => item.approval_status === "pending");
+  const pendingHomework = state.homeworkSubmissions.filter((item) => item.approval_status === "pending");
   const pendingPraise = state.praiseRequests.filter((p) => p.approval_status === "pending");
 
   return (
     <div>
       <h2 className="text-title mb-1">승인함</h2>
       <p className="text-caption text-text-secondary mb-5">
-        칭찬 스티커 요청을 확인하고 승인/반려해요. 출석과 과제 스티커는 학생 체크 즉시 자동 지급됩니다.
+        출석·과제·칭찬 요청을 확인하고 승인하거나 반려해요. 승인한 요청만 스티커가 지급됩니다.
       </p>
 
       <div className="border border-border rounded-xl overflow-hidden">
@@ -43,6 +44,24 @@ export default function AdminApprovalsPage() {
             </tr>
           </thead>
           <tbody>
+            {pendingAttendance.map((attendance) => {
+              const student = state.students.find((item) => item.id === attendance.student_id);
+              const cls = state.classes.find((item) => item.id === attendance.class_id);
+              const tier = state.attendancePolicy.find((item) => item.tier === attendance.tier);
+              return (
+                <tr key={attendance.id} className="border-b last:border-0 border-border">
+                  <td className="p-2.5">출석</td>
+                  <td className="p-2.5">{student?.name}</td>
+                  <td className="p-2.5">{cls?.name}</td>
+                  <td className="p-2.5">{tier?.label ?? attendance.tier} ({attendance.sticker_count}점)</td>
+                  <td className="p-2.5">{attendance.created_at.slice(0, 10)}</td>
+                  <td className="p-2.5 flex gap-1.5">
+                    <button className="border border-state-success text-state-success rounded-lg px-2 py-1 text-caption" disabled={processingId === attendance.id} onClick={async () => { try { setProcessingId(attendance.id); await persist("attendance", attendance.id, "approve"); dispatch({ type: "APPROVE_ATTENDANCE", attendanceId: attendance.id, approverId: state.currentUserId }); showToast("승인 완료 — 스티커가 지급되었어요."); } catch (error) { showToast(error instanceof Error ? error.message : "승인하지 못했습니다."); } finally { setProcessingId(null); } }}>승인</button>
+                    <button className="border border-state-danger text-state-danger rounded-lg px-2 py-1 text-caption" disabled={processingId === attendance.id} onClick={async () => { try { setProcessingId(attendance.id); await persist("attendance", attendance.id, "reject"); dispatch({ type: "REJECT_ATTENDANCE", attendanceId: attendance.id }); showToast("출석 요청을 반려했어요."); } catch (error) { showToast(error instanceof Error ? error.message : "반려하지 못했습니다."); } finally { setProcessingId(null); } }}>반려</button>
+                  </td>
+                </tr>
+              );
+            })}
             {pendingHomework.map((h) => {
               const student = state.students.find((s) => s.id === h.student_id);
               const cls = state.classes.find((c) => c.id === h.class_id);
@@ -125,7 +144,7 @@ export default function AdminApprovalsPage() {
                 </tr>
               );
             })}
-            {pendingHomework.length === 0 && pendingPraise.length === 0 && (
+            {pendingAttendance.length === 0 && pendingHomework.length === 0 && pendingPraise.length === 0 && (
               <tr>
                 <td className="p-2.5 text-center text-text-secondary" colSpan={6}>
                   대기 중인 요청이 없어요.

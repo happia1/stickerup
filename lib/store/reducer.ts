@@ -24,21 +24,32 @@ export function appReducer(state: AppState, action: Action): AppState {
     case "CHECK_IN": {
       const tierDef = state.attendancePolicy.find((t) => t.tier === action.tier);
       const count = tierDef ? tierDef.count : 0;
-      const entry = {
-        id: uid("led"),
+      const attendance = {
+        id: uid("att"),
         tenant_id: state.tenant.id,
         student_id: action.studentId,
         class_id: action.classId,
-        source_type: "attendance" as const,
-        source_id: uid("att"),
-        count,
-        status: "active" as const,
-        actor_teacher_id: null,
-        rollback_reason: null,
-        rollback_at: null,
+        checked_at: nowISO(),
+        tier: action.tier,
+        sticker_count: count,
+        approval_status: "pending" as const,
+        approver_id: null,
+        approved_at: null,
         created_at: nowISO(),
       };
-      return { ...state, ledger: [...state.ledger, entry] };
+      return { ...state, attendanceRecords: [...state.attendanceRecords, attendance] };
+    }
+
+    case "APPROVE_ATTENDANCE": {
+      const attendance = state.attendanceRecords.find((item) => item.id === action.attendanceId);
+      if (!attendance) return state;
+      const updated = state.attendanceRecords.map((item) => item.id === action.attendanceId ? { ...item, approval_status: "approved" as const, approver_id: action.approverId, approved_at: nowISO() } : item);
+      const entry = { id: uid("led"), tenant_id: state.tenant.id, student_id: attendance.student_id, class_id: attendance.class_id, source_type: "attendance" as const, source_id: attendance.id, count: attendance.sticker_count, status: "active" as const, actor_teacher_id: action.approverId, rollback_reason: null, rollback_at: null, created_at: nowISO() };
+      return { ...state, attendanceRecords: updated, ledger: [...state.ledger, entry] };
+    }
+
+    case "REJECT_ATTENDANCE": {
+      return { ...state, attendanceRecords: state.attendanceRecords.map((item) => item.id === action.attendanceId ? { ...item, approval_status: "rejected" as const } : item) };
     }
 
     case "SUBMIT_HOMEWORK": {
@@ -50,26 +61,12 @@ export function appReducer(state: AppState, action: Action): AppState {
         class_id: action.classId,
         completion_tier: action.tier,
         sticker_count: tierDef ? tierDef.count : 0,
-        approval_status: "approved" as const,
+        approval_status: "pending" as const,
         approver_id: null,
         submitted_at: nowISO(),
-        approved_at: nowISO(),
+        approved_at: null,
       };
-      const entry = {
-        id: uid("led"),
-        tenant_id: state.tenant.id,
-        student_id: action.studentId,
-        class_id: action.classId,
-        source_type: "homework" as const,
-        source_id: submission.id,
-        count: submission.sticker_count,
-        status: "active" as const,
-        actor_teacher_id: null,
-        rollback_reason: null,
-        rollback_at: null,
-        created_at: nowISO(),
-      };
-      return { ...state, homeworkSubmissions: [...state.homeworkSubmissions, submission], ledger: [...state.ledger, entry] };
+      return { ...state, homeworkSubmissions: [...state.homeworkSubmissions, submission] };
     }
 
     case "APPROVE_HOMEWORK": {

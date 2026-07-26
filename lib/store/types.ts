@@ -1,6 +1,6 @@
 import type {
   Tenant, Teacher, InviteLink, Student, ClassRoom, Enrollment,
-  StickerLedgerEntry, HomeworkSubmission, PraiseRequest,
+  StickerLedgerEntry, AttendanceRecord, HomeworkSubmission, PraiseRequest,
   RankingPeriodConfig, RewardCampaign, RewardItem, RewardClaim, ProductCatalogItem, Notice,
   TierConfig, GradingMode, RankingUnit, Role, TeacherPermissionKey,
 } from "@/lib/types";
@@ -15,6 +15,7 @@ export interface AppState {
   classes: ClassRoom[];
   enrollments: Enrollment[];
   ledger: StickerLedgerEntry[];
+  attendanceRecords: AttendanceRecord[];
   homeworkSubmissions: HomeworkSubmission[];
   praiseRequests: PraiseRequest[];
   rankingPeriodConfigs: RankingPeriodConfig[];
@@ -32,6 +33,8 @@ export type Action =
   | { type: "HYDRATE_APP_STATE"; state: Partial<AppState> & Pick<AppState, "currentUserId" | "currentUserRole" | "tenant"> }
   | { type: "SWITCH_USER"; userId: string; role: Role }
   | { type: "CHECK_IN"; studentId: string; classId: string; tier: string }
+  | { type: "APPROVE_ATTENDANCE"; attendanceId: string; approverId: string }
+  | { type: "REJECT_ATTENDANCE"; attendanceId: string }
   | { type: "SUBMIT_HOMEWORK"; studentId: string; classId: string; tier: string }
   | { type: "APPROVE_HOMEWORK"; submissionId: string; approverId: string }
   | { type: "REJECT_HOMEWORK"; submissionId: string }

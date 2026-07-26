@@ -71,14 +71,8 @@ export async function POST(request: Request) {
     const duplicate = await db.from("homework_submissions").select("id").eq("student_id", student.data.id).eq("class_id", body.classId).eq("check_date", checkDate).limit(1).maybeSingle();
     if (duplicate.error) return NextResponse.json({ error: duplicate.error.message }, { status: 400 });
     if (duplicate.data) return NextResponse.json({ error: "과제는 반별로 하루에 한 번만 체크할 수 있어요." }, { status: 409 });
-    const approvedAt = new Date().toISOString();
-    const result = await db.from("homework_submissions").insert({ tenant_id: student.data.tenant_id, student_id: student.data.id, class_id: body.classId, completion_tier: tier.tier, sticker_count: tier.count, approval_status: "approved", approved_at: approvedAt, check_date: checkDate }).select("*").single();
+    const result = await db.from("homework_submissions").insert({ tenant_id: student.data.tenant_id, student_id: student.data.id, class_id: body.classId, completion_tier: tier.tier, sticker_count: tier.count, approval_status: "pending", approved_at: null, approver_id: null, check_date: checkDate }).select("*").single();
     if (result.error) return NextResponse.json({ error: result.error.code === "23505" ? "과제는 반별로 하루에 한 번만 체크할 수 있어요." : result.error.message }, { status: result.error.code === "23505" ? 409 : 400 });
-    const ledger = await db.from("sticker_ledger").insert({ tenant_id: student.data.tenant_id, student_id: student.data.id, class_id: body.classId, source_type: "homework", source_id: result.data.id, count: tier.count, status: "active", actor_teacher_id: null });
-    if (ledger.error) {
-      await db.from("homework_submissions").delete().eq("id", result.data.id);
-      return NextResponse.json({ error: ledger.error.message }, { status: 400 });
-    }
     return NextResponse.json({ submission: result.data });
   }
 
@@ -91,13 +85,8 @@ export async function POST(request: Request) {
     const duplicate = await db.from("attendance_records").select("id").eq("student_id", student.data.id).eq("check_date", checkDate).limit(1).maybeSingle();
     if (duplicate.error) return NextResponse.json({ error: duplicate.error.message }, { status: 400 });
     if (duplicate.data) return NextResponse.json({ error: "출석은 하루에 한 번만 체크할 수 있어요." }, { status: 409 });
-    const attendance = await db.from("attendance_records").insert({ tenant_id: student.data.tenant_id, student_id: student.data.id, class_id: regularClass.data.id, tier: tier.tier, sticker_count: tier.count, check_date: checkDate }).select("id, created_at").single();
+    const attendance = await db.from("attendance_records").insert({ tenant_id: student.data.tenant_id, student_id: student.data.id, class_id: regularClass.data.id, tier: tier.tier, sticker_count: tier.count, approval_status: "pending", approver_id: null, approved_at: null, check_date: checkDate }).select("*").single();
     if (attendance.error) return NextResponse.json({ error: attendance.error.code === "23505" ? "출석은 하루에 한 번만 체크할 수 있어요." : attendance.error.message }, { status: attendance.error.code === "23505" ? 409 : 400 });
-    const ledger = await db.from("sticker_ledger").insert({ tenant_id: student.data.tenant_id, student_id: student.data.id, class_id: regularClass.data.id, source_type: "attendance", source_id: attendance.data.id, count: tier.count, status: "active" });
-    if (ledger.error) {
-      await db.from("attendance_records").delete().eq("id", attendance.data.id);
-      return NextResponse.json({ error: ledger.error.message }, { status: 400 });
-    }
     return NextResponse.json({ attendance: attendance.data });
   }
 

@@ -22,7 +22,7 @@ create table teachers (
   role text not null check (role in ('owner', 'assistant')),
   name text not null,
   email text not null,
-  invited_by uuid references teachers (id),
+  invited_by uuid references teachers (id) on delete set null,
   created_at timestamptz not null default now()
 );
 
@@ -44,8 +44,8 @@ create table invite_links (
 create table students (
   id uuid primary key references auth.users (id) on delete cascade,
   tenant_id uuid not null references tenants (id) on delete cascade,
-  invited_by_teacher_id uuid references teachers (id),
-  invite_link_id uuid references invite_links (id),
+  invited_by_teacher_id uuid references teachers (id) on delete set null,
+  invite_link_id uuid references invite_links (id) on delete set null,
   name text not null,
   age int check (age between 1 and 100),
   profile_image_url text,
@@ -83,7 +83,7 @@ create table enrollments (
   status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
   requested_at timestamptz not null default now(),
   approved_at timestamptz,
-  approver_id uuid references teachers (id),
+  approver_id uuid references teachers (id) on delete set null,
   unique (student_id, class_id)
 );
 
@@ -99,6 +99,9 @@ create table attendance_records (
   checked_at timestamptz not null default now(),
   tier text not null,
   sticker_count int not null,
+  approval_status text not null default 'pending' check (approval_status in ('pending', 'approved', 'rejected')),
+  approver_id uuid references teachers (id) on delete set null,
+  approved_at timestamptz,
   created_at timestamptz not null default now()
 );
 
@@ -110,7 +113,7 @@ create table homework_submissions (
   completion_tier text not null,
   sticker_count int not null,
   approval_status text not null default 'pending' check (approval_status in ('pending', 'approved', 'rejected')),
-  approver_id uuid references teachers (id),
+  approver_id uuid references teachers (id) on delete set null,
   submitted_at timestamptz not null default now(),
   approved_at timestamptz
 );
@@ -124,7 +127,7 @@ create table praise_requests (
   reason text not null,
   sticker_count int,
   approval_status text not null default 'pending' check (approval_status in ('pending', 'approved', 'rejected')),
-  approver_id uuid references teachers (id),
+  approver_id uuid references teachers (id) on delete set null,
   requested_at timestamptz not null default now(),
   approved_at timestamptz
 );
@@ -142,7 +145,7 @@ create table sticker_ledger (
   source_id uuid not null, -- attendance_records / homework_submissions / praise_requests 의 id (폴리모픽, FK 제약 없음)
   count int not null,
   status text not null default 'active' check (status in ('active', 'rolled_back')),
-  actor_teacher_id uuid references teachers (id), -- null 이면 시스템 자동 지급(출석)
+  actor_teacher_id uuid references teachers (id) on delete set null, -- null 이면 시스템 자동 지급(출석)
   rollback_reason text,
   rollback_at timestamptz,
   created_at timestamptz not null default now()
@@ -216,6 +219,6 @@ create table notices (
   title text not null,
   content text not null default '',
   pinned boolean not null default false,
-  author_teacher_id uuid references teachers (id),
+  author_teacher_id uuid references teachers (id) on delete set null,
   created_at timestamptz not null default now()
 );

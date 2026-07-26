@@ -26,12 +26,43 @@ export default function AdminSettingsPage() {
   const me = getTeacherById(state, state.currentUserId);
   const [name, setName] = useState(me?.name ?? "");
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(me?.profile_image_url ?? null);
+  const [deleting, setDeleting] = useState(false);
 
   async function handleLogout() {
     const supabase = getSupabaseBrowserClient();
     if (supabase) await supabase.auth.signOut();
     showToast("로그아웃했습니다.");
     router.replace("/");
+  }
+
+  async function handleDeleteProfile() {
+    if (deleting) return;
+    const confirmed = window.confirm("관리자 프로필을 삭제하면 해당 계정으로 다시 로그인할 수 없습니다. 학원과 학생 데이터는 유지됩니다. 정말 삭제할까요?");
+    if (!confirmed) return;
+
+    const supabase = getSupabaseBrowserClient();
+    const session = (await supabase?.auth.getSession())?.data.session;
+    if (!supabase || !session) {
+      showToast("로그인 상태를 확인한 뒤 다시 시도해 주세요.");
+      router.replace("/");
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      const response = await fetch("/api/admin/profile", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const payload = await response.json().catch(() => null) as { error?: string } | null;
+      if (!response.ok) throw new Error(payload?.error ?? "관리자 프로필을 삭제하지 못했습니다.");
+      await supabase.auth.signOut();
+      router.replace("/");
+      router.refresh();
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "관리자 프로필을 삭제하지 못했습니다.");
+      setDeleting(false);
+    }
   }
 
   if (!me) {
@@ -108,6 +139,14 @@ export default function AdminSettingsPage() {
       <Card>
         <h3 className="mb-2 text-subtitle">계정</h3>
         <Button variant="secondary" onClick={handleLogout}>로그아웃</Button>
+        <button
+          type="button"
+          disabled={deleting}
+          onClick={handleDeleteProfile}
+          className="mt-2 block px-1 py-1 text-left text-micro text-text-muted hover:text-state-danger disabled:opacity-50"
+        >
+          {deleting ? "프로필 삭제 중..." : "프로필 삭제하기"}
+        </button>
       </Card>
     </div>
   );

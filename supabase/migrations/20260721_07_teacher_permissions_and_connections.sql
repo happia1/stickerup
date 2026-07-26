@@ -7,7 +7,7 @@ create table if not exists student_connection_requests (
   token text not null unique,
   status text not null default 'pending' check (status in ('pending','approved','expired','revoked')),
   expires_at timestamptz not null default (now() + interval '7 days'),
-  approved_by uuid references teachers(id),
+  approved_by uuid references teachers(id) on delete set null,
   approved_at timestamptz,
   created_at timestamptz not null default now()
 );

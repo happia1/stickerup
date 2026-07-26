@@ -90,6 +90,9 @@ export interface AttendanceRecord {
   checked_at: string;
   tier: AttendanceTier;
   sticker_count: number;
+  approval_status: ApprovalStatus;
+  approver_id: string | null;
+  approved_at: string | null;
   created_at: string;
 }
 

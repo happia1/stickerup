@@ -5,7 +5,7 @@ import type { AppState, Action } from "./types";
 import { appReducer } from "./reducer";
 import {
   seedTenant, seedTeachers, seedInviteLinks, seedStudents, seedClasses,
-  seedEnrollments, seedLedger, seedHomeworkSubmissions, seedPraiseRequests,
+  seedEnrollments, seedLedger, seedAttendanceRecords, seedHomeworkSubmissions, seedPraiseRequests,
   seedRankingPeriodConfigs, seedRewardCampaigns, seedRewardItems, seedRewardClaims,
   seedNotices,
 } from "@/lib/mock/data";
@@ -23,6 +23,7 @@ function buildInitialState(): AppState {
     classes: seedClasses,
     enrollments: seedEnrollments,
     ledger: seedLedger,
+    attendanceRecords: seedAttendanceRecords,
     homeworkSubmissions: seedHomeworkSubmissions,
     praiseRequests: seedPraiseRequests,
     rankingPeriodConfigs: seedRankingPeriodConfigs,
