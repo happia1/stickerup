@@ -11,8 +11,7 @@ import {
 const SETTING_KEY = "student_mypage_footer";
 const EDITABLE_FIELDS: Array<keyof FooterSettings> = [
   "creator_name",
-  "support_title",
-  "support_description",
+  "tagline",
   "terms_label",
   "terms_url",
   "privacy_label",
@@ -43,7 +42,7 @@ export async function PATCH(request: Request) {
   for (const field of EDITABLE_FIELDS) {
     if (typeof body[field] === "string") settings[field] = body[field].trim();
   }
-  if (!settings.creator_name || !settings.support_title || !settings.copyright_text) {
+  if (!settings.creator_name || !settings.tagline || !settings.copyright_text) {
     return NextResponse.json({ error: "필수 푸터 문구를 입력해 주세요." }, { status: 400 });
   }
   for (const field of ["terms_url", "privacy_url"] as const) {

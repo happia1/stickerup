@@ -1,7 +1,6 @@
 export type FooterSettings = {
   creator_name: string;
-  support_title: string;
-  support_description: string;
+  tagline: string;
   terms_label: string;
   terms_url: string;
   privacy_label: string;
@@ -11,8 +10,7 @@ export type FooterSettings = {
 
 export const DEFAULT_FOOTER_SETTINGS: FooterSettings = {
   creator_name: "Jeongwon Kim",
-  support_title: "고객지원",
-  support_description: "서비스 이용 중 궁금한 점이나 불편한 사항이 있으면 문의해 주세요.",
+  tagline: "학원 출석 · 숙제 · 칭찬 스티커 랭킹 앱",
   terms_label: "이용약관",
   terms_url: "/terms",
   privacy_label: "개인정보 처리방침",

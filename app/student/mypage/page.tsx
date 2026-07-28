@@ -340,17 +340,14 @@ export default function StudentMyPage() {
             className="object-contain"
           />
         </div>
+        <p className="mt-1 text-caption text-text-secondary">
+          {footer.tagline}
+        </p>
         <p className="mt-1 text-caption text-text-muted">
           by. {footer.creator_name}
         </p>
 
-        <section className="mt-7" aria-labelledby="student-support-title">
-          <h2 id="student-support-title" className="text-subtitle">
-            {footer.support_title}
-          </h2>
-          <p className="mt-2 max-w-sm text-caption leading-6 text-text-secondary">
-            {footer.support_description}
-          </p>
+        <section className="mt-6">
           <button
             type="button"
             onClick={() => setInquiryOpen(true)}
