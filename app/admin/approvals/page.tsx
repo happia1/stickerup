@@ -1,158 +1,180 @@
 "use client";
-import { useState } from "react";
-import { useAppState, useAppDispatch } from "@/lib/store/provider";
+
+import { useMemo, useState } from "react";
+import { useAppDispatch, useAppState } from "@/lib/store/provider";
 import { useToast } from "@/lib/toast/provider";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { koreaDateKey } from "@/lib/korea-date";
+import type { AppState } from "@/lib/store/types";
+
+type RequestType = "attendance" | "homework" | "praise";
+type RequestEdit = { tier: string; count: number };
 
 export default function AdminApprovalsPage() {
   const state = useAppState();
   const dispatch = useAppDispatch();
   const showToast = useToast();
-  const [praiseCounts, setPraiseCounts] = useState<Record<string, number>>({});
+  const [edits, setEdits] = useState<Record<string, RequestEdit>>({});
   const [processingId, setProcessingId] = useState<string | null>(null);
-
-  async function persist(type: "attendance" | "homework" | "praise", requestId: string, action: "approve" | "reject", count?: number) {
-    const client = getSupabaseBrowserClient();
-    const { data } = await client!.auth.getSession();
-    if (!data.session) throw new Error("로그인이 필요합니다.");
-    const response = await fetch("/api/admin/approvals", { method: "PATCH", headers: { Authorization: `Bearer ${data.session.access_token}`, "Content-Type": "application/json" }, body: JSON.stringify({ type, requestId, action, count }) });
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error ?? "승인 요청을 처리하지 못했습니다.");
-  }
+  const [directOpen, setDirectOpen] = useState(false);
+  const [directType, setDirectType] = useState<"attendance" | "homework">("attendance");
+  const [directStudentId, setDirectStudentId] = useState("");
+  const [directClassId, setDirectClassId] = useState("");
+  const [directDate, setDirectDate] = useState(koreaDateKey());
+  const [directTier, setDirectTier] = useState(state.attendancePolicy[0]?.tier ?? "on_time");
+  const [directCount, setDirectCount] = useState(state.attendancePolicy[0]?.count ?? 5);
 
   const pendingAttendance = state.attendanceRecords.filter((item) => item.approval_status === "pending");
   const pendingHomework = state.homeworkSubmissions.filter((item) => item.approval_status === "pending");
-  const pendingPraise = state.praiseRequests.filter((p) => p.approval_status === "pending");
+  const pendingPraise = state.praiseRequests.filter((item) => item.approval_status === "pending");
+  const directClasses = useMemo(() => {
+    const approvedClassIds = new Set(state.enrollments.filter((item) => item.student_id === directStudentId && item.status === "approved").map((item) => item.class_id));
+    return state.classes.filter((item) => !item.is_default && item.status === "active" && approvedClassIds.has(item.id));
+  }, [directStudentId, state.classes, state.enrollments]);
+
+  async function accessToken() {
+    const client = getSupabaseBrowserClient();
+    const { data } = await client!.auth.getSession();
+    if (!data.session) throw new Error("로그인이 필요합니다.");
+    return data.session.access_token;
+  }
+
+  async function refreshState(token: string) {
+    const response = await fetch("/api/app-state", { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
+    const payload = await response.json() as { state?: Partial<AppState> & Pick<AppState, "currentUserId" | "currentUserRole" | "tenant">; error?: string };
+    if (!response.ok || !payload.state) throw new Error(payload.error ?? "최신 정보를 불러오지 못했습니다.");
+    dispatch({ type: "HYDRATE_APP_STATE", state: payload.state });
+  }
+
+  async function persist(type: RequestType, requestId: string, action: "approve" | "reject", edit?: RequestEdit) {
+    const token = await accessToken();
+    const response = await fetch("/api/admin/approvals", {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ type, requestId, action, tier: edit?.tier, count: edit?.count }),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error ?? "승인 요청을 처리하지 못했습니다.");
+    await refreshState(token);
+  }
+
+  async function handleRequest(type: RequestType, requestId: string, action: "approve" | "reject", edit?: RequestEdit) {
+    try {
+      setProcessingId(requestId);
+      await persist(type, requestId, action, edit);
+      showToast(action === "approve" ? "승인 완료 — 수정한 내용으로 스티커가 지급되었어요." : "요청을 반려했어요. 학생은 다시 신청할 수 있어요.");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "요청을 처리하지 못했습니다.");
+    } finally {
+      setProcessingId(null);
+    }
+  }
+
+  function updateDirectType(type: "attendance" | "homework") {
+    const policy = type === "attendance" ? state.attendancePolicy : state.homeworkPolicy;
+    setDirectType(type);
+    setDirectTier(policy[0]?.tier ?? "");
+    setDirectCount(policy[0]?.count ?? 0);
+    if (type === "attendance") setDirectClassId("");
+  }
+
+  async function createDirectRecord() {
+    if (!directStudentId) return showToast("학생을 선택해 주세요.");
+    if (directType === "homework" && !directClassId) return showToast("과제 반을 선택해 주세요.");
+    try {
+      setProcessingId("direct");
+      const token = await accessToken();
+      const response = await fetch("/api/admin/approvals", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ type: directType, studentId: directStudentId, classId: directClassId || undefined, checkDate: directDate, tier: directTier, count: directCount }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? "직접 등록하지 못했습니다.");
+      await refreshState(token);
+      setDirectOpen(false);
+      showToast("선생님이 직접 등록하고 스티커를 지급했어요.");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "직접 등록하지 못했습니다.");
+    } finally {
+      setProcessingId(null);
+    }
+  }
+
+  const rows = [
+    ...pendingAttendance.map((request) => ({ type: "attendance" as const, request })),
+    ...pendingHomework.map((request) => ({ type: "homework" as const, request })),
+    ...pendingPraise.map((request) => ({ type: "praise" as const, request })),
+  ];
 
   return (
     <div>
-      <h2 className="text-title mb-1">승인함</h2>
-      <p className="text-caption text-text-secondary mb-5">
-        출석·과제·칭찬 요청을 확인하고 승인하거나 반려해요. 승인한 요청만 스티커가 지급됩니다.
-      </p>
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <div>
+          <h2 className="mb-1 text-title">승인함</h2>
+          <p className="text-caption text-text-secondary">신청 내용을 수정해 승인하거나 반려할 수 있어요. 반려된 출석·과제는 학생이 다시 신청할 수 있습니다.</p>
+        </div>
+        <button type="button" onClick={() => setDirectOpen((value) => !value)} className="shrink-0 rounded-lg bg-brand-amber px-3 py-2 text-caption font-bold text-surface-page">+ 직접 등록</button>
+      </div>
 
-      <div className="border border-border rounded-xl overflow-hidden">
-        <table className="w-full text-body">
-          <thead>
-            <tr className="text-caption text-text-secondary text-left border-b border-border">
-              <th className="p-2.5">유형</th>
-              <th className="p-2.5">학생</th>
-              <th className="p-2.5">반</th>
-              <th className="p-2.5">내용</th>
-              <th className="p-2.5">신청일</th>
-              <th className="p-2.5">처리</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pendingAttendance.map((attendance) => {
-              const student = state.students.find((item) => item.id === attendance.student_id);
-              const cls = state.classes.find((item) => item.id === attendance.class_id);
-              const tier = state.attendancePolicy.find((item) => item.tier === attendance.tier);
-              return (
-                <tr key={attendance.id} className="border-b last:border-0 border-border">
-                  <td className="p-2.5">출석</td>
-                  <td className="p-2.5">{student?.name}</td>
-                  <td className="p-2.5">{cls?.name}</td>
-                  <td className="p-2.5">{tier?.label ?? attendance.tier} ({attendance.sticker_count}점)</td>
-                  <td className="p-2.5">{attendance.created_at.slice(0, 10)}</td>
-                  <td className="p-2.5 flex gap-1.5">
-                    <button className="border border-state-success text-state-success rounded-lg px-2 py-1 text-caption" disabled={processingId === attendance.id} onClick={async () => { try { setProcessingId(attendance.id); await persist("attendance", attendance.id, "approve"); dispatch({ type: "APPROVE_ATTENDANCE", attendanceId: attendance.id, approverId: state.currentUserId }); showToast("승인 완료 — 스티커가 지급되었어요."); } catch (error) { showToast(error instanceof Error ? error.message : "승인하지 못했습니다."); } finally { setProcessingId(null); } }}>승인</button>
-                    <button className="border border-state-danger text-state-danger rounded-lg px-2 py-1 text-caption" disabled={processingId === attendance.id} onClick={async () => { try { setProcessingId(attendance.id); await persist("attendance", attendance.id, "reject"); dispatch({ type: "REJECT_ATTENDANCE", attendanceId: attendance.id }); showToast("출석 요청을 반려했어요."); } catch (error) { showToast(error instanceof Error ? error.message : "반려하지 못했습니다."); } finally { setProcessingId(null); } }}>반려</button>
-                  </td>
-                </tr>
-              );
-            })}
-            {pendingHomework.map((h) => {
-              const student = state.students.find((s) => s.id === h.student_id);
-              const cls = state.classes.find((c) => c.id === h.class_id);
-              const tierDef = state.homeworkPolicy.find((t) => t.tier === h.completion_tier);
-              return (
-                <tr key={h.id} className="border-b last:border-0 border-border">
-                  <td className="p-2.5">숙제 인증</td>
-                  <td className="p-2.5">{student?.name}</td>
-                  <td className="p-2.5">{cls?.name}</td>
-                  <td className="p-2.5">
-                    {tierDef?.label} ({h.sticker_count}장)
-                  </td>
-                  <td className="p-2.5">{h.submitted_at.slice(0, 10)}</td>
-                  <td className="p-2.5 flex gap-1.5">
-                    <button
-                      className="border border-state-success text-state-success rounded-lg px-2 py-1 text-caption"
-                      disabled={processingId === h.id}
-                      onClick={async () => {
-                        try { setProcessingId(h.id); await persist("homework", h.id, "approve"); dispatch({ type: "APPROVE_HOMEWORK", submissionId: h.id, approverId: state.currentUserId }); showToast("승인 완료 — 스티커가 지급되었어요."); }
-                        catch (error) { showToast(error instanceof Error ? error.message : "승인하지 못했습니다."); }
-                        finally { setProcessingId(null); }
-                      }}
-                    >
-                      승인
-                    </button>
-                    <button
-                      className="border border-state-danger text-state-danger rounded-lg px-2 py-1 text-caption"
-                      disabled={processingId === h.id}
-                      onClick={async () => { try { setProcessingId(h.id); await persist("homework", h.id, "reject"); dispatch({ type: "REJECT_HOMEWORK", submissionId: h.id }); } catch (error) { showToast(error instanceof Error ? error.message : "반려하지 못했습니다."); } finally { setProcessingId(null); } }}
-                    >
-                      반려
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-            {pendingPraise.map((p) => {
-              const student = state.students.find((s) => s.id === p.student_id);
-              const cls = state.classes.find((c) => c.id === p.class_id);
-              return (
-                <tr key={p.id} className="border-b last:border-0 border-border">
-                  <td className="p-2.5">칭찬 스티커</td>
-                  <td className="p-2.5">{student?.name}</td>
-                  <td className="p-2.5">{cls?.name ?? "-"}</td>
-                  <td className="p-2.5">{p.reason}</td>
-                  <td className="p-2.5">{p.requested_at.slice(0, 10)}</td>
-                  <td className="p-2.5 flex items-center gap-1.5">
-                    <input
-                      type="number"
-                      className="w-14 border border-border rounded-lg px-1.5 py-1 text-caption"
-                      placeholder="2"
-                      value={praiseCounts[p.id] ?? 2}
-                      onChange={(e) => setPraiseCounts((prev) => ({ ...prev, [p.id]: Number(e.target.value) || 0 }))}
-                    />
-                    <button
-                      className="border border-state-success text-state-success rounded-lg px-2 py-1 text-caption"
-                      disabled={processingId === p.id}
-                      onClick={async () => {
-                        const count = praiseCounts[p.id] ?? 2;
-                        try { setProcessingId(p.id); await persist("praise", p.id, "approve", count); dispatch({
-                          type: "APPROVE_PRAISE",
-                          requestId: p.id,
-                          approverId: state.currentUserId,
-                          count,
-                        }); showToast("승인 완료 — 스티커가 지급되었어요."); }
-                        catch (error) { showToast(error instanceof Error ? error.message : "승인하지 못했습니다."); }
-                        finally { setProcessingId(null); }
-                      }}
-                    >
-                      승인
-                    </button>
-                    <button
-                      className="border border-state-danger text-state-danger rounded-lg px-2 py-1 text-caption"
-                      disabled={processingId === p.id}
-                      onClick={async () => { try { setProcessingId(p.id); await persist("praise", p.id, "reject"); dispatch({ type: "REJECT_PRAISE", requestId: p.id }); } catch (error) { showToast(error instanceof Error ? error.message : "반려하지 못했습니다."); } finally { setProcessingId(null); } }}
-                    >
-                      반려
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-            {pendingAttendance.length === 0 && pendingHomework.length === 0 && pendingPraise.length === 0 && (
-              <tr>
-                <td className="p-2.5 text-center text-text-secondary" colSpan={6}>
-                  대기 중인 요청이 없어요.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      {directOpen && (
+        <section className="mb-5 rounded-xl border border-brand-amber/40 bg-surface-card p-4">
+          <h3 className="mb-3 text-subtitle">학생 출결·과제 직접 등록</h3>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <label className="text-caption text-text-secondary">유형
+              <select value={directType} onChange={(event) => updateDirectType(event.target.value as "attendance" | "homework")} className="mt-1 w-full rounded-lg border border-border px-2.5 py-2 text-body"><option value="attendance">출석</option><option value="homework">과제</option></select>
+            </label>
+            <label className="text-caption text-text-secondary">학생
+              <select value={directStudentId} onChange={(event) => { setDirectStudentId(event.target.value); setDirectClassId(""); }} className="mt-1 w-full rounded-lg border border-border px-2.5 py-2 text-body"><option value="">학생 선택</option>{state.students.map((student) => <option key={student.id} value={student.id}>{student.name}</option>)}</select>
+            </label>
+            <label className="text-caption text-text-secondary">날짜
+              <input type="date" max={koreaDateKey()} value={directDate} onChange={(event) => setDirectDate(event.target.value)} className="mt-1 w-full rounded-lg border border-border px-2.5 py-2 text-body" />
+            </label>
+            {directType === "homework" && <label className="text-caption text-text-secondary">특강반
+              <select value={directClassId} onChange={(event) => setDirectClassId(event.target.value)} className="mt-1 w-full rounded-lg border border-border px-2.5 py-2 text-body"><option value="">반 선택</option>{directClasses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
+            </label>}
+            <label className="text-caption text-text-secondary">{directType === "attendance" ? "출석 기준" : "과제 완료율"}
+              <select value={directTier} onChange={(event) => { const policy = directType === "attendance" ? state.attendancePolicy : state.homeworkPolicy; const selected = policy.find((item) => item.tier === event.target.value); setDirectTier(event.target.value); if (selected) setDirectCount(selected.count); }} className="mt-1 w-full rounded-lg border border-border px-2.5 py-2 text-body">{(directType === "attendance" ? state.attendancePolicy : state.homeworkPolicy).map((item) => <option key={item.tier} value={item.tier}>{item.label}</option>)}</select>
+            </label>
+            <label className="text-caption text-text-secondary">지급 스티커
+              <input type="number" min={0} max={100} value={directCount} onChange={(event) => setDirectCount(Number(event.target.value) || 0)} className="mt-1 w-full rounded-lg border border-border px-2.5 py-2 text-body" />
+            </label>
+          </div>
+          <div className="mt-4 flex justify-end gap-2"><button type="button" onClick={() => setDirectOpen(false)} className="rounded-lg border border-border px-3 py-2 text-caption">취소</button><button type="button" disabled={processingId === "direct"} onClick={() => void createDirectRecord()} className="rounded-lg bg-brand-amber px-3 py-2 text-caption font-bold text-surface-page disabled:opacity-50">등록 및 지급</button></div>
+        </section>
+      )}
+
+      <div className="space-y-2">
+        {rows.map(({ type, request }) => {
+          const student = state.students.find((item) => item.id === request.student_id);
+          const cls = state.classes.find((item) => item.id === request.class_id);
+          const currentTier = type === "attendance" ? request.tier : type === "homework" ? request.completion_tier : "";
+          const currentCount = request.sticker_count ?? (type === "praise" ? 2 : 0);
+          const edit = edits[request.id] ?? { tier: currentTier, count: currentCount };
+          const policy = type === "attendance" ? state.attendancePolicy : state.homeworkPolicy;
+          const requestDate = type === "attendance" ? request.check_date ?? request.checked_at.slice(0, 10) : type === "homework" ? request.check_date ?? request.submitted_at.slice(0, 10) : request.requested_at.slice(0, 10);
+          return (
+            <article key={`${type}-${request.id}`} className="rounded-xl border border-border bg-surface-card p-3">
+              <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="rounded-full bg-surface-raised px-2 py-1 text-caption font-bold">{type === "attendance" ? "출석" : type === "homework" ? "과제" : "칭찬"}</span>
+                <strong className="text-body">{student?.name ?? "학생 정보 없음"}</strong>
+                <span className="text-caption text-text-secondary">{cls?.name ?? "반 공통"} · {requestDate}</span>
+              </div>
+              {type === "praise" ? <p className="mb-3 whitespace-pre-wrap text-body">{request.reason}</p> : null}
+              <div className="flex flex-wrap items-end gap-2">
+                {type !== "praise" && <label className="min-w-36 flex-1 text-caption text-text-secondary">{type === "attendance" ? "출석 기준" : "과제 완료율"}
+                  <select value={edit.tier} onChange={(event) => { const selected = policy.find((item) => item.tier === event.target.value); setEdits((prev) => ({ ...prev, [request.id]: { tier: event.target.value, count: selected?.count ?? edit.count } })); }} className="mt-1 w-full rounded-lg border border-border px-2 py-1.5 text-body">{policy.map((item) => <option key={item.tier} value={item.tier}>{item.label}</option>)}</select>
+                </label>}
+                <label className="w-24 text-caption text-text-secondary">스티커
+                  <input type="number" min={0} max={100} value={edit.count} onChange={(event) => setEdits((prev) => ({ ...prev, [request.id]: { tier: edit.tier, count: Number(event.target.value) || 0 } }))} className="mt-1 w-full rounded-lg border border-border px-2 py-1.5 text-body" />
+                </label>
+                <button type="button" disabled={processingId === request.id} onClick={() => void handleRequest(type, request.id, "approve", edit)} className="rounded-lg border border-state-success px-3 py-1.5 text-caption text-state-success disabled:opacity-50">수정 후 승인</button>
+                <button type="button" disabled={processingId === request.id} onClick={() => void handleRequest(type, request.id, "reject")} className="rounded-lg border border-state-danger px-3 py-1.5 text-caption text-state-danger disabled:opacity-50">반려</button>
+              </div>
+            </article>
+          );
+        })}
+        {rows.length === 0 && <div className="rounded-xl border border-border p-8 text-center text-body text-text-secondary">대기 중인 요청이 없어요.</div>}
       </div>
     </div>
   );

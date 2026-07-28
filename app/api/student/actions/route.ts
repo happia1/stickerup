@@ -11,7 +11,11 @@ export async function POST(request: Request) {
   const student = await db.from("students").select("id, tenant_id").eq("id", auth.user.id).maybeSingle();
   if (student.error || !student.data) return NextResponse.json({ error: "학생 계정이 필요합니다." }, { status: 403 });
   const studentData = student.data;
-  const body = await request.json() as { action?: "attendance" | "homework" | "praise" | "enrollment" | "withdraw-enrollment" | "profile"; classId?: string | null; classIds?: string[]; enrollmentId?: string; tier?: string; reason?: string; name?: string; birthDate?: string | null; profileImageUrl?: string | null };
+  const body = await request.json() as { action?: "attendance" | "homework" | "praise" | "enrollment" | "withdraw-enrollment" | "profile"; classId?: string | null; classIds?: string[]; enrollmentId?: string; tier?: string; checkDate?: string; reason?: string; name?: string; birthDate?: string | null; profileImageUrl?: string | null };
+  const requestedCheckDate = body.checkDate ?? koreaDateKey();
+  if (body.checkDate && (!/^\d{4}-\d{2}-\d{2}$/.test(body.checkDate) || body.checkDate > koreaDateKey())) {
+    return NextResponse.json({ error: "오늘 또는 지난 날짜만 신청할 수 있어요." }, { status: 400 });
+  }
 
   if (body.action === "profile") {
     const name = body.name?.trim();
@@ -67,10 +71,15 @@ export async function POST(request: Request) {
     if (!enrollment.data || !classRoom.data || classRoom.data.is_default) return NextResponse.json({ error: "과제를 제출할 승인된 특강반을 선택해주세요." }, { status: 400 });
     const tier = DEFAULT_HOMEWORK_TIERS.find((item) => item.tier === body.tier);
     if (!tier) return NextResponse.json({ error: "숙제 완료율을 확인해주세요." }, { status: 400 });
-    const checkDate = koreaDateKey();
-    const duplicate = await db.from("homework_submissions").select("id").eq("student_id", student.data.id).eq("class_id", body.classId).eq("check_date", checkDate).limit(1).maybeSingle();
+    const checkDate = requestedCheckDate;
+    const duplicate = await db.from("homework_submissions").select("id, approval_status").eq("student_id", student.data.id).eq("class_id", body.classId).eq("check_date", checkDate).limit(1).maybeSingle();
     if (duplicate.error) return NextResponse.json({ error: duplicate.error.message }, { status: 400 });
-    if (duplicate.data) return NextResponse.json({ error: "과제는 반별로 하루에 한 번만 체크할 수 있어요." }, { status: 409 });
+    if (duplicate.data?.approval_status !== "rejected" && duplicate.data) return NextResponse.json({ error: "과제는 반별로 하루에 한 번만 체크할 수 있어요." }, { status: 409 });
+    if (duplicate.data?.approval_status === "rejected") {
+      const retried = await db.from("homework_submissions").update({ completion_tier: tier.tier, sticker_count: tier.count, approval_status: "pending", approved_at: null, approver_id: null, submitted_at: new Date().toISOString() }).eq("id", duplicate.data.id).select("*").single();
+      if (retried.error) return NextResponse.json({ error: retried.error.message }, { status: 400 });
+      return NextResponse.json({ submission: retried.data, retried: true });
+    }
     const result = await db.from("homework_submissions").insert({ tenant_id: student.data.tenant_id, student_id: student.data.id, class_id: body.classId, completion_tier: tier.tier, sticker_count: tier.count, approval_status: "pending", approved_at: null, approver_id: null, check_date: checkDate }).select("*").single();
     if (result.error) return NextResponse.json({ error: result.error.code === "23505" ? "과제는 반별로 하루에 한 번만 체크할 수 있어요." : result.error.message }, { status: result.error.code === "23505" ? 409 : 400 });
     return NextResponse.json({ submission: result.data });
@@ -79,12 +88,17 @@ export async function POST(request: Request) {
   if (body.action === "attendance") {
     const tier = DEFAULT_ATTENDANCE_TIERS.find((item) => item.tier === body.tier);
     if (!tier) return NextResponse.json({ error: "출석 지급 기준을 선택해 주세요." }, { status: 400 });
-    const checkDate = koreaDateKey();
+    const checkDate = requestedCheckDate;
     const regularClass = await db.from("classes").select("id").eq("tenant_id", studentData.tenant_id).eq("is_default", true).eq("status", "active").maybeSingle();
     if (!regularClass.data) return NextResponse.json({ error: "기본 소속 반 정보를 찾을 수 없어요." }, { status: 400 });
-    const duplicate = await db.from("attendance_records").select("id").eq("student_id", student.data.id).eq("check_date", checkDate).limit(1).maybeSingle();
+    const duplicate = await db.from("attendance_records").select("id, approval_status").eq("student_id", student.data.id).eq("check_date", checkDate).limit(1).maybeSingle();
     if (duplicate.error) return NextResponse.json({ error: duplicate.error.message }, { status: 400 });
-    if (duplicate.data) return NextResponse.json({ error: "출석은 하루에 한 번만 체크할 수 있어요." }, { status: 409 });
+    if (duplicate.data?.approval_status !== "rejected" && duplicate.data) return NextResponse.json({ error: "출석은 하루에 한 번만 체크할 수 있어요." }, { status: 409 });
+    if (duplicate.data?.approval_status === "rejected") {
+      const retried = await db.from("attendance_records").update({ class_id: regularClass.data.id, tier: tier.tier, sticker_count: tier.count, approval_status: "pending", approver_id: null, approved_at: null, checked_at: new Date().toISOString() }).eq("id", duplicate.data.id).select("*").single();
+      if (retried.error) return NextResponse.json({ error: retried.error.message }, { status: 400 });
+      return NextResponse.json({ attendance: retried.data, retried: true });
+    }
     const attendance = await db.from("attendance_records").insert({ tenant_id: student.data.tenant_id, student_id: student.data.id, class_id: regularClass.data.id, tier: tier.tier, sticker_count: tier.count, approval_status: "pending", approver_id: null, approved_at: null, check_date: checkDate }).select("*").single();
     if (attendance.error) return NextResponse.json({ error: attendance.error.code === "23505" ? "출석은 하루에 한 번만 체크할 수 있어요." : attendance.error.message }, { status: attendance.error.code === "23505" ? 409 : 400 });
     return NextResponse.json({ attendance: attendance.data });

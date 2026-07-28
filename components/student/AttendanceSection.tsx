@@ -8,14 +8,17 @@ import { useToast } from "@/lib/toast/provider";
 import { submitStudentAction } from "@/lib/student-action-client";
 import { koreaDateKey } from "@/lib/korea-date";
 
-export function AttendanceSection() {
+export function AttendanceSection({ selectedDate }: { selectedDate: string }) {
   const state = useAppState();
   const dispatch = useAppDispatch();
   const showToast = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [selectedTier, setSelectedTier] = useState("on_time");
   const regularClass = state.classes.find((item) => item.is_default);
-  const todayAttendance = state.attendanceRecords.find((entry) => entry.student_id === state.currentUserId && koreaDateKey(entry.created_at) === koreaDateKey());
+  const today = koreaDateKey();
+  const selectedAttendance = state.attendanceRecords.find((entry) => entry.student_id === state.currentUserId && (entry.check_date ?? koreaDateKey(entry.created_at)) === selectedDate);
+  const dateLabel = selectedDate === today ? "오늘" : selectedDate.replaceAll("-", ".");
+  const isFuture = selectedDate > today;
 
   return (
     <Card>
@@ -23,20 +26,20 @@ export function AttendanceSection() {
         <h3 className="shrink-0 text-subtitle">출석 체크</h3>
         <p className="min-w-0 text-micro text-text-secondary">반과 관계없이 하루에 한 번 체크해요.</p>
       </div>
-      {todayAttendance?.approval_status === "pending" ? (
+      {selectedAttendance?.approval_status === "pending" ? (
         <div className="rounded-xl bg-state-warningBg p-5 text-center">
           <p className="text-subtitle text-brand-amber">승인 요청 중</p>
           <p className="mt-1 text-body text-text-secondary">관리자가 확인하면 스티커가 지급돼요.</p>
         </div>
-      ) : todayAttendance?.approval_status === "approved" ? (
+      ) : selectedAttendance?.approval_status === "approved" ? (
         <div className="rounded-xl bg-state-successBg p-5 text-center">
-          <p className="text-subtitle text-state-success">오늘 출석 체크 완료</p>
-          <p className="mt-1 text-body text-text-primary">스티커 {todayAttendance.sticker_count}장이 지급됐어요.</p>
+          <p className="text-subtitle text-state-success">{dateLabel} 출석 체크 완료</p>
+          <p className="mt-1 text-body text-text-primary">스티커 {selectedAttendance.sticker_count}장이 지급됐어요.</p>
         </div>
-      ) : todayAttendance?.approval_status === "rejected" ? (
-        <div className="rounded-xl bg-state-dangerBg p-5 text-center"><p className="text-subtitle text-state-danger">출석 요청이 반려됐어요.</p></div>
       ) : (
         <>
+          {selectedAttendance?.approval_status === "rejected" && <div className="mb-3 rounded-xl bg-state-dangerBg p-3 text-center"><p className="text-body text-state-danger">이 요청은 반려됐어요. 내용을 확인해 다시 신청할 수 있어요.</p></div>}
+          {isFuture && <div className="mb-3 rounded-xl bg-surface-raised p-3 text-center text-body text-text-secondary">미래 날짜는 출석 신청을 할 수 없어요.</div>}
           <div className="mb-3 grid grid-cols-2 gap-2">
             {state.attendancePolicy.map((tier) => (
               <button
@@ -52,14 +55,14 @@ export function AttendanceSection() {
           </div>
           <Button
             fullWidth
-            disabled={!regularClass || submitting}
+            disabled={!regularClass || submitting || isFuture}
             onClick={async () => {
               if (!regularClass) return showToast("기본 소속 반 정보를 찾을 수 없어요.");
               try {
                 setSubmitting(true);
-                await submitStudentAction({ action: "attendance", tier: selectedTier });
-                dispatch({ type: "CHECK_IN", studentId: state.currentUserId, classId: regularClass.id, tier: selectedTier });
-                showToast("출석 승인 요청을 보냈어요.");
+                await submitStudentAction({ action: "attendance", tier: selectedTier, checkDate: selectedDate });
+                dispatch({ type: "CHECK_IN", studentId: state.currentUserId, classId: regularClass.id, tier: selectedTier, checkDate: selectedDate });
+                showToast(`${dateLabel} 출석 승인 요청을 보냈어요.`);
               } catch (error) {
                 showToast(error instanceof Error ? error.message : "출석을 저장하지 못했어요.");
               } finally {

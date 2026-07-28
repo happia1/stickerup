@@ -107,8 +107,8 @@ function StudentStickerInner() {
         value={tab}
         onChange={(value) => setTab(value as SubTab)}
       />
-      {tab === "attend" && <AttendanceSection />}
-      {tab === "homework" && <HomeworkSection />}
+      {tab === "attend" && <AttendanceSection selectedDate={selectedDate} />}
+      {tab === "homework" && <HomeworkSection selectedDate={selectedDate} />}
       {tab === "praise" && <PraiseSection />}
       <Card>
         <Accordion label={`내 스티커 이력 (${logs.length})`}>

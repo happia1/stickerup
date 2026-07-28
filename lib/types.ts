@@ -93,6 +93,7 @@ export interface AttendanceRecord {
   approval_status: ApprovalStatus;
   approver_id: string | null;
   approved_at: string | null;
+  check_date?: string | null;
   created_at: string;
 }
 
@@ -109,6 +110,7 @@ export interface HomeworkSubmission {
   approval_status: ApprovalStatus;
   approver_id: string | null;
   submitted_at: string;
+  check_date?: string | null;
   approved_at: string | null;
 }
 

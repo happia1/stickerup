@@ -24,6 +24,7 @@ export function appReducer(state: AppState, action: Action): AppState {
     case "CHECK_IN": {
       const tierDef = state.attendancePolicy.find((t) => t.tier === action.tier);
       const count = tierDef ? tierDef.count : 0;
+      const checkDate = action.checkDate ?? nowISO().slice(0, 10);
       const attendance = {
         id: uid("att"),
         tenant_id: state.tenant.id,
@@ -35,9 +36,10 @@ export function appReducer(state: AppState, action: Action): AppState {
         approval_status: "pending" as const,
         approver_id: null,
         approved_at: null,
+        check_date: checkDate,
         created_at: nowISO(),
       };
-      return { ...state, attendanceRecords: [...state.attendanceRecords, attendance] };
+      return { ...state, attendanceRecords: [...state.attendanceRecords.filter((item) => !(item.student_id === action.studentId && item.check_date === checkDate && item.approval_status === "rejected")), attendance] };
     }
 
     case "APPROVE_ATTENDANCE": {
@@ -54,6 +56,7 @@ export function appReducer(state: AppState, action: Action): AppState {
 
     case "SUBMIT_HOMEWORK": {
       const tierDef = state.homeworkPolicy.find((t) => t.tier === action.tier);
+      const checkDate = action.checkDate ?? nowISO().slice(0, 10);
       const submission = {
         id: uid("hw"),
         tenant_id: state.tenant.id,
@@ -64,9 +67,10 @@ export function appReducer(state: AppState, action: Action): AppState {
         approval_status: "pending" as const,
         approver_id: null,
         submitted_at: nowISO(),
+        check_date: checkDate,
         approved_at: null,
       };
-      return { ...state, homeworkSubmissions: [...state.homeworkSubmissions, submission] };
+      return { ...state, homeworkSubmissions: [...state.homeworkSubmissions.filter((item) => !(item.student_id === action.studentId && item.class_id === action.classId && item.check_date === checkDate && item.approval_status === "rejected")), submission] };
     }
 
     case "APPROVE_HOMEWORK": {
