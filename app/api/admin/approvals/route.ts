@@ -31,8 +31,40 @@ export async function PATCH(request: Request) {
   const row = await db.from(table).select("*").eq("id", body.requestId).eq("tenant_id", teacher.tenant_id).eq("approval_status", "pending").maybeSingle();
   if (!row.data) return NextResponse.json({ error: "처리할 대기 요청을 찾을 수 없습니다." }, { status: 404 });
   if (body.action === "reject") {
-    const rejected = await db.from(table).update({ approval_status: "rejected", approver_id: teacher.id, approved_at: new Date().toISOString() }).eq("id", body.requestId);
+    const rejectedAt = new Date().toISOString();
+    const rejected = await db.from(table).update({ approval_status: "rejected", approver_id: teacher.id, approved_at: rejectedAt }).eq("id", body.requestId);
     if (rejected.error) return NextResponse.json({ error: rejected.error.message }, { status: 400 });
+    let rejectionClassId = row.data.class_id as string | null;
+    if (!rejectionClassId) {
+      const defaultClass = await db.from("classes").select("id").eq("tenant_id", teacher.tenant_id).eq("is_default", true).maybeSingle();
+      rejectionClassId = defaultClass.data?.id ?? null;
+    }
+    if (!rejectionClassId) {
+      await db.from(table).update({ approval_status: "pending", approver_id: null, approved_at: null }).eq("id", body.requestId);
+      return NextResponse.json({ error: "반려 이력을 기록할 기본 소속 반이 없습니다." }, { status: 400 });
+    }
+    const detail = body.type === "attendance"
+      ? `${DEFAULT_ATTENDANCE_TIERS.find((item) => item.tier === row.data.tier)?.label ?? row.data.tier} · 신청 ${row.data.sticker_count}장`
+      : body.type === "homework"
+        ? `${DEFAULT_HOMEWORK_TIERS.find((item) => item.tier === row.data.completion_tier)?.label ?? row.data.completion_tier} · 신청 ${row.data.sticker_count}장`
+        : row.data.reason;
+    const audit = await db.from("sticker_ledger").insert({
+      tenant_id: teacher.tenant_id,
+      student_id: row.data.student_id,
+      class_id: rejectionClassId,
+      source_type: body.type,
+      source_id: body.requestId,
+      count: 0,
+      status: "rolled_back",
+      actor_teacher_id: teacher.id,
+      rollback_reason: `승인 반려: ${detail}`,
+      rollback_at: rejectedAt,
+      created_at: rejectedAt,
+    });
+    if (audit.error) {
+      await db.from(table).update({ approval_status: "pending", approver_id: null, approved_at: null }).eq("id", body.requestId);
+      return NextResponse.json({ error: audit.error.message }, { status: 400 });
+    }
     return NextResponse.json({ ok: true });
   }
   const count = Math.min(100, Math.max(0, Math.round(body.count ?? row.data.sticker_count ?? 2)));

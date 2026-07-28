@@ -23,7 +23,7 @@ export async function GET(request: Request) {
   const { db, teacher } = context;
   const [students, classes, enrollments, ledger, connections, prizeLikes, products] = await Promise.all([
     db.from("students").select("id, name, birth_date, invited_by_teacher_id, created_at").eq("tenant_id", teacher.tenant_id),
-    db.from("classes").select("id, name, is_default").eq("tenant_id", teacher.tenant_id),
+    db.from("classes").select("id, name, is_default, status").eq("tenant_id", teacher.tenant_id),
     db.from("enrollments").select("student_id, class_id, status, requested_at").eq("tenant_id", teacher.tenant_id),
     db.from("sticker_ledger").select("student_id, source_type, count, status, created_at").eq("tenant_id", teacher.tenant_id),
     db.from("student_connection_requests").select("student_id, status, created_at").order("created_at", { ascending: false }),
@@ -61,20 +61,35 @@ export async function GET(request: Request) {
     };
   }).sort((a, b) => Number(b.connectionStatus === "pending") - Number(a.connectionStatus === "pending") || (b.requestedAt ?? "").localeCompare(a.requestedAt ?? ""));
 
-  return NextResponse.json({ students: rows, pendingConnectionCount: rows.filter((row) => row.connectionStatus === "pending").length, canDeleteStudents: teacher.role === "owner" });
+  return NextResponse.json({
+    students: rows,
+    availableClasses: (classes.data ?? []).filter((row) => !row.is_default && row.status === "active").map((row) => ({ id: row.id, name: row.name })),
+    pendingConnectionCount: rows.filter((row) => row.connectionStatus === "pending").length,
+    canDeleteStudents: teacher.role === "owner",
+  });
 }
 
 export async function PATCH(request: Request) {
   const context = await getContext(request); if ("error" in context) return context.error;
   const { db, teacher } = context;
-  const body = await request.json() as { studentId?: string; classId?: string; action?: "approve" | "disconnect" | "revoke_pending" | "delete" | "remove_class" };
-  if (!body.studentId || !body.action || !["approve", "disconnect", "revoke_pending", "delete", "remove_class"].includes(body.action)) {
+  const body = await request.json() as { studentId?: string; classId?: string; classIds?: string[]; action?: "approve" | "disconnect" | "revoke_pending" | "delete" | "remove_class" | "add_classes" };
+  if (!body.studentId || !body.action || !["approve", "disconnect", "revoke_pending", "delete", "remove_class", "add_classes"].includes(body.action)) {
     return NextResponse.json({ error: "학생과 처리 작업을 확인해주세요." }, { status: 400 });
   }
   const student = await db.from("students").select("id").eq("id", body.studentId).eq("tenant_id", teacher.tenant_id).maybeSingle();
   if (student.error || !student.data) return NextResponse.json({ error: "학생을 찾을 수 없습니다." }, { status: 404 });
+  const studentId = student.data.id;
 
-  if (body.action === "remove_class") {
+  if (body.action === "add_classes") {
+    const classIds = [...new Set(body.classIds ?? [])];
+    if (!classIds.length) return NextResponse.json({ error: "추가할 특강반을 선택해 주세요." }, { status: 400 });
+    const classes = await db.from("classes").select("id").eq("tenant_id", teacher.tenant_id).eq("is_default", false).eq("status", "active").in("id", classIds);
+    if (classes.error || classes.data.length !== classIds.length) return NextResponse.json({ error: "추가할 수 없는 반이 포함되어 있습니다." }, { status: 400 });
+    const approvedAt = new Date().toISOString();
+    const rows = classIds.map((classId) => ({ tenant_id: teacher.tenant_id, student_id: studentId, class_id: classId, status: "approved", approved_at: approvedAt, approver_id: teacher.id }));
+    const added = await db.from("enrollments").upsert(rows, { onConflict: "student_id,class_id" });
+    if (added.error) return NextResponse.json({ error: added.error.message }, { status: 400 });
+  } else if (body.action === "remove_class") {
     if (!body.classId) return NextResponse.json({ error: "해지할 반을 확인해주세요." }, { status: 400 });
     const classInfo = await db.from("classes").select("is_default").eq("id", body.classId).eq("tenant_id", teacher.tenant_id).maybeSingle();
     if (!classInfo.data || classInfo.data.is_default) return NextResponse.json({ error: "기본 소속 반은 해지할 수 없습니다." }, { status: 400 });

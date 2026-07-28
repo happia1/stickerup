@@ -73,7 +73,7 @@ export function AdminTopBar() {
   const connectionCount = remoteConnectionCount ?? counts.enrollment;
   const totalPending = counts.praise + connectionCount;
   const notifItems = [
-    { label: "칭찬 승인 대기", count: counts.praise, href: "/admin/approvals" },
+    { label: "칭찬 승인 대기", count: counts.praise, href: "/admin/stickers?tab=approvals" },
     { label: "연결 대기중인 학생", count: connectionCount, href: "/admin/students" },
   ];
 

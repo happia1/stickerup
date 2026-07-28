@@ -14,6 +14,7 @@ export interface AdminStudentRow {
 
 export interface AdminStudentsData {
   students: AdminStudentRow[];
+  availableClasses: Array<{ id: string; name: string }>;
   pendingConnectionCount: number;
   canDeleteStudents: boolean;
 }
