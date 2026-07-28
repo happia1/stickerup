@@ -16,6 +16,9 @@ export default function Home() {
         <p className="text-display">로그인</p>
         <LoginForm />
       </div>
+      <p className="-mt-1 text-micro text-text-muted">
+        Copyright © 2026 Jeongwon Kim. All rights reserved.
+      </p>
     </main>
   );
 }

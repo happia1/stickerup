@@ -14,6 +14,9 @@ export default function LoginPage({ searchParams }: { searchParams?: { type?: st
         {searchParams?.reason==="session_expired"&&<p className="mt-2 text-caption text-text-secondary">로그인 정보가 만료되어 안전하게 로그아웃됐습니다. 다시 로그인해 주세요.</p>}
         <LoginForm initialAccountType={accountType} redirectTo={redirectTo} forceReauth={forceReauth} />
       </div>
+      <p className="mt-5 text-center text-micro text-text-muted">
+        Copyright © 2026 Jeongwon Kim. All rights reserved.
+      </p>
     </main>
   );
 }

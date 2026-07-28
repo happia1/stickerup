@@ -8,15 +8,7 @@ import { useAppDispatch, useAppState } from "@/lib/store/provider";
 import { getTeacherById } from "@/lib/store/selectors";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useToast } from "@/lib/toast/provider";
-
-function readImageAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
+import { AppFooter } from "@/components/layout/AppFooter";
 
 export default function AdminSettingsPage() {
   const router = useRouter();
@@ -26,19 +18,14 @@ export default function AdminSettingsPage() {
   const me = getTeacherById(state, state.currentUserId);
   const loadedTeacherId = me?.id;
   const loadedTeacherName = me?.name;
-  const loadedProfileImageUrl = me?.profile_image_url;
   const [name, setName] = useState(me?.name ?? "");
-  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(me?.profile_image_url ?? null);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!loadedTeacherId || !loadedTeacherName) return;
     setName(loadedTeacherName);
-    setProfileImageUrl(loadedProfileImageUrl ?? null);
-    setSelectedImage(null);
-  }, [loadedTeacherId, loadedTeacherName, loadedProfileImageUrl]);
+  }, [loadedTeacherId, loadedTeacherName]);
 
   async function handleLogout() {
     const supabase = getSupabaseBrowserClient();
@@ -86,22 +73,10 @@ export default function AdminSettingsPage() {
 
     try {
       setSaving(true);
-      let savedImageUrl = profileImageUrl;
-      if (selectedImage) {
-        const formData = new FormData();
-        formData.append("file", selectedImage);
-        const uploadResponse = await fetch("/api/uploads/profile-image", { method: "POST", headers: { Authorization: `Bearer ${session.access_token}` }, body: formData });
-        const uploadPayload = await uploadResponse.json().catch(() => null) as { imageUrl?: string; error?: string } | null;
-        if (!uploadResponse.ok || !uploadPayload?.imageUrl) throw new Error(uploadPayload?.error ?? "프로필 사진을 업로드하지 못했습니다.");
-        savedImageUrl = uploadPayload.imageUrl;
-      }
-
-      const response = await fetch("/api/admin/profile", { method: "PATCH", headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" }, body: JSON.stringify({ name: nextName, profileImageUrl: savedImageUrl }) });
-      const payload = await response.json().catch(() => null) as { teacher?: { name: string; profile_image_url: string | null }; error?: string } | null;
+      const response = await fetch("/api/admin/profile", { method: "PATCH", headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" }, body: JSON.stringify({ name: nextName }) });
+      const payload = await response.json().catch(() => null) as { teacher?: { name: string }; error?: string } | null;
       if (!response.ok || !payload?.teacher) throw new Error(payload?.error ?? "프로필을 저장하지 못했습니다.");
-      setProfileImageUrl(payload.teacher.profile_image_url);
-      setSelectedImage(null);
-      dispatch({ type: "UPDATE_TEACHER_PROFILE", teacherId: me.id, name: payload.teacher.name, profileImageUrl: payload.teacher.profile_image_url });
+      dispatch({ type: "UPDATE_TEACHER_PROFILE", teacherId: me.id, name: payload.teacher.name, profileImageUrl: null });
       showToast("프로필이 저장되었습니다.");
     } catch (error) {
       showToast(error instanceof Error ? error.message : "프로필을 저장하지 못했습니다.");
@@ -127,37 +102,11 @@ export default function AdminSettingsPage() {
 
       <Card>
         <h3 className="mb-4 text-subtitle">내 프로필</h3>
-        <div className="mb-4 flex items-center gap-4">
-          {profileImageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={profileImageUrl} alt="프로필 사진" className="h-20 w-20 rounded-full border border-border object-cover" />
-          ) : (
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-state-warningBg text-display font-extrabold text-brand-amber">
-              {(name || me.name).slice(0, 1)}
-            </div>
-          )}
-          <div>
-            <label className="inline-flex cursor-pointer rounded-xl bg-surface-raised px-3 py-2 text-caption text-brand-amber">
-              사진 추가
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={async (event) => {
-                  const file = event.target.files?.[0];
-                  if (!file) return;
-                  setSelectedImage(file);
-                  setProfileImageUrl(await readImageAsDataUrl(file));
-                }}
-              />
-            </label>
-            {profileImageUrl && (
-              <button type="button" className="ml-2 text-caption text-state-danger" onClick={() => { setProfileImageUrl(null); setSelectedImage(null); }}>
-                제거
-              </button>
-            )}
-            <p className="mt-2 text-caption text-text-muted">프로필 저장 후 모든 관리자 화면에 동일하게 적용돼요.</p>
+        <div className="mb-4 flex items-center gap-3">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-state-warningBg text-title font-extrabold text-brand-amber">
+            {(name || me.name).slice(0, 1)}
           </div>
+          <p className="text-caption text-text-muted">관리자 프로필은 이름으로 표시됩니다.</p>
         </div>
 
         <label className="mb-3 block text-caption font-semibold text-text-secondary">
@@ -192,6 +141,7 @@ export default function AdminSettingsPage() {
           {deleting ? "프로필 삭제 중..." : "프로필 삭제하기"}
         </button>
       </Card>
+      <AppFooter initialName={me.name} />
     </div>
   );
 }

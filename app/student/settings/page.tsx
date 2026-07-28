@@ -5,10 +5,15 @@ import { Card } from "@/components/ui/Card";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useToast } from "@/lib/toast/provider";
 import clsx from "@/lib/clsx";
+import { AppFooter } from "@/components/layout/AppFooter";
+import { useAppState } from "@/lib/store/provider";
+import { getStudentById } from "@/lib/store/selectors";
 
 export default function StudentSettingsPage() {
   const router = useRouter();
   const showToast = useToast();
+  const state = useAppState();
+  const me = getStudentById(state, state.currentUserId);
   const [notifications, setNotifications] = useState(true);
   const [deleting, setDeleting] = useState(false);
 
@@ -91,6 +96,7 @@ export default function StudentSettingsPage() {
           {deleting ? "프로필 삭제 중..." : "프로필 삭제하기"}
         </button>
       </Card>
+      <AppFooter initialName={me?.name ?? ""} />
     </div>
   );
 }

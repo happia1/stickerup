@@ -6,13 +6,12 @@ export async function PATCH(request: Request) {
   const auth = await getRequestUser(request);
   if (!auth.user) return NextResponse.json({ error: auth.error }, { status: 401 });
 
-  const body = await request.json() as { name?: string; profileImageUrl?: string | null };
+  const body = await request.json() as { name?: string };
   const name = body.name?.trim();
   if (!name) return NextResponse.json({ error: "이름을 입력해 주세요." }, { status: 400 });
-  if (body.profileImageUrl && !/^https?:\/\//i.test(body.profileImageUrl)) return NextResponse.json({ error: "프로필 이미지를 다시 등록해 주세요." }, { status: 400 });
 
   const db = createSupabaseAdminClient();
-  const updated = await db.from("teachers").update({ name, profile_image_url: body.profileImageUrl ?? null }).eq("id", auth.user.id).select("id, name, profile_image_url").maybeSingle();
+  const updated = await db.from("teachers").update({ name, profile_image_url: null }).eq("id", auth.user.id).select("id, name").maybeSingle();
   if (updated.error) return NextResponse.json({ error: updated.error.message }, { status: 400 });
   if (!updated.data) return NextResponse.json({ error: "수정할 관리자 프로필을 찾지 못했습니다." }, { status: 404 });
 
