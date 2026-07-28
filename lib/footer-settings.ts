@@ -1,5 +1,4 @@
 export type FooterSettings = {
-  service_intro: string;
   creator_name: string;
   support_title: string;
   support_description: string;
@@ -11,7 +10,6 @@ export type FooterSettings = {
 };
 
 export const DEFAULT_FOOTER_SETTINGS: FooterSettings = {
-  service_intro: "앱서비스 소개",
   creator_name: "Jeongwon Kim",
   support_title: "고객지원",
   support_description: "서비스 이용 중 궁금한 점이나 불편한 사항이 있으면 문의해 주세요.",

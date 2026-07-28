@@ -15,7 +15,6 @@ insert into public.app_content_settings (key, value)
 values (
   'student_mypage_footer',
   jsonb_build_object(
-    'service_intro', '앱서비스 소개',
     'creator_name', 'Jeongwon Kim',
     'support_title', '고객지원',
     'support_description', '서비스 이용 중 궁금한 점이나 불편한 사항이 있으면 문의해 주세요.',

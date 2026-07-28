@@ -1079,3 +1079,9 @@ pm run build는 기존 EISDIR/EPERM 환경 이슈로 실패
 - 개발자 전용 목록·상태 변경과 로그인 학생 전용 문의 접수 API를 추가하고 `support_inquiries` 저장 테이블 마이그레이션을 작성했다.
 - 상태: `npm.cmd run typecheck`, `npm.cmd run build` 통과.
 - 다음 할 일: Supabase에 `20260728_03_support_inquiries.sql`을 적용하고 실제 학생·개발자 계정으로 접수 흐름을 확인한다.
+## 2026-07-28 (학생 푸터 로고 노출 수정)
+
+- 학생 마이페이지 푸터 로고를 잘라 채우는 방식에서 원본 비율 전체를 표시하는 방식으로 변경해 `STICKERUP` 로고와 하단 표식이 잘리지 않게 했다.
+- `앱서비스 소개` 문구와 개발자 푸터 관리 항목을 제거하고 학생 화면과 개발자 미리보기에는 `by. Jeongwon Kim` 형식의 제작자 표기만 남겼다.
+- 상태: `npm.cmd run typecheck`, `npm.cmd run build` 통과.
+- 다음 할 일: 배포 화면에서 모바일 너비별 로고 크기를 확인한다.

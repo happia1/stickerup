@@ -97,14 +97,14 @@ function FooterManager() {
     <h2 className="text-subtitle">학생 마이페이지 푸터 관리</h2>
     <p className="mt-1 text-caption text-text-secondary">저장한 내용은 모든 학생의 마이페이지 하단에 공통으로 표시됩니다.</p>
     <div className="mt-5 grid gap-4 md:grid-cols-2">
-      {field("서비스 소개", "service_intro")}{field("제작자 이름", "creator_name")}{field("고객지원 제목", "support_title")}
+      {field("제작자 이름", "creator_name")}{field("고객지원 제목", "support_title")}
       <label className="text-caption text-text-secondary md:col-span-2">고객지원 안내<textarea value={form.support_description} onChange={(event) => update("support_description", event.target.value)} className="mt-1 min-h-24 w-full rounded-lg border border-border px-3 py-2"/></label>
       {field("이용약관 링크 이름", "terms_label")}{field("이용약관 주소", "terms_url", "/terms")}{field("개인정보 처리방침 링크 이름", "privacy_label")}{field("개인정보 처리방침 주소", "privacy_url", "/privacy")}
       <div className="md:col-span-2">{field("저작권 문구", "copyright_text")}</div>
     </div>
     <div className="mt-6 rounded-xl border border-border bg-surface-card p-5">
       <p className="text-caption font-bold text-text-muted">미리보기</p><p className="mt-3 text-subtitle">STICKERUP</p>
-      <p className="mt-1 text-caption text-text-secondary">{form.service_intro} <span className="text-text-muted">by. {form.creator_name}</span></p>
+      <p className="mt-1 text-caption text-text-muted">by. {form.creator_name}</p>
       <p className="mt-5 font-bold">{form.support_title}</p><p className="mt-1 whitespace-pre-wrap text-caption text-text-secondary">{form.support_description}</p>
       <div className="mt-5 flex gap-4 border-t border-border pt-4 text-micro"><span>{form.terms_label}</span><span className="font-bold">{form.privacy_label}</span></div>
       <p className="mt-3 text-micro text-text-muted">{form.copyright_text}</p>

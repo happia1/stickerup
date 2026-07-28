@@ -331,17 +331,17 @@ export default function StudentMyPage() {
       </Card>
 
       <footer className="mt-8 border-t border-border px-1 pb-8 pt-7">
-        <div className="relative h-11 w-44 overflow-hidden">
+        <div className="relative aspect-[1731/909] w-44">
           <NextImage
             src="/brand/bar.png"
             alt="StickerUp"
             fill
             sizes="176px"
-            className="object-cover object-[50%_42%]"
+            className="object-contain"
           />
         </div>
-        <p className="mt-2 text-caption text-text-secondary">
-          {footer.service_intro} <span className="text-text-muted">by. {footer.creator_name}</span>
+        <p className="mt-1 text-caption text-text-muted">
+          by. {footer.creator_name}
         </p>
 
         <section className="mt-7" aria-labelledby="student-support-title">
