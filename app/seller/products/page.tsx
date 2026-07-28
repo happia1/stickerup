@@ -6,6 +6,11 @@ import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useToast } from "@/lib/toast/provider";
 import { uploadProductImage } from "@/lib/client/upload-product-image";
+import {
+  DEFAULT_FOOTER_SETTINGS,
+  normalizedFooterSettings,
+  type FooterSettings,
+} from "@/lib/footer-settings";
 
 type Product = { id:string; title:string; price_label:string|null; image_url:string|null; prize_image_url:string|null; purchase_url:string; description:string|null; category:string|null; is_active:boolean; sort_order:number };
 type FormState = { title:string; priceLabel:string; imageUrl:string; prizeImageUrl:string; purchaseUrl:string; description:string; category:string; isActive:boolean; sortOrder:number };
@@ -46,10 +51,163 @@ function ImagePicker({ title, value, disabled, onChange }: { title:string; value
   return <div className={`rounded-xl bg-surface-card p-4 ${disabled ? "opacity-60" : ""}`}><p className="text-caption font-bold">{title}</p><div className="mt-3 flex items-center gap-3">{value ? <img src={value} onError={event=>{event.currentTarget.onerror=null;event.currentTarget.src="/images/placeholder-product.svg";}} alt={title} className="h-24 w-24 rounded-xl object-cover" /> : <div className="flex h-24 w-24 items-center justify-center rounded-xl border border-dashed border-border text-caption text-text-muted">이미지 없음</div>}<label className={`rounded-lg border border-border px-3 py-2 text-caption font-bold ${disabled||uploading ? "pointer-events-none opacity-60" : "cursor-pointer"}`}>{uploading?"업로드 중...":"이미지 등록"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={choose} disabled={disabled||uploading}/></label>{value && !disabled && !uploading && <button type="button" className="text-caption text-state-danger" onClick={() => onChange("")}>삭제</button>}</div></div>;
 }
 
+function FooterManager() {
+  const toast = useToast();
+  const [form, setForm] = useState<FooterSettings>(DEFAULT_FOOTER_SETTINGS);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const token = async () => (await getSupabaseBrowserClient()!.auth.getSession()).data.session?.access_token;
+
+  useEffect(() => {
+    fetch("/api/site-footer", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((payload) => setForm(normalizedFooterSettings(payload.settings)))
+      .catch(() => toast("푸터 설정을 불러오지 못했습니다."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const update = (field: keyof FooterSettings, value: string) => setForm((current) => ({ ...current, [field]: value }));
+  const save = async () => {
+    const access = await token();
+    if (!access) return toast("개발자 계정으로 다시 로그인해 주세요.");
+    setSaving(true);
+    try {
+      const response = await fetch("/api/site-footer", {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${access}`, "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? "푸터를 저장하지 못했습니다.");
+      setForm(normalizedFooterSettings(payload.settings));
+      toast("학생 앱 푸터를 저장했습니다.");
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "푸터를 저장하지 못했습니다.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <section className="mt-5 rounded-card bg-surface-page p-5 text-text-muted">푸터 설정을 불러오는 중...</section>;
+  const field = (label: string, key: keyof FooterSettings, placeholder = "") => (
+    <label className="text-caption text-text-secondary">{label}<input value={form[key]} onChange={(event) => update(key, event.target.value)} placeholder={placeholder} className="mt-1 w-full rounded-lg border border-border px-3 py-2"/></label>
+  );
+
+  return <section className="mt-5 rounded-card bg-surface-page p-5">
+    <h2 className="text-subtitle">학생 마이페이지 푸터 관리</h2>
+    <p className="mt-1 text-caption text-text-secondary">저장한 내용은 모든 학생의 마이페이지 하단에 공통으로 표시됩니다.</p>
+    <div className="mt-5 grid gap-4 md:grid-cols-2">
+      {field("서비스 소개", "service_intro")}{field("제작자 이름", "creator_name")}{field("고객지원 제목", "support_title")}
+      <label className="text-caption text-text-secondary md:col-span-2">고객지원 안내<textarea value={form.support_description} onChange={(event) => update("support_description", event.target.value)} className="mt-1 min-h-24 w-full rounded-lg border border-border px-3 py-2"/></label>
+      {field("이용약관 링크 이름", "terms_label")}{field("이용약관 주소", "terms_url", "/terms")}{field("개인정보 처리방침 링크 이름", "privacy_label")}{field("개인정보 처리방침 주소", "privacy_url", "/privacy")}
+      <div className="md:col-span-2">{field("저작권 문구", "copyright_text")}</div>
+    </div>
+    <div className="mt-6 rounded-xl border border-border bg-surface-card p-5">
+      <p className="text-caption font-bold text-text-muted">미리보기</p><p className="mt-3 text-subtitle">STICKERUP</p>
+      <p className="mt-1 text-caption text-text-secondary">{form.service_intro} <span className="text-text-muted">by. {form.creator_name}</span></p>
+      <p className="mt-5 font-bold">{form.support_title}</p><p className="mt-1 whitespace-pre-wrap text-caption text-text-secondary">{form.support_description}</p>
+      <div className="mt-5 flex gap-4 border-t border-border pt-4 text-micro"><span>{form.terms_label}</span><span className="font-bold">{form.privacy_label}</span></div>
+      <p className="mt-3 text-micro text-text-muted">{form.copyright_text}</p>
+    </div>
+    <button type="button" disabled={saving} onClick={() => void save()} className="mt-5 rounded-lg bg-brand-amber px-5 py-2.5 font-bold text-surface-page disabled:opacity-60">{saving ? "저장 중..." : "푸터 저장"}</button>
+  </section>;
+}
+
+type SupportInquiry = {
+  id: string;
+  name: string;
+  contact: string;
+  content: string;
+  status: "received" | "reviewing" | "completed";
+  created_at: string;
+};
+
+const INQUIRY_STATUS_LABEL: Record<SupportInquiry["status"], string> = {
+  received: "접수",
+  reviewing: "확인 중",
+  completed: "답변 완료",
+};
+
+function InquiryManager() {
+  const toast = useToast();
+  const [inquiries, setInquiries] = useState<SupportInquiry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<"all" | SupportInquiry["status"]>("all");
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const token = async () => (await getSupabaseBrowserClient()!.auth.getSession()).data.session?.access_token;
+  const load = async () => {
+    const access = await token();
+    if (!access) return;
+    try {
+      const response = await fetch("/api/support-inquiries", { headers: { Authorization: `Bearer ${access}` }, cache: "no-store" });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? "문의 목록을 불러오지 못했습니다.");
+      setInquiries(payload.inquiries ?? []);
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "문의 목록을 불러오지 못했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => { void load(); }, []);
+  const updateStatus = async (inquiryId: string, status: SupportInquiry["status"]) => {
+    const access = await token();
+    if (!access) return;
+    setUpdatingId(inquiryId);
+    try {
+      const response = await fetch("/api/support-inquiries", {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${access}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ inquiryId, status }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? "처리 상태를 변경하지 못했습니다.");
+      setInquiries((current) => current.map((item) => item.id === inquiryId ? { ...item, status } : item));
+      toast("문의 처리 상태를 변경했습니다.");
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "처리 상태를 변경하지 못했습니다.");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+  const visible = filter === "all" ? inquiries : inquiries.filter((item) => item.status === filter);
+
+  return <section className="mt-5 rounded-card bg-surface-page p-5">
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div><h2 className="text-subtitle">고객 문의 게시판</h2><p className="mt-1 text-caption text-text-secondary">학생이 남긴 연락처와 문의 내용을 확인하고 처리 상태를 관리합니다.</p></div>
+      <button type="button" onClick={() => void load()} className="rounded-lg border border-border px-3 py-2 text-caption font-bold">새로고침</button>
+    </div>
+    <div className="mt-5 flex flex-wrap gap-2">
+      {(["all", "received", "reviewing", "completed"] as const).map((value) => <button key={value} type="button" onClick={() => setFilter(value)} className={`rounded-full px-3 py-2 text-caption font-bold ${filter === value ? "bg-brand-amber text-surface-page" : "bg-surface-card text-text-secondary"}`}>{value === "all" ? `전체 ${inquiries.length}` : `${INQUIRY_STATUS_LABEL[value]} ${inquiries.filter((item) => item.status === value).length}`}</button>)}
+    </div>
+    <div className="mt-5 space-y-2">
+      {loading ? <p className="rounded-xl bg-surface-card p-5 text-center text-caption text-text-muted">문의 목록을 불러오는 중...</p> : visible.length === 0 ? <p className="rounded-xl bg-surface-card p-5 text-center text-caption text-text-muted">접수된 문의가 없습니다.</p> : visible.map((inquiry) => (
+        <details key={inquiry.id} className="rounded-xl border border-border bg-surface-card">
+          <summary className="cursor-pointer list-none p-4">
+            <div className="flex items-center gap-3">
+              <span className={`rounded-full px-2.5 py-1 text-micro font-bold ${inquiry.status === "completed" ? "bg-state-successBg text-state-success" : inquiry.status === "reviewing" ? "bg-state-warningBg text-brand-amber" : "bg-surface-raised text-text-secondary"}`}>{INQUIRY_STATUS_LABEL[inquiry.status]}</span>
+              <div className="min-w-0 flex-1"><p className="truncate text-body font-bold">{inquiry.content}</p><p className="mt-1 text-micro text-text-muted">{inquiry.name} · {new Date(inquiry.created_at).toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short" })}</p></div>
+              <span className="text-text-muted">⌄</span>
+            </div>
+          </summary>
+          <div className="border-t border-border p-4">
+            <dl className="grid gap-3 text-caption sm:grid-cols-2">
+              <div><dt className="text-text-muted">성함</dt><dd className="mt-1 font-bold">{inquiry.name}</dd></div>
+              <div><dt className="text-text-muted">답변 연락처</dt><dd className="mt-1 break-all font-bold">{inquiry.contact}</dd></div>
+            </dl>
+            <div className="mt-4"><p className="text-caption text-text-muted">문의 내용</p><p className="mt-2 whitespace-pre-wrap break-words rounded-lg bg-surface-raised p-4 text-body leading-7">{inquiry.content}</p></div>
+            <label className="mt-4 block max-w-48 text-caption text-text-secondary">처리 상태<select disabled={updatingId === inquiry.id} value={inquiry.status} onChange={(event) => void updateStatus(inquiry.id, event.target.value as SupportInquiry["status"])} className="mt-1 w-full rounded-lg border border-border px-3 py-2"><option value="received">접수</option><option value="reviewing">확인 중</option><option value="completed">답변 완료</option></select></label>
+          </div>
+        </details>
+      ))}
+    </div>
+  </section>;
+}
+
 export default function DeveloperProductsPage() {
   const router = useRouter();
   const toast = useToast();
-  const [tab, setTab] = useState<"new"|"sourcing"|"promotion">("new");
+  const [tab, setTab] = useState<"new"|"sourcing"|"promotion"|"footer"|"inquiries">("new");
   const [view, setView] = useState<"card"|"list">("card");
   const [products, setProducts] = useState<Product[]>([]);
   const [editing, setEditing] = useState<Product|null>(null);
@@ -75,8 +233,8 @@ export default function DeveloperProductsPage() {
   const logout=async()=>{if(loggingOut)return;setLoggingOut(true);try{const client=getSupabaseBrowserClient();if(client)await client.auth.signOut();toast("개발자 계정에서 로그아웃했습니다.");router.replace("/developer/login");router.refresh();}catch{toast("로그아웃하지 못했습니다. 다시 시도해 주세요.");setLoggingOut(false);}};
 
   return <main className="min-h-screen bg-surface-card p-6 text-text-primary"><div className="mx-auto max-w-6xl"><div className="flex items-start justify-between gap-4"><div><h1 className="text-title">StickerUp 개발자 상품 관리</h1><p className="mt-1 text-caption text-text-secondary">구매 상품과 이벤트 경품 이미지를 구분해 관리합니다.</p></div><button type="button" disabled={loggingOut} onClick={()=>void logout()} className="shrink-0 rounded-lg border border-border px-3 py-2 text-caption font-bold text-text-secondary disabled:opacity-50">{loggingOut?"로그아웃 중...":"로그아웃"}</button></div>
-    <div className="mt-6 grid max-w-2xl grid-cols-3 rounded-xl bg-surface-page p-1"><button onClick={()=>setTab("new")} className={`rounded-lg px-3 py-3 font-bold ${tab==="new"?"bg-brand-amber text-surface-page":"text-text-secondary"}`}>상품 등록</button><button onClick={()=>setTab("sourcing")} className={`rounded-lg px-3 py-3 font-bold ${tab==="sourcing"?"bg-brand-amber text-surface-page":"text-text-secondary"}`}>상품 리스트 {products.length}</button><button onClick={()=>setTab("promotion")} className={`rounded-lg px-3 py-3 font-bold ${tab==="promotion"?"bg-brand-amber text-surface-page":"text-text-secondary"}`}>프로모션</button></div>
-    {error ? <div className="mt-6 rounded-card border border-state-danger p-5 text-state-danger">{error}</div> : tab==="promotion" ? <BannerManager /> : tab==="new" ? <section className="mt-5 rounded-card bg-surface-page p-5"><h2 className="mb-4 text-subtitle">{editing?"상품 수정":"상품 등록"}</h2><div className="grid gap-4 md:grid-cols-2">
+    <div className="mt-6 grid max-w-4xl grid-cols-2 rounded-xl bg-surface-page p-1 sm:grid-cols-5"><button onClick={()=>setTab("new")} className={`rounded-lg px-3 py-3 font-bold ${tab==="new"?"bg-brand-amber text-surface-page":"text-text-secondary"}`}>상품 등록</button><button onClick={()=>setTab("sourcing")} className={`rounded-lg px-3 py-3 font-bold ${tab==="sourcing"?"bg-brand-amber text-surface-page":"text-text-secondary"}`}>상품 리스트 {products.length}</button><button onClick={()=>setTab("promotion")} className={`rounded-lg px-3 py-3 font-bold ${tab==="promotion"?"bg-brand-amber text-surface-page":"text-text-secondary"}`}>프로모션</button><button onClick={()=>setTab("footer")} className={`rounded-lg px-3 py-3 font-bold ${tab==="footer"?"bg-brand-amber text-surface-page":"text-text-secondary"}`}>푸터 관리</button><button onClick={()=>setTab("inquiries")} className={`rounded-lg px-3 py-3 font-bold ${tab==="inquiries"?"bg-brand-amber text-surface-page":"text-text-secondary"}`}>문의 관리</button></div>
+    {tab==="inquiries" ? <InquiryManager /> : tab==="footer" ? <FooterManager /> : error ? <div className="mt-6 rounded-card border border-state-danger p-5 text-state-danger">{error}</div> : tab==="promotion" ? <BannerManager /> : tab==="new" ? <section className="mt-5 rounded-card bg-surface-page p-5"><h2 className="mb-4 text-subtitle">{editing?"상품 수정":"상품 등록"}</h2><div className="grid gap-4 md:grid-cols-2">
       <label className="text-caption text-text-secondary md:col-span-2"><span className="flex items-center justify-between">상품 링크<button type="button" onClick={reset} className="text-micro text-text-muted underline underline-offset-2">입력 초기화</button></span><div className="mt-1 flex gap-2"><input value={form.purchaseUrl} onChange={(e)=>{setForm({...form,purchaseUrl:e.target.value});setPreviewMessage("");}} onBlur={()=>{if(usableProductInput(form.purchaseUrl)&&!previewing)void fetchPreview();}} className="min-w-0 flex-1 rounded-lg border border-border px-3 py-2" placeholder="상품 링크 또는 쿠팡 iframe 태그"/><button type="button" disabled={previewing} onClick={()=>void fetchPreview()} className="rounded-lg border border-brand-amber px-4 py-2 font-bold text-brand-amber">{previewing?"불러오는 중":"상품정보 자동입력"}</button></div><span className={`mt-1 block text-micro ${previewMessage?"text-brand-amber":"text-text-muted"}`}>{previewMessage||"링크 입력을 마치면 상품 정보를 자동으로 확인합니다. 쿠팡 iframe 태그도 그대로 붙여넣을 수 있어요."}</span></label>
       <label className="text-caption text-text-secondary">상품명<input value={form.title} onChange={(e)=>setForm({...form,title:e.target.value})} className="mt-1 w-full rounded-lg border border-border px-3 py-2"/></label><label className="text-caption text-text-secondary">가격<input value={form.priceLabel} onChange={(e)=>setForm({...form,priceLabel:e.target.value})} className="mt-1 w-full rounded-lg border border-border px-3 py-2" placeholder="예: 12,900원"/></label>
       <label className="text-caption text-text-secondary">카테고리<select value={form.category} onChange={(e)=>setForm({...form,category:e.target.value})} className="mt-1 w-full rounded-lg border border-border px-3 py-2">{categories.map((category)=><option key={category}>{category}</option>)}</select></label><div className="flex items-end gap-2"><input value={newCategory} onChange={(e)=>setNewCategory(e.target.value)} className="min-w-0 flex-1 rounded-lg border border-border px-3 py-2" placeholder="새 카테고리"/><button type="button" onClick={addCategory} className="rounded-lg border border-border px-3 py-2">추가</button></div>
