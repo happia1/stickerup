@@ -20,11 +20,12 @@ export async function POST(request: Request) {
   if (body.action === "profile") {
     const name = body.name?.trim();
     if (!name) return NextResponse.json({ error: "이름을 입력해 주세요." }, { status: 400 });
+    if (name.length > 30) return NextResponse.json({ error: "이름은 30자 이내로 입력해 주세요." }, { status: 400 });
     if (body.birthDate && (!/^\d{4}-\d{2}-\d{2}$/.test(body.birthDate) || body.birthDate > koreaDateKey())) return NextResponse.json({ error: "올바른 생년월일을 입력해 주세요." }, { status: 400 });
     if (body.profileImageUrl && !body.profileImageUrl.startsWith("data:image/")) return NextResponse.json({ error: "올바른 프로필 이미지를 선택해 주세요." }, { status: 400 });
-    const result = await db.from("students").update({ name, birth_date: body.birthDate || null, profile_image_url: body.profileImageUrl ?? null }).eq("id", studentData.id);
+    const result = await db.from("students").update({ name, birth_date: body.birthDate || null, profile_image_url: body.profileImageUrl ?? null }).eq("id", studentData.id).eq("tenant_id", studentData.tenant_id).select("id, name, birth_date, profile_image_url").single();
     if (result.error) return NextResponse.json({ error: result.error.message }, { status: 400 });
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, student: result.data });
   }
 
   if (body.action === "withdraw-enrollment") {

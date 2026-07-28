@@ -104,6 +104,8 @@ export default function StudentMyPage() {
                   className="min-w-0 flex-1 bg-surface-raised rounded-lg px-2.5 py-1.5 text-subtitle text-text-primary"
                   value={name}
                   onChange={(event) => setName(event.target.value)}
+                  maxLength={30}
+                  placeholder="이름을 입력해 주세요"
                   aria-label="이름"
                 />
               ) : (
@@ -111,8 +113,8 @@ export default function StudentMyPage() {
               )}
               <button
                 type="button"
-                aria-label="프로필 설정"
-                className="w-7 h-7 rounded-full bg-surface-raised text-text-secondary text-caption flex items-center justify-center flex-shrink-0"
+                aria-label="이름과 프로필 수정"
+                className="flex h-8 flex-shrink-0 items-center justify-center gap-1 rounded-full bg-surface-raised px-2.5 text-micro font-bold text-text-secondary"
                 onClick={() => {
                   setName(me.name);
                   setBirthDate(me.birth_date ?? "");
@@ -121,6 +123,7 @@ export default function StudentMyPage() {
                 }}
               >
                 <span className="inline-block -scale-x-100" aria-hidden="true">✎</span>
+                <span>{editingProfile ? "닫기" : "이름 수정"}</span>
               </button>
             </div>
             {editingProfile ? (
@@ -143,6 +146,7 @@ export default function StudentMyPage() {
         </div>
         {editingProfile && (
           <div className="mt-3 space-y-3">
+            <p className="text-caption text-text-secondary">수정한 이름은 홈 화면과 랭킹에도 동일하게 반영돼요.</p>
             <div className="flex flex-wrap gap-2">
               <label className="cursor-pointer rounded-lg bg-surface-raised px-3 py-2 text-caption font-bold text-brand-amber">
                 앨범에서 선택
@@ -161,7 +165,8 @@ export default function StudentMyPage() {
               onClick={async () => {
                 try {
                   setSavingProfile(true);
-                  const nextName = name.trim() || me.name;
+                  const nextName = name.trim();
+                  if (!nextName) throw new Error("이름을 입력해 주세요.");
                   await postStudentAction({ action: "profile", name: nextName, birthDate: birthDate || null, profileImageUrl });
                   dispatch({ type: "UPDATE_STUDENT_PROFILE", studentId: me.id, name: nextName, birthDate: birthDate || null, profileImageUrl });
                   showToast("프로필이 저장되었어요.");
@@ -171,7 +176,7 @@ export default function StudentMyPage() {
                 } finally { setSavingProfile(false); }
               }}
             >
-              {savingProfile ? "저장 중..." : "저장"}
+              {savingProfile ? "저장 중..." : "프로필 저장"}
             </Button>
             <Button
               variant="secondary"
