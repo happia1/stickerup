@@ -5,7 +5,6 @@ import { AttendanceSection } from "@/components/student/AttendanceSection";
 import { HomeworkSection } from "@/components/student/HomeworkSection";
 import { PraiseSection } from "@/components/student/PraiseSection";
 import { WeekDatePicker } from "@/components/student/WeekDatePicker";
-import { ChipTabs } from "@/components/ui/Tabs";
 import { Accordion } from "@/components/ui/Accordion";
 import { Card } from "@/components/ui/Card";
 import { activeDatesForStudent, dailyBreakdown, getClassById, totalStickers } from "@/lib/store/selectors";
@@ -14,6 +13,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { AppState } from "@/lib/store/types";
 import { DEMO_NOW } from "@/lib/demoClock";
 import { fmtDateTime } from "@/lib/format";
+import clsx from "@/lib/clsx";
 
 type SubTab = "attend" | "homework" | "praise";
 
@@ -98,15 +98,29 @@ function StudentStickerInner() {
     <div>
       <WeekDatePicker value={selectedDate} onChange={setSelectedDate} today={DEMO_NOW} activeDates={activeDates} />
       <DailyBreakdownCard date={selectedDate} />
-      <ChipTabs
-        options={[
+      <div className="mb-4 grid min-h-14 grid-cols-3 gap-1 rounded-card bg-surface-raised p-1" role="tablist" aria-label="스티커 신청 유형">
+        {([
           { value: "attend", label: "출석" },
           { value: "homework", label: "숙제" },
           { value: "praise", label: "칭찬" },
-        ]}
-        value={tab}
-        onChange={(value) => setTab(value as SubTab)}
-      />
+        ] as const).map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            role="tab"
+            aria-selected={tab === option.value}
+            onClick={() => setTab(option.value)}
+            className={clsx(
+              "min-h-12 rounded-lg px-3 py-3 text-subtitle transition-colors",
+              tab === option.value
+                ? "bg-brand-amber text-surface-page"
+                : "text-text-secondary"
+            )}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
       {tab === "attend" && <AttendanceSection selectedDate={selectedDate} />}
       {tab === "homework" && <HomeworkSection selectedDate={selectedDate} />}
       {tab === "praise" && <PraiseSection />}

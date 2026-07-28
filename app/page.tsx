@@ -11,6 +11,9 @@ export default function Home() {
         <p className="text-body text-text-secondary mt-2">
           학원 출석 · 숙제 · 칭찬 스티커 랭킹 앱
         </p>
+        <p className="mt-1 text-caption text-text-muted">
+          by. Jeongwon Kim
+        </p>
       </div>
       <div className="w-full rounded-card bg-surface-card p-5 text-left">
         <p className="text-display">로그인</p>
