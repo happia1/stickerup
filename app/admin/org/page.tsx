@@ -218,8 +218,8 @@ export default function AdminOrgPage() {
           {links.map((link) => {
             const role = link.invitee_role ?? "student";
             const url = role === "teacher"
-              ? `${origin}/signup?type=teacher&invite=${encodeURIComponent(link.token)}`
-              : `${origin}/signup?invite=${encodeURIComponent(link.token)}`;
+              ? `${origin}/join/teacher/${encodeURIComponent(link.token)}`
+              : `${origin}/join/${encodeURIComponent(link.token)}`;
             return (
               <div key={link.id} className="flex flex-wrap items-center gap-3 border-b border-border p-3 last:border-0">
                 <Pill tone={role === "teacher" ? "wait" : "neutral"}>{role === "teacher" ? "선생님" : "학생"}</Pill>

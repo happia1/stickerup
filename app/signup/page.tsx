@@ -221,13 +221,13 @@ function SignupForm() {
     <main className="mx-auto min-h-screen max-w-app px-6 py-10">
       <Link href="/" className="text-caption text-text-secondary">&lt; 이전</Link>
       <div className="mt-8 rounded-card bg-surface-card p-5">
-        <p className="text-display">회원가입</p>
-        <p className="mt-2 text-body text-text-secondary">계정 유형과 기본 정보를 입력해 주세요.</p>
+        <p className="text-display">{inviteCode ? `${signupType === "teacher" ? "선생님" : "학생"} 회원가입` : "회원가입"}</p>
+        <p className="mt-2 text-body text-text-secondary">{inviteCode ? `초대받은 ${signupType === "teacher" ? "선생님" : "학생"} 계정 정보를 입력해 주세요.` : "계정 유형과 기본 정보를 입력해 주세요."}</p>
         {configError && <p className="mt-4 text-caption text-text-secondary">Supabase 환경변수를 설정한 뒤 회원가입을 진행해 주세요.</p>}
         {inviteCode && loadingInvite && <p className="mt-4 text-caption text-text-secondary">초대 링크를 확인하고 있습니다.</p>}
         {invite && <p className="mt-4 text-caption text-text-secondary">{invite.academyName} · {invite.teacherName} 선생님 초대</p>}
         <form onSubmit={handleSubmit} className="mt-5 space-y-3">
-          <fieldset>
+          {!inviteCode ? <fieldset>
             <legend className="text-caption text-text-secondary">가입 유형</legend>
             <div className="mt-1 grid grid-cols-2 gap-2">
               <label className={`rounded-xl px-3 py-2.5 text-center text-caption font-bold ${signupType === "student" ? "bg-brand-amber text-surface-page" : "bg-surface-raised text-text-secondary"}`}>
@@ -239,7 +239,7 @@ function SignupForm() {
                 선생님
               </label>
             </div>
-          </fieldset>
+          </fieldset> : <div className="rounded-xl bg-surface-raised px-3 py-2.5 text-center text-caption font-bold text-brand-amber">가입 유형 · {signupType === "teacher" ? "선생님" : "학생"}</div>}
           <label className="block text-caption text-text-secondary">이름
             <input required value={name} onChange={(event) => setName(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none" />
           </label>
