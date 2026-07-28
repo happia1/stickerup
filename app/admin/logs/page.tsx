@@ -4,6 +4,8 @@ import { useAppState, useAppDispatch } from "@/lib/store/provider";
 import { Pill } from "@/components/ui/Pill";
 import { fmtDateTime } from "@/lib/format";
 import { useToast } from "@/lib/toast/provider";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import type { AppState } from "@/lib/store/types";
 
 const TYPE_LABEL = { attendance: "출석", homework: "숙제", praise: "칭찬" } as const;
 
@@ -15,6 +17,55 @@ export default function AdminLogsPage() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [reasonDrafts, setReasonDrafts] = useState<Record<string, string>>({});
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editCount, setEditCount] = useState(0);
+  const [editReason, setEditReason] = useState("");
+  const [processingId, setProcessingId] = useState<string | null>(null);
+
+  async function persistLedger(action: "adjust" | "rollback", ledgerId: string, reason: string, count?: number) {
+    const client = getSupabaseBrowserClient();
+    const { data } = await client!.auth.getSession();
+    if (!data.session) throw new Error("로그인이 필요합니다.");
+    const response = await fetch("/api/admin/sticker-logs", {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${data.session.access_token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ action, ledgerId, reason, count }),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error ?? "스티커 기록을 변경하지 못했습니다.");
+    const stateResponse = await fetch("/api/app-state", { headers: { Authorization: `Bearer ${data.session.access_token}` }, cache: "no-store" });
+    const statePayload = await stateResponse.json() as { state?: Partial<AppState> & Pick<AppState, "currentUserId" | "currentUserRole" | "tenant">; error?: string };
+    if (!stateResponse.ok || !statePayload.state) throw new Error(statePayload.error ?? "변경된 스티커 정보를 불러오지 못했습니다.");
+    dispatch({ type: "HYDRATE_APP_STATE", state: statePayload.state });
+  }
+
+  async function adjustLedger(ledgerId: string) {
+    if (!editReason.trim()) return showToast("수정 사유를 입력해 주세요.");
+    try {
+      setProcessingId(ledgerId);
+      await persistLedger("adjust", ledgerId, editReason.trim(), editCount);
+      setEditingId(null);
+      setEditReason("");
+      showToast("기존 지급 이력을 보존하고 수정된 스티커 수를 반영했어요.");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "스티커 지급 수를 수정하지 못했습니다.");
+    } finally {
+      setProcessingId(null);
+    }
+  }
+
+  async function rollbackLedger(ledgerId: string) {
+    const reason = reasonDrafts[ledgerId]?.trim() || "관리자 지급 취소";
+    try {
+      setProcessingId(ledgerId);
+      await persistLedger("rollback", ledgerId, reason);
+      showToast("해당 지급 건을 롤백했어요.");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "스티커 지급을 롤백하지 못했습니다.");
+    } finally {
+      setProcessingId(null);
+    }
+  }
 
   let rows = [...state.ledger].sort((a, b) => b.created_at.localeCompare(a.created_at));
   if (studentFilter !== "all") rows = rows.filter((l) => l.student_id === studentFilter);
@@ -68,12 +119,14 @@ export default function AdminLogsPage() {
             {rows.map((l) => {
               const student = state.students.find((s) => s.id === l.student_id);
               const cls = state.classes.find((c) => c.id === l.class_id);
+              const isCorrected = l.status === "active" && state.ledger.some((entry) => entry.id !== l.id && entry.source_type === l.source_type && entry.source_id === l.source_id && entry.status === "rolled_back" && entry.rollback_reason?.startsWith("지급 수정:"));
               return (
                 <tr key={l.id} className="border-b last:border-0 border-border align-top">
                   <td className="p-2.5">{student?.name}</td>
                   <td className="p-2.5">{cls?.name}</td>
                   <td className="p-2.5">
                     {TYPE_LABEL[l.source_type]}
+                    {isCorrected && <p className="mt-0.5 text-caption text-brand-amber">수정 지급</p>}
                     {l.status === "rolled_back" && (
                       <p className="text-caption text-text-muted mt-0.5">사유: {l.rollback_reason}</p>
                     )}
@@ -85,24 +138,20 @@ export default function AdminLogsPage() {
                   </td>
                   <td className="p-2.5">
                     {l.status === "active" && (
-                      <div className="flex gap-1">
-                        <input
-                          className="w-28 border border-border rounded-lg px-1.5 py-1 text-caption"
-                          placeholder="취소 사유"
-                          value={reasonDrafts[l.id] ?? ""}
-                          onChange={(e) => setReasonDrafts((prev) => ({ ...prev, [l.id]: e.target.value }))}
-                        />
-                        <button
-                          className="border border-state-danger text-state-danger rounded-lg px-2 py-1 text-caption"
-                          onClick={() => {
-                            const reason = reasonDrafts[l.id]?.trim() || "부정 지급 확인";
-                            dispatch({ type: "ROLLBACK_LEDGER", ledgerId: l.id, reason });
-                            showToast("해당 지급 건이 롤백되었어요.");
-                          }}
-                        >
-                          롤백
-                        </button>
-                      </div>
+                      editingId === l.id ? (
+                        <div className="flex min-w-56 flex-wrap gap-1">
+                          <input type="number" min={0} max={100} aria-label="변경할 스티커 수" className="w-20 rounded-lg border border-border px-1.5 py-1 text-caption" value={editCount} onChange={(event) => setEditCount(Number(event.target.value) || 0)} />
+                          <input className="min-w-32 flex-1 rounded-lg border border-border px-1.5 py-1 text-caption" placeholder="수정 사유" value={editReason} onChange={(event) => setEditReason(event.target.value)} />
+                          <button disabled={processingId === l.id} className="rounded-lg border border-state-success px-2 py-1 text-caption text-state-success disabled:opacity-50" onClick={() => void adjustLedger(l.id)}>저장</button>
+                          <button disabled={processingId === l.id} className="rounded-lg border border-border px-2 py-1 text-caption text-text-secondary disabled:opacity-50" onClick={() => { setEditingId(null); setEditReason(""); }}>취소</button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap gap-1">
+                          <button className="rounded-lg border border-brand-amber px-2 py-1 text-caption text-brand-amber" onClick={() => { setEditingId(l.id); setEditCount(l.count); setEditReason(""); }}>지급 수정</button>
+                          <input className="w-28 rounded-lg border border-border px-1.5 py-1 text-caption" placeholder="취소 사유" value={reasonDrafts[l.id] ?? ""} onChange={(event) => setReasonDrafts((prev) => ({ ...prev, [l.id]: event.target.value }))} />
+                          <button disabled={processingId === l.id} className="rounded-lg border border-state-danger px-2 py-1 text-caption text-state-danger disabled:opacity-50" onClick={() => void rollbackLedger(l.id)}>롤백</button>
+                        </div>
+                      )
                     )}
                   </td>
                 </tr>
