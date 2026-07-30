@@ -22,7 +22,7 @@ export interface StudentOnboardingInput {
   userId: string;
   studentName: string;
   birthDate: string;
-  academyName: string;
+  academyName?: string;
   inviteCode?: string | null;
 }
 
@@ -183,29 +183,18 @@ export async function completeStudentOnboarding(
     teacherId = invite.teacherId;
     inviteId = invite.inviteId;
   } else {
-    const academyName = input.academyName.trim();
-    if (!academyName) throw new Error("Academy name is required for student signup.");
-
-    const tenantResult = await supabase
+    // 초대받지 않은 학생은 이름으로 기존 학원을 추측해 연결하지 않는다.
+    // tenant_id NOT NULL 제약을 만족하기 위한 학생 전용 대기 조직을 만들고,
+    // 실제 선생님 승인 시 해당 선생님의 조직으로 이동한다.
+    const pendingTenantResult = await supabase
       .from("tenants")
+      .insert({ name: "선생님 연결 대기" })
       .select("id")
-      .eq("name", academyName)
-      .limit(1)
-      .maybeSingle();
-    if (tenantResult.error) fail(tenantResult.error, "Unable to find academy.");
-    if (tenantResult.data) {
-      tenantId = tenantResult.data.id;
-    } else {
-      const pendingTenantResult = await supabase
-        .from("tenants")
-        .insert({ name: academyName })
-        .select("id")
-        .single();
-      if (pendingTenantResult.error || !pendingTenantResult.data) {
-        fail(pendingTenantResult.error, "Unable to prepare academy request.");
-      }
-      tenantId = pendingTenantResult.data.id;
+      .single();
+    if (pendingTenantResult.error || !pendingTenantResult.data) {
+      fail(pendingTenantResult.error, "Unable to prepare student connection.");
     }
+    tenantId = pendingTenantResult.data.id;
   }
 
   const studentResult = await supabase.from("students").insert({
@@ -216,21 +205,25 @@ export async function completeStudentOnboarding(
     name: input.studentName,
     birth_date: input.birthDate,
   });
-  if (studentResult.error) fail(studentResult.error, "Unable to create student profile.");
+  if (studentResult.error) {
+    if (!invite) await supabase.from("tenants").delete().eq("id", tenantId);
+    fail(studentResult.error, "Unable to create student profile.");
+  }
+
+  if (!invite) {
+    return { tenantId, classId: null, enrollmentStatus: "pending" as const };
+  }
 
   const defaultClassId = await getDefaultClassId(supabase, tenantId);
-  const enrollmentResult = await supabase.from("enrollments").upsert(
-    {
-      tenant_id: tenantId,
-      student_id: input.userId,
-      class_id: defaultClassId,
-      status: "approved",
-      approved_at: new Date().toISOString(),
-      approver_id: teacherId,
-    },
-    { onConflict: "student_id,class_id" }
-  );
+  const enrollmentResult = await supabase.from("enrollments").upsert({
+    tenant_id: tenantId,
+    student_id: input.userId,
+    class_id: defaultClassId,
+    status: "approved",
+    approved_at: new Date().toISOString(),
+    approver_id: teacherId,
+  }, { onConflict: "student_id,class_id" });
   if (enrollmentResult.error) fail(enrollmentResult.error, "Unable to enroll the student in the default class.");
 
-  return { tenantId, classId: defaultClassId, enrollmentStatus: "approved" };
+  return { tenantId, classId: defaultClassId, enrollmentStatus: "approved" as const };
 }

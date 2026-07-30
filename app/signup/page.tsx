@@ -264,9 +264,9 @@ function SignupForm() {
           {signupType === "student" && <label className="block text-caption text-text-secondary">생년월일
             <input required max={koreaDateKey()} type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none" />
           </label>}
-          <label className="block text-caption text-text-secondary">학원 이름
+          {(signupType === "teacher" || Boolean(inviteCode)) ? <label className="block text-caption text-text-secondary">학원 이름
             <input required value={academyName} readOnly={Boolean(inviteCode)} placeholder={inviteCode && loadingInvite ? "학원 정보를 확인하고 있습니다." : undefined} onChange={(event) => setAcademyName(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none read-only:cursor-not-allowed read-only:text-text-secondary" />
-          </label>
+          </label> : <p className="rounded-xl bg-surface-raised px-3 py-2.5 text-caption text-text-secondary">가입 후 선생님 연결 링크를 보내 승인받으면 학원과 기본반이 자동으로 설정됩니다.</p>}
           <label className="block text-caption text-text-secondary">내 한글 아이디 또는 이메일
             <input required={!existingSession} disabled={existingSession} type="text" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="사용할 아이디를 직접 입력하세요" autoComplete="username" className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none disabled:opacity-60" />
           </label>

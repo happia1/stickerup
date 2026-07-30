@@ -8,9 +8,12 @@ export async function POST(request: Request) {
   const auth = await getRequestUser(request);
   if (!auth.user) return NextResponse.json({ error: auth.error }, { status: 401 });
   const db = createSupabaseAdminClient();
-  const student = await db.from("students").select("id, tenant_id").eq("id", auth.user.id).maybeSingle();
+  const student = await db.from("students").select("id, tenant_id, invited_by_teacher_id").eq("id", auth.user.id).maybeSingle();
   if (student.error || !student.data) return NextResponse.json({ error: "학생 계정이 필요합니다." }, { status: 403 });
   const studentData = student.data;
+  if (!studentData.invited_by_teacher_id) {
+    return NextResponse.json({ error: "선생님과 연결한 뒤 이용할 수 있습니다." }, { status: 403 });
+  }
   const body = await request.json() as { action?: "attendance" | "homework" | "praise" | "enrollment" | "withdraw-enrollment" | "profile"; classId?: string | null; classIds?: string[]; enrollmentId?: string; tier?: string; checkDate?: string; reason?: string; name?: string; birthDate?: string | null; profileImageUrl?: string | null };
   const requestedCheckDate = body.checkDate ?? koreaDateKey();
   if (body.checkDate && (!/^\d{4}-\d{2}-\d{2}$/.test(body.checkDate) || body.checkDate > koreaDateKey())) {

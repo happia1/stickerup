@@ -80,5 +80,22 @@ export async function POST(request: Request, { params }: { params: { token: stri
     .eq("student_id", connection.data.student_id)
     .eq("status", "pending")
     .neq("id", connection.data.id);
+
+  if (currentStudent.data.tenant_id !== teacher.data.tenant_id) {
+    const [remainingStudents, remainingTeachers] = await Promise.all([
+      db.from("students").select("id", { count: "exact", head: true }).eq("tenant_id", currentStudent.data.tenant_id),
+      db.from("teachers").select("id", { count: "exact", head: true }).eq("tenant_id", currentStudent.data.tenant_id),
+    ]);
+    if (!remainingStudents.error && !remainingTeachers.error && remainingStudents.count === 0 && remainingTeachers.count === 0) {
+      const removedPendingTenant = await db
+        .from("tenants")
+        .delete()
+        .eq("id", currentStudent.data.tenant_id)
+        .is("owner_teacher_id", null);
+      if (removedPendingTenant.error) {
+        console.error("Unable to remove the empty student connection tenant", removedPendingTenant.error);
+      }
+    }
+  }
   return NextResponse.json({ ok: true });
 }

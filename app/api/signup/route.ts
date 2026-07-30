@@ -33,8 +33,8 @@ export async function POST(request: Request) {
   const academyName = payload.academyName?.trim();
   const birthDate = payload.birthDate?.trim() ?? null;
 
-  if (!signupType || !name || !academyName) {
-    return NextResponse.json({ error: "Signup type, name, and academy name are required." }, { status: 400 });
+  if (!signupType || !name || (signupType === "teacher" && !academyName)) {
+    return NextResponse.json({ error: "가입 유형과 이름을 확인해 주세요." }, { status: 400 });
   }
 
   if (getSupabaseServerConfigError()) {
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
         user_metadata: {
           signup_role: signupType,
           display_name: name,
-          academy_name: academyName,
+          academy_name: academyName ?? null,
           birth_date: signupType === "student" ? birthDate : null,
           invite_code: payload.inviteCode ?? null,
           login_identifier: identifier,
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
       }) : await completeTeacherOnboarding(admin, {
         userId: user.id,
         email: user.email,
-        academyName,
+        academyName: academyName!,
         teacherName: name,
       });
       return NextResponse.json({ redirectTo: "/admin/dashboard", inviteCode: "inviteCode" in result ? result.inviteCode : undefined });

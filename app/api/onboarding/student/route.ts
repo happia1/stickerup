@@ -14,8 +14,8 @@ export async function POST(request: Request) {
   const studentName = payload.studentName?.trim();
   const academyName = payload.academyName?.trim();
   const birthDate = payload.birthDate?.trim();
-  if (!studentName || !academyName || !birthDate || !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
-    return NextResponse.json({ error: "학원 이름, 학생 이름과 올바른 생년월일이 필요합니다." }, { status: 400 });
+  if (!studentName || !birthDate || !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
+    return NextResponse.json({ error: "학생 이름과 올바른 생년월일이 필요합니다." }, { status: 400 });
   }
 
   try {

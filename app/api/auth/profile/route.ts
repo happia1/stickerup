@@ -10,7 +10,7 @@ export async function GET(request: Request) {
 
   const supabase = createSupabaseAdminClient();
   const [studentResult, teacherResult] = await Promise.all([
-    supabase.from("students").select("id").eq("id", requestUser.user.id).maybeSingle(),
+    supabase.from("students").select("id, invited_by_teacher_id").eq("id", requestUser.user.id).maybeSingle(),
     supabase.from("teachers").select("id, role").eq("id", requestUser.user.id).maybeSingle(),
   ]);
 
@@ -18,7 +18,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unable to load your profile." }, { status: 400 });
   }
 
-  if (studentResult.data) return NextResponse.json({ role: "student", onboarded: true });
+  if (studentResult.data) return NextResponse.json({
+    role: "student",
+    onboarded: true,
+    teacherConnected: Boolean(studentResult.data.invited_by_teacher_id),
+  });
   if (teacherResult.data) return NextResponse.json({ role: teacherResult.data.role, onboarded: true });
 
   return NextResponse.json({ role: null, onboarded: false });

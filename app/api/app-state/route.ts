@@ -8,13 +8,16 @@ export async function GET(request: Request) {
   if (!auth.user) return NextResponse.json({ error: auth.error }, { status: 401 });
   const db = createSupabaseAdminClient();
   const [studentProfile, teacherProfile] = await Promise.all([
-    db.from("students").select("tenant_id").eq("id", auth.user.id).maybeSingle(),
+    db.from("students").select("tenant_id, invited_by_teacher_id").eq("id", auth.user.id).maybeSingle(),
     db.from("teachers").select("tenant_id, role").eq("id", auth.user.id).maybeSingle(),
   ]);
   if (studentProfile.error || teacherProfile.error) return NextResponse.json({ error: "프로필을 불러오지 못했습니다." }, { status: 400 });
   const tenantId = studentProfile.data?.tenant_id ?? teacherProfile.data?.tenant_id;
   const role: Role | null = studentProfile.data ? "student" : teacherProfile.data?.role ?? null;
   if (!tenantId || !role) return NextResponse.json({ error: "가입 프로필을 찾을 수 없습니다." }, { status: 404 });
+  if (role === "student" && !studentProfile.data?.invited_by_teacher_id) {
+    return NextResponse.json({ error: "선생님과 연결한 뒤 이용할 수 있습니다.", code: "TEACHER_CONNECTION_REQUIRED" }, { status: 403 });
+  }
 
   const [tenant, teachers, invites, students, classes, enrollments, ledger, attendance, homework, praise, ranking, campaigns, items, claims, notices, products] = await Promise.all([
     db.from("tenants").select("*").eq("id", tenantId).single(),
