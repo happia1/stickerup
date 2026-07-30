@@ -32,7 +32,7 @@ export default function AdminStickerLogsPanel({ embedded = false }: { embedded?:
   const [statusFilter, setStatusFilter] = useState("all");
   const [reasonDrafts, setReasonDrafts] = useState<Record<string, string>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editCount, setEditCount] = useState(0);
+  const [editCount, setEditCount] = useState("0");
   const [editReason, setEditReason] = useState("");
   const [processingId, setProcessingId] = useState<string | null>(null);
 
@@ -55,9 +55,13 @@ export default function AdminStickerLogsPanel({ embedded = false }: { embedded?:
 
   async function adjustLedger(ledgerId: string) {
     if (!editReason.trim()) return showToast("수정 사유를 입력해 주세요.");
+    const parsedCount = Number(editCount);
+    if (editCount.trim() === "" || !Number.isFinite(parsedCount) || parsedCount < 0 || parsedCount > 100) {
+      return showToast("변경할 스티커 수를 0~100 사이로 입력해 주세요.");
+    }
     try {
       setProcessingId(ledgerId);
-      await persistLedger("adjust", ledgerId, editReason.trim(), editCount);
+      await persistLedger("adjust", ledgerId, editReason.trim(), parsedCount);
       setEditingId(null);
       setEditReason("");
       showToast("기존 지급 이력을 보존하고 수정된 스티커 수를 반영했어요.");
@@ -187,14 +191,14 @@ export default function AdminStickerLogsPanel({ embedded = false }: { embedded?:
                     {l.kind === "ledger" && l.status === "active" && (
                       editingId === l.id ? (
                         <div className="flex min-w-56 flex-wrap gap-1">
-                          <input type="number" min={0} max={100} aria-label="변경할 스티커 수" className="w-20 rounded-lg border border-border px-1.5 py-1 text-caption" value={editCount} onChange={(event) => setEditCount(Number(event.target.value) || 0)} />
+                          <input type="number" min={0} max={100} aria-label="변경할 스티커 수" className="w-20 rounded-lg border border-border px-1.5 py-1 text-caption" value={editCount} onChange={(event) => setEditCount(event.target.value)} />
                           <input className="min-w-32 flex-1 rounded-lg border border-border px-1.5 py-1 text-caption" placeholder="수정 사유" value={editReason} onChange={(event) => setEditReason(event.target.value)} />
                           <button disabled={processingId === l.id} className="rounded-lg border border-state-success px-2 py-1 text-caption text-state-success disabled:opacity-50" onClick={() => void adjustLedger(l.id)}>저장</button>
                           <button disabled={processingId === l.id} className="rounded-lg border border-border px-2 py-1 text-caption text-text-secondary disabled:opacity-50" onClick={() => { setEditingId(null); setEditReason(""); }}>취소</button>
                         </div>
                       ) : (
                         <div className="flex flex-wrap gap-1">
-                          <button className="rounded-lg border border-brand-amber px-2 py-1 text-caption text-brand-amber" onClick={() => { setEditingId(l.id); setEditCount(l.count ?? 0); setEditReason(""); }}>지급 수정</button>
+                          <button className="rounded-lg border border-brand-amber px-2 py-1 text-caption text-brand-amber" onClick={() => { setEditingId(l.id); setEditCount(String(l.count ?? 0)); setEditReason(""); }}>지급 수정</button>
                           <input className="w-28 rounded-lg border border-border px-1.5 py-1 text-caption" placeholder="취소 사유" value={reasonDrafts[l.id] ?? ""} onChange={(event) => setReasonDrafts((prev) => ({ ...prev, [l.id]: event.target.value }))} />
                           <button disabled={processingId === l.id} className="rounded-lg border border-state-danger px-2 py-1 text-caption text-state-danger disabled:opacity-50" onClick={() => void rollbackLedger(l.id)}>롤백</button>
                         </div>
