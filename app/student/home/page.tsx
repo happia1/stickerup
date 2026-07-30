@@ -21,6 +21,7 @@ export default function StudentHomePage() {
   const [connectionMessage, setConnectionMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [classPromptDismissed,setClassPromptDismissed]=useState(false);
+  const [connectionPromptDismissed, setConnectionPromptDismissed] = useState(false);
   const mockStudent = getStudentById(state, state.currentUserId);
 
   useEffect(() => {
@@ -90,13 +91,26 @@ export default function StudentHomePage() {
   }
 
   const classes = remoteData?.classes ?? approvedClassesForStudent(state, me.id);
-  const allClasses=remoteData?.classes??state.classes;const hasSpecial=classes.some(item=>!item.is_default);const availableSpecial=allClasses.some(item=>!item.is_default&&item.status==="active");const showClassPrompt=availableSpecial&&!hasSpecial&&!classPromptDismissed;
+  const needsTeacherConnection = !me.invited_by_teacher_id;
+  const allClasses=remoteData?.classes??state.classes;const hasSpecial=classes.some(item=>!item.is_default);const availableSpecial=allClasses.some(item=>!item.is_default&&item.status==="active");const showClassPrompt=!needsTeacherConnection&&availableSpecial&&!hasSpecial&&!classPromptDismissed;
 
   return (
     <div>
+      {needsTeacherConnection && !connectionPromptDismissed && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4" role="dialog" aria-modal="true" aria-labelledby="teacher-connection-title">
+          <div className="w-full max-w-sm rounded-card bg-surface-card p-6 shadow-xl">
+            <div id="teacher-connection-title">
+              <TeacherConnectionCard compact />
+            </div>
+            <button type="button" onClick={() => setConnectionPromptDismissed(true)} className="mt-4 w-full text-center text-caption text-text-muted">
+              나중에 연결하기
+            </button>
+          </div>
+        </div>
+      )}
       {showClassPrompt&&<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"><div className="w-full max-w-sm rounded-card bg-surface-card p-6 text-center"><h2 className="text-subtitle">현재 등록된 특강반을 설정해 주세요</h2><p className="mt-2 text-caption text-text-secondary">특강반별 과제를 확인하려면 수강할 반을 선택해 주세요.</p><Link href="/student/mypage#class-enrollment" className="mt-5 block rounded-xl bg-brand-amber py-3 font-bold text-surface-page">마이페이지에서 특강반 선택</Link><button onClick={()=>setClassPromptDismissed(true)} className="mt-3 text-caption text-text-muted">나중에 하기</button></div></div>}
       <SupabaseModeNotice />
-      {!me.invited_by_teacher_id && <TeacherConnectionCard />}
+      {needsTeacherConnection && connectionPromptDismissed && <TeacherConnectionCard />}
       {connectionMessage && <p className="mb-3 text-caption text-text-muted">{connectionMessage}</p>}
       <FlapBanner notices={remoteData?.notices} />
       <div className="bg-surface-card rounded-card p-4 mb-3.5 flex items-center gap-3">

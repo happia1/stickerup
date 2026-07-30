@@ -19,15 +19,66 @@ export async function POST(request: Request, { params }: { params: { token: stri
   if (!connection.data || connection.data.status !== "pending" || new Date(connection.data.expires_at) < new Date()) {
     return NextResponse.json({ error: "만료되었거나 처리된 링크입니다." }, { status: 400 });
   }
-  const student = await db.from("students").update({ tenant_id: teacher.data.tenant_id, invited_by_teacher_id: teacher.data.id }).eq("id", connection.data.student_id);
+  const currentStudent = await db
+    .from("students")
+    .select("id, tenant_id, invited_by_teacher_id")
+    .eq("id", connection.data.student_id)
+    .maybeSingle();
+  if (currentStudent.error || !currentStudent.data) {
+    return NextResponse.json({ error: "연결할 학생 정보를 찾지 못했습니다." }, { status: 404 });
+  }
+  if (currentStudent.data.invited_by_teacher_id) {
+    return NextResponse.json({ error: "이미 다른 선생님과 연결된 학생입니다." }, { status: 409 });
+  }
+
+  const student = await db
+    .from("students")
+    .update({ tenant_id: teacher.data.tenant_id, invited_by_teacher_id: teacher.data.id })
+    .eq("id", connection.data.student_id)
+    .is("invited_by_teacher_id", null)
+    .select("id")
+    .maybeSingle();
   if (student.error) return NextResponse.json({ error: "학생을 등록하지 못했습니다." }, { status: 400 });
+  if (!student.data) return NextResponse.json({ error: "이미 다른 선생님이 연결을 완료했습니다." }, { status: 409 });
 
   const defaultClass = await db.from("classes").select("id").eq("tenant_id", teacher.data.tenant_id).eq("is_default", true).maybeSingle();
-  if (defaultClass.data) {
-    const enrollment = await db.from("enrollments").upsert({ tenant_id: teacher.data.tenant_id, student_id: connection.data.student_id, class_id: defaultClass.data.id, status: "approved", approved_at: new Date().toISOString(), approver_id: teacher.data.id }, { onConflict: "student_id,class_id" });
-    if (enrollment.error) return NextResponse.json({ error: "학생의 기본 소속 반 등록을 완료하지 못했습니다." }, { status: 400 });
+  if (defaultClass.error || !defaultClass.data) {
+    await db.from("students").update({ tenant_id: currentStudent.data.tenant_id, invited_by_teacher_id: null }).eq("id", connection.data.student_id);
+    return NextResponse.json({ error: "선생님 학원의 기본반을 찾지 못했습니다." }, { status: 400 });
   }
+
+  const enrollment = await db.from("enrollments").upsert(
+    {
+      tenant_id: teacher.data.tenant_id,
+      student_id: connection.data.student_id,
+      class_id: defaultClass.data.id,
+      status: "approved",
+      approved_at: new Date().toISOString(),
+      approver_id: teacher.data.id,
+    },
+    { onConflict: "student_id,class_id" }
+  );
+  if (enrollment.error) {
+    await db.from("students").update({ tenant_id: currentStudent.data.tenant_id, invited_by_teacher_id: null }).eq("id", connection.data.student_id);
+    return NextResponse.json({ error: "학생의 기본 소속 반 등록을 완료하지 못했습니다." }, { status: 400 });
+  }
+
+  const oldEnrollments = await db
+    .from("enrollments")
+    .delete()
+    .eq("student_id", connection.data.student_id)
+    .neq("tenant_id", teacher.data.tenant_id);
+  if (oldEnrollments.error) {
+    console.error("Unable to remove the student's previous tenant enrollments", oldEnrollments.error);
+  }
+
   const approved = await db.from("student_connection_requests").update({ status: "approved", approved_by: teacher.data.id, approved_at: new Date().toISOString() }).eq("id", connection.data.id);
   if (approved.error) return NextResponse.json({ error: "연결 요청 상태를 변경하지 못했습니다." }, { status: 400 });
+  await db
+    .from("student_connection_requests")
+    .update({ status: "revoked" })
+    .eq("student_id", connection.data.student_id)
+    .eq("status", "pending")
+    .neq("id", connection.data.id);
   return NextResponse.json({ ok: true });
 }
