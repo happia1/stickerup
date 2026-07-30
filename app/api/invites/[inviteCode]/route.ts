@@ -13,13 +13,27 @@ export async function GET(
   }
 
   try {
-    const invite = await getActiveInvitePreview(createSupabaseAdminClient(), params.inviteCode);
+    const inviteCode = decodeURIComponent(params.inviteCode).trim();
+    if (!inviteCode) {
+      return NextResponse.json(
+        { error: "초대 링크 정보가 없습니다.", code: "INVITE_CODE_MISSING" },
+        { status: 400 }
+      );
+    }
+
+    const invite = await getActiveInvitePreview(createSupabaseAdminClient(), inviteCode);
     if (!invite) {
-      return NextResponse.json({ error: "This invite link is invalid or expired." }, { status: 404 });
+      return NextResponse.json(
+        { error: "유효하지 않거나 만료된 초대 링크입니다.", code: "INVITE_INVALID_OR_EXPIRED" },
+        { status: 404 }
+      );
     }
     return NextResponse.json({ invite });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unable to load invite link.";
-    return NextResponse.json({ error: message }, { status: 400 });
+    console.error("Unable to load invite preview", error);
+    return NextResponse.json(
+      { error: "초대 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.", code: "INVITE_LOOKUP_FAILED" },
+      { status: 500 }
+    );
   }
 }

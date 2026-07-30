@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { LoginForm } from "@/components/auth/LoginForm";
 
+// Vercel에서 이 경로가 정적 오류 페이지로 잘못 고정되는 것을 막고
+// 로그인 요청마다 App Router 페이지를 정상 렌더링한다.
+export const dynamic = "force-dynamic";
+
 export default function LoginPage({ searchParams }: { searchParams?: { type?: string | string[]; next?: string | string[]; reauth?: string | string[]; reason?: string | string[] } }) {
   const next = typeof searchParams?.next === "string" ? searchParams.next : undefined;
   const redirectTo = next?.startsWith("/") && !next.startsWith("//") ? next : undefined;

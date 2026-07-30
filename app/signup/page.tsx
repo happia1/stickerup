@@ -16,6 +16,12 @@ interface InvitePreview {
   inviteeRole: "student" | "teacher";
 }
 
+interface InvitePreviewResponse {
+  invite?: InvitePreview;
+  error?: string;
+  code?: string;
+}
+
 export default function SignupPage() {
   return (
     <Suspense fallback={<main className="mx-auto flex min-h-screen max-w-app items-center justify-center px-6 text-body text-text-secondary">회원가입 화면을 준비하고 있습니다.</main>}>
@@ -39,6 +45,7 @@ function SignupForm() {
   const [academyName, setAcademyName] = useState("");
   const [invite, setInvite] = useState<InvitePreview | null>(null);
   const [loadingInvite, setLoadingInvite] = useState(Boolean(inviteCode));
+  const [inviteReloadKey, setInviteReloadKey] = useState(0);
   const [existingSession, setExistingSession] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -93,10 +100,15 @@ function SignupForm() {
 
     let active = true;
     setLoadingInvite(true);
-    void fetch(`/api/invites/${encodeURIComponent(inviteCode)}`)
+    setMessage(null);
+    void fetch(`/api/invites/${encodeURIComponent(inviteCode)}`, { cache: "no-store" })
       .then(async (response) => {
-        const payload = (await response.json()) as { invite?: InvitePreview; error?: string };
-        if (!response.ok || !payload.invite) throw new Error(payload.error ?? "초대 링크를 확인하지 못했습니다.");
+        const payload = (await response.json()) as InvitePreviewResponse;
+        if (!response.ok || !payload.invite) {
+          const error = new Error(payload.error ?? "초대 링크를 확인하지 못했습니다.");
+          error.name = payload.code ?? (response.status === 404 ? "INVITE_INVALID_OR_EXPIRED" : "INVITE_LOOKUP_FAILED");
+          throw error;
+        }
         if (active) {
           setInvite(payload.invite);
           setSignupType(payload.invite.inviteeRole);
@@ -104,7 +116,13 @@ function SignupForm() {
         }
       })
       .catch((error: unknown) => {
-        if (active) setMessage(error instanceof Error ? error.message : "유효하지 않은 초대 링크입니다.");
+        if (!active) return;
+        setInvite(null);
+        setMessage(
+          error instanceof Error && error.name === "INVITE_INVALID_OR_EXPIRED"
+            ? "유효하지 않거나 만료된 초대 링크입니다. 선생님께 새 링크를 요청해 주세요."
+            : "초대 정보를 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 다시 시도해 주세요."
+        );
       })
       .finally(() => {
         if (active) setLoadingInvite(false);
@@ -113,7 +131,7 @@ function SignupForm() {
     return () => {
       active = false;
     };
-  }, [inviteCode]);
+  }, [inviteCode, inviteReloadKey]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -247,7 +265,7 @@ function SignupForm() {
             <input required max={koreaDateKey()} type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none" />
           </label>}
           <label className="block text-caption text-text-secondary">학원 이름
-            <input required value={academyName} readOnly={Boolean(invite)} onChange={(event) => setAcademyName(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none read-only:cursor-not-allowed read-only:text-text-secondary" />
+            <input required value={academyName} readOnly={Boolean(inviteCode)} placeholder={inviteCode && loadingInvite ? "학원 정보를 확인하고 있습니다." : undefined} onChange={(event) => setAcademyName(event.target.value)} className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none read-only:cursor-not-allowed read-only:text-text-secondary" />
           </label>
           <label className="block text-caption text-text-secondary">내 한글 아이디 또는 이메일
             <input required={!existingSession} disabled={existingSession} type="text" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="사용할 아이디를 직접 입력하세요" autoComplete="username" className="mt-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-text-primary outline-none disabled:opacity-60" />
@@ -262,6 +280,11 @@ function SignupForm() {
           </label>
           {existingSession && <p className="text-caption text-text-secondary">인증된 계정입니다. 가입 정보를 확인한 뒤 완료해 주세요.</p>}
           {message && <p className="text-caption text-text-secondary">{message}</p>}
+          {inviteCode && !loadingInvite && !invite && (
+            <button type="button" onClick={() => setInviteReloadKey((key) => key + 1)} className="w-full rounded-xl border border-border py-2.5 text-caption font-bold text-text-primary">
+              초대 정보 다시 확인
+            </button>
+          )}
           <button disabled={!canSubmit} className="w-full rounded-xl bg-brand-amber py-3 text-body font-bold text-surface-page disabled:opacity-60">
             {redirecting ? "이동 중..." : submitting ? "가입 처리 중..." : "회원가입"}
           </button>
