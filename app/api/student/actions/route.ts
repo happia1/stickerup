@@ -67,12 +67,12 @@ export async function POST(request: Request) {
   }
 
   if (body.action === "homework") {
-    if (!body.classId || !body.tier) return NextResponse.json({ error: "특강반과 과제 완료율을 선택해주세요." }, { status: 400 });
+    if (!body.classId || !body.tier) return NextResponse.json({ error: "과제 반과 과제 완료율을 선택해주세요." }, { status: 400 });
     const [enrollment, classRoom] = await Promise.all([
       db.from("enrollments").select("id").eq("student_id", student.data.id).eq("class_id", body.classId).eq("status", "approved").maybeSingle(),
       db.from("classes").select("id, is_default").eq("id", body.classId).eq("tenant_id", studentData.tenant_id).maybeSingle(),
     ]);
-    if (!enrollment.data || !classRoom.data || classRoom.data.is_default) return NextResponse.json({ error: "과제를 제출할 승인된 특강반을 선택해주세요." }, { status: 400 });
+    if (!enrollment.data || !classRoom.data) return NextResponse.json({ error: "과제를 제출할 승인된 소속반을 선택해주세요." }, { status: 400 });
     const tier = DEFAULT_HOMEWORK_TIERS.find((item) => item.tier === body.tier);
     if (!tier) return NextResponse.json({ error: "숙제 완료율을 확인해주세요." }, { status: 400 });
     const checkDate = requestedCheckDate;

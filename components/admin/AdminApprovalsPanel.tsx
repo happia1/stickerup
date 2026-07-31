@@ -30,7 +30,9 @@ export default function AdminApprovalsPanel({ embedded = false }: { embedded?: b
   const pendingPraise = state.praiseRequests.filter((item) => item.approval_status === "pending");
   const directClasses = useMemo(() => {
     const approvedClassIds = new Set(state.enrollments.filter((item) => item.student_id === directStudentId && item.status === "approved").map((item) => item.class_id));
-    return state.classes.filter((item) => !item.is_default && item.status === "active" && approvedClassIds.has(item.id));
+    return state.classes
+      .filter((item) => item.status === "active" && approvedClassIds.has(item.id))
+      .sort((a, b) => Number(b.is_default) - Number(a.is_default));
   }, [directStudentId, state.classes, state.enrollments]);
 
   async function accessToken() {
@@ -140,7 +142,7 @@ export default function AdminApprovalsPanel({ embedded = false }: { embedded?: b
             <label className="text-caption text-text-secondary">날짜
               <input type="date" max={koreaDateKey()} value={directDate} onChange={(event) => setDirectDate(event.target.value)} className="mt-1 w-full rounded-lg border border-border px-2.5 py-2 text-body" />
             </label>
-            {directType === "homework" && <label className="text-caption text-text-secondary">특강반
+            {directType === "homework" && <label className="text-caption text-text-secondary">과제 반
               <select value={directClassId} onChange={(event) => setDirectClassId(event.target.value)} className="mt-1 w-full rounded-lg border border-border px-2.5 py-2 text-body"><option value="">반 선택</option>{directClasses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
             </label>}
             <label className="text-caption text-text-secondary">{directType === "attendance" ? "출석 기준" : "과제 완료율"}

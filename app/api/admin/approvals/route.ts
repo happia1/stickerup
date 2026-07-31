@@ -117,7 +117,7 @@ export async function POST(request: Request) {
     if (!classId) return NextResponse.json({ error: "과제 반을 선택해 주세요." }, { status: 400 });
     const enrollment = await db.from("enrollments").select("id").eq("student_id", body.studentId).eq("class_id", classId).eq("status", "approved").maybeSingle();
     const classRoom = await db.from("classes").select("is_default").eq("id", classId).eq("tenant_id", teacher.tenant_id).maybeSingle();
-    if (!enrollment.data || !classRoom.data || classRoom.data.is_default) return NextResponse.json({ error: "학생이 승인된 특강반만 과제를 등록할 수 있습니다." }, { status: 400 });
+    if (!enrollment.data || !classRoom.data) return NextResponse.json({ error: "학생이 승인된 소속반만 과제를 등록할 수 있습니다." }, { status: 400 });
   }
   if (!classId) return NextResponse.json({ error: "스티커를 지급할 반을 찾을 수 없습니다." }, { status: 400 });
 

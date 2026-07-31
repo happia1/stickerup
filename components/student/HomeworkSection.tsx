@@ -18,7 +18,9 @@ export function HomeworkSection({ selectedDate }: { selectedDate: string }) {
   const state = useAppState();
   const dispatch = useAppDispatch();
   const showToast = useToast();
-  const myClasses = approvedClassesForStudent(state, state.currentUserId).filter((item) => !item.is_default);
+  const myClasses = approvedClassesForStudent(state, state.currentUserId)
+    .filter((item) => item.status === "active")
+    .sort((a, b) => Number(b.is_default) - Number(a.is_default));
   const [classId, setClassId] = usePreferredClass(state.currentUserId, myClasses);
   const [tier, setTier] = useState<HomeworkTier>("p90");
   const [submitting, setSubmitting] = useState(false);

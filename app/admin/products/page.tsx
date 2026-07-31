@@ -8,6 +8,7 @@ import { useAppDispatch, useAppState } from "@/lib/store/provider";
 import { useToast } from "@/lib/toast/provider";
 import type { ProductCatalogItem } from "@/lib/types";
 import { PageSkeleton } from "@/components/ui/PageSkeleton";
+import { ALL_AFFILIATES, productAffiliateLabel, productAffiliateOptions } from "@/lib/product-affiliate";
 
 type Product = { id:string; title:string; price_label?:string|null; image_url:string|null; purchase_url?:string|null; description:string|null; category?:string|null; like_count?:number; source_marketplace_product_id?:string|null };
 type MarketProduct = Product & { purchase_url:string; prize_image_url:string|null };
@@ -31,19 +32,9 @@ function FilterIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-none stroke-current stroke-2"><path d="M4 6h16M7 12h10M10 18h4"/></svg>;
 }
 
-function affiliateLabel(url?: string | null): string {
-  if (!url) return "직접 등록";
-  if (url.toLowerCase().includes("temu")) return "TEMU";
-  try {
-    const host = new URL(url).hostname.toLowerCase();
-    if (host.includes("coupang.com") || host.includes("coupa.ng")) return "쿠팡";
-    if (host.includes("temu.com")) return "TEMU";
-  } catch { return "기타 제휴"; }
-  return "기타 제휴";
-}
 function ProductInfo({ product, compact = false }: { product:Product; compact?:boolean }) {
-  if(compact)return <div className="min-w-0 flex-1"><p className="truncate text-micro text-brand-amber">{product.category ?? "미분류"} / <span className="text-text-muted">{affiliateLabel(product.purchase_url)}</span></p>{product.purchase_url?<a href={product.purchase_url} target="_blank" rel="noreferrer"><h4 className="line-clamp-1 text-caption font-bold">{product.title}</h4></a>:<h4 className="line-clamp-1 text-caption font-bold">{product.title}</h4>}<p className="mt-1 text-caption font-bold">{product.price_label ?? "가격정보 없음"}</p></div>;
-  return <div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-2 text-micro"><p className="min-w-0 truncate text-brand-amber">{product.category ?? "미분류"}</p><p className="shrink-0 text-text-muted">{affiliateLabel(product.purchase_url)}</p></div>{product.purchase_url?<a href={product.purchase_url} target="_blank" rel="noreferrer"><h4 className="line-clamp-2 text-caption font-bold">{product.title}</h4></a>:<h4 className="line-clamp-2 text-caption font-bold">{product.title}</h4>}<p className="mt-1 text-caption font-bold">{product.price_label ?? "가격정보 없음"}</p><details className="mt-2 text-micro text-text-secondary"><summary className="cursor-pointer">더보기</summary><p className="mt-2 whitespace-pre-wrap break-words">{product.description ?? "상품 설명이 없습니다."}</p></details></div>;
+  if(compact)return <div className="min-w-0 flex-1"><p className="truncate text-micro text-brand-amber">{product.category ?? "미분류"} / <span className="text-text-muted">{productAffiliateLabel(product.purchase_url)}</span></p>{product.purchase_url?<a href={product.purchase_url} target="_blank" rel="noreferrer"><h4 className="line-clamp-1 text-caption font-bold">{product.title}</h4></a>:<h4 className="line-clamp-1 text-caption font-bold">{product.title}</h4>}<p className="mt-1 text-caption font-bold">{product.price_label ?? "가격정보 없음"}</p></div>;
+  return <div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-2 text-micro"><p className="min-w-0 truncate text-brand-amber">{product.category ?? "미분류"}</p><p className="shrink-0 text-text-muted">{productAffiliateLabel(product.purchase_url)}</p></div>{product.purchase_url?<a href={product.purchase_url} target="_blank" rel="noreferrer"><h4 className="line-clamp-2 text-caption font-bold">{product.title}</h4></a>:<h4 className="line-clamp-2 text-caption font-bold">{product.title}</h4>}<p className="mt-1 text-caption font-bold">{product.price_label ?? "가격정보 없음"}</p><details className="mt-2 text-micro text-text-secondary"><summary className="cursor-pointer">더보기</summary><p className="mt-2 whitespace-pre-wrap break-words">{product.description ?? "상품 설명이 없습니다."}</p></details></div>;
 }
 
 function PromotionCarousel({ banners }: { banners:PromoBanner[] }) {
@@ -54,13 +45,14 @@ function PromotionCarousel({ banners }: { banners:PromoBanner[] }) {
   return <section className="mt-8"><h3 className="mb-3 text-subtitle">상품 이벤트 · 프로모션</h3><div onTouchStart={event=>setStart(event.touches[0].clientX)} onTouchEnd={event=>end(event.changedTouches[0].clientX)} className="max-w-sm overflow-hidden rounded-card border border-border"><div className="flex transition-transform duration-500" style={{transform:`translateX(-${index*100}%)`}}>{banners.map(banner=><a key={banner.id} href={banner.link_url} target="_blank" rel="noreferrer" className="flex aspect-square min-w-full items-center justify-center bg-surface-raised">{banner.image_url?<img src={banner.image_url} alt={banner.title} className="h-full w-full object-cover"/>:<span className="px-5 text-center text-subtitle">{banner.title}</span>}</a>)}</div></div><p className="mt-2 text-micro text-text-muted">{DISCLOSURE}</p></section>;
 }
 
-function CatalogToolbar({ categories, category, setCategory, filterOpen, setFilterOpen, searchOpen, setSearchOpen, query, setQuery, view, setView }: {
+function CatalogToolbar({ affiliates, affiliate, setAffiliate, categories, category, setCategory, filterOpen, setFilterOpen, searchOpen, setSearchOpen, query, setQuery, view, setView }: {
+  affiliates:string[]; affiliate:string; setAffiliate:(value:string)=>void;
   categories:string[]; category:string; setCategory:(value:string)=>void; filterOpen:boolean; setFilterOpen:(value:boolean)=>void;
   searchOpen:boolean; setSearchOpen:(value:boolean)=>void; query:string; setQuery:(value:string)=>void; view:ViewMode; setView:(value:ViewMode)=>void;
 }) {
   return <div className="mb-4">
     <div className="flex items-center gap-2">
-      <button type="button" aria-expanded={filterOpen} onClick={()=>setFilterOpen(!filterOpen)} className={`flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-2 text-micro ${filterOpen||category!=="전체"?"border-brand-amber text-brand-amber":"border-border text-text-secondary"}`}><FilterIcon/><span>{category === "전체" ? "카테고리" : category}</span></button>
+      <button type="button" aria-expanded={filterOpen} onClick={()=>setFilterOpen(!filterOpen)} className={`flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-2 text-micro ${filterOpen||affiliate!==ALL_AFFILIATES||category!=="전체"?"border-brand-amber text-brand-amber":"border-border text-text-secondary"}`}><FilterIcon/><span>{affiliate !== ALL_AFFILIATES ? affiliate : category === "전체" ? "필터" : category}</span></button>
       <div className="ml-auto flex min-w-0 items-center justify-end gap-1.5">
         <div className={`flex items-center overflow-hidden rounded-lg border border-border bg-surface-card transition-[width] duration-200 ${searchOpen?"w-44 sm:w-64":"w-9"}`}>
           <button type="button" aria-label="상품 검색" onClick={()=>setSearchOpen(true)} className="flex h-9 w-9 shrink-0 items-center justify-center text-text-secondary"><SearchIcon/></button>
@@ -72,14 +64,17 @@ function CatalogToolbar({ categories, category, setCategory, filterOpen, setFilt
         </div>
       </div>
     </div>
-    {filterOpen&&<div className="mt-2 flex flex-wrap gap-1.5 rounded-xl bg-surface-raised p-2">{categories.map(item=><button type="button" key={item} onClick={()=>setCategory(item)} className={`rounded-full px-3 py-1.5 text-micro ${category===item?"bg-brand-amber font-bold text-surface-page":"bg-surface-card text-text-secondary"}`}>{item}</button>)}</div>}
+    {filterOpen&&<div className="mt-2 space-y-2 rounded-xl bg-surface-raised p-2">
+      <div><p className="mb-1.5 text-micro font-bold text-text-muted">제휴처</p><div className="flex flex-wrap gap-1.5">{affiliates.map(item=><button type="button" key={item} onClick={()=>setAffiliate(item)} className={`rounded-full px-3 py-1.5 text-micro ${affiliate===item?"bg-brand-amber font-bold text-surface-page":"bg-surface-card text-text-secondary"}`}>{item}</button>)}</div></div>
+      <div><p className="mb-1.5 text-micro font-bold text-text-muted">카테고리</p><div className="flex flex-wrap gap-1.5">{categories.map(item=><button type="button" key={item} onClick={()=>setCategory(item)} className={`rounded-full px-3 py-1.5 text-micro ${category===item?"bg-brand-amber font-bold text-surface-page":"bg-surface-card text-text-secondary"}`}>{item}</button>)}</div></div>
+    </div>}
   </div>;
 }
 
 export default function AdminProductsPage() {
   const state=useAppState(); const dispatch=useAppDispatch(); const toast=useToast();
   const [tab,setTab]=useState<Tab>("cart"); const [market,setMarket]=useState<MarketProduct[]>([]); const [saved,setSaved]=useState<string[]>([]);
-  const [query,setQuery]=useState(""); const [searchOpen,setSearchOpen]=useState(false); const [filterOpen,setFilterOpen]=useState(false); const [category,setCategory]=useState("전체");
+  const [query,setQuery]=useState(""); const [searchOpen,setSearchOpen]=useState(false); const [filterOpen,setFilterOpen]=useState(false); const [affiliate,setAffiliate]=useState(ALL_AFFILIATES); const [category,setCategory]=useState("전체");
   const [views,setViews]=useState<Record<Tab,ViewMode>>({cart:"card",recommended:"card"}); const [loading,setLoading]=useState(true);
   const [banners,setBanners]=useState<PromoBanner[]>([]); const [page,setPage]=useState(0); const [touchStart,setTouchStart]=useState<number|null>(null);
   const [editing,setEditing]=useState<Product|null>(null); const [formOpen,setFormOpen]=useState(false); const [title,setTitle]=useState(""); const [price,setPrice]=useState(""); const [editCategory,setEditCategory]=useState(""); const [description,setDescription]=useState(""); const [url,setUrl]=useState("");
@@ -89,8 +84,9 @@ export default function AdminProductsPage() {
   useEffect(()=>{void Promise.all([loadCatalog(),loadMarket()]).finally(()=>setLoading(false));},[]);
   const cart=state.productCatalog as Array<ProductCatalogItem&{price_label?:string|null;category?:string|null;like_count?:number}>;
   const rawSource:Product[]=tab==="cart"?cart:market.filter(product=>!saved.includes(product.id));
+  const affiliates=useMemo(()=>productAffiliateOptions(rawSource),[rawSource]);
   const categories=useMemo(()=>["전체",...Array.from(new Set(rawSource.map(product=>product.category?.trim()).filter((value):value is string=>Boolean(value)))).sort((a,b)=>a.localeCompare(b,"ko"))],[rawSource]);
-  const source=useMemo(()=>rawSource.filter(product=>(category==="전체"||(product.category??"미분류")===category)&&`${product.title} ${product.category??""}`.toLowerCase().includes(query.trim().toLowerCase())),[rawSource,category,query]);
+  const source=useMemo(()=>rawSource.filter(product=>(affiliate===ALL_AFFILIATES||productAffiliateLabel(product.purchase_url)===affiliate)&&(category==="전체"||(product.category??"미분류")===category)&&`${product.title} ${product.category??""} ${productAffiliateLabel(product.purchase_url)}`.toLowerCase().includes(query.trim().toLowerCase())),[rawSource,affiliate,category,query]);
   const addToCart=async(id:string)=>{const access=await token();if(!access)return;const response=await fetch("/api/admin/product-market",{method:"POST",headers:{Authorization:`Bearer ${access}`,"Content-Type":"application/json"},body:JSON.stringify({productId:id,action:"save"})});const payload=await response.json();if(!response.ok)return toast(payload.error);setSaved(ids=>ids.includes(id)?ids:[...ids,id]);await loadCatalog();toast("경품 리스트에 담았어요.");};
   const begin=(product:Product)=>{setEditing(product);setTitle(product.title);setPrice(product.price_label??"");setEditCategory(product.category??"");setDescription(product.description??"");setUrl(product.purchase_url??"");setFormOpen(true);};
   const reset=()=>{setEditing(null);setTitle("");setPrice("");setEditCategory("");setDescription("");setUrl("");setFormOpen(false);};
@@ -98,8 +94,8 @@ export default function AdminProductsPage() {
   const remove=async(id:string)=>{if(!confirm("경품 리스트에서 삭제할까요?"))return;const access=await token();if(!access)return;const response=await fetch("/api/admin/products",{method:"DELETE",headers:{Authorization:`Bearer ${access}`,"Content-Type":"application/json"},body:JSON.stringify({productId:id})});if(!response.ok)return toast("삭제하지 못했어요.");await Promise.all([loadCatalog(),loadMarket()]);};
   const pageCount=Math.max(1,Math.ceil(source.length/PAGE_SIZE)); const paged=source.slice(page*PAGE_SIZE,(page+1)*PAGE_SIZE); const movePage=(direction:number)=>setPage(current=>Math.max(0,Math.min(pageCount-1,current+direction)));
   const swipeProps={onTouchStart:(event:React.TouchEvent)=>setTouchStart(event.touches[0].clientX),onTouchEnd:(event:React.TouchEvent)=>{if(touchStart===null)return;const distance=event.changedTouches[0].clientX-touchStart;if(Math.abs(distance)>50)movePage(distance<0?1:-1);setTouchStart(null);}};
-  useEffect(()=>{setPage(0);setCategory("전체");setQuery("");setSearchOpen(false);},[tab]);
-  useEffect(()=>{setPage(0);},[query,category]);
+  useEffect(()=>{setPage(0);setAffiliate(ALL_AFFILIATES);setCategory("전체");setQuery("");setSearchOpen(false);},[tab]);
+  useEffect(()=>{setPage(0);},[query,affiliate,category]);
   if(loading)return <PageSkeleton/>;
 
   const view=views[tab];
@@ -107,7 +103,7 @@ export default function AdminProductsPage() {
     <h2 className="text-title">이벤트/상품 관리</h2><p className="mb-4 mt-1 text-caption text-text-secondary">추천상품을 확인하고 경품 리스트에 저장해 학생 선호도를 확인하세요.</p><div className="mb-5 grid max-w-md grid-cols-2 rounded-xl bg-surface-raised p-1"><Link href="/admin/rewards" className="rounded-lg px-4 py-2.5 text-center font-bold text-text-secondary">이벤트 리스트</Link><button type="button" className="rounded-lg bg-brand-amber px-4 py-2.5 font-bold text-surface-page">경품 리스트 관리</button></div><h3 className="mb-4 text-subtitle">경품 리스트</h3>
     <div className="mb-5 grid max-w-md grid-cols-2 rounded-xl bg-surface-raised p-1"><button onClick={()=>setTab("cart")} className={`rounded-lg px-4 py-2.5 font-bold ${tab==="cart"?"bg-brand-amber text-surface-page":"text-text-secondary"}`}>경품 리스트 {cart.length}</button><button onClick={()=>setTab("recommended")} className={`rounded-lg px-4 py-2.5 font-bold ${tab==="recommended"?"bg-brand-amber text-surface-page":"text-text-secondary"}`}>추천상품</button></div>
     {tab==="recommended"&&<div className="mb-5 rounded-xl bg-surface-raised p-3"><p className="mb-2 text-caption font-bold">제휴 상품 검색</p><iframe title="쿠팡 파트너스 배너" src="https://coupa.ng/coeq4M" width="100%" height="36" frameBorder="0" scrolling="no" referrerPolicy="unsafe-url" className="mb-1"/><p className="text-micro text-text-muted">{DISCLOSURE}</p>{query&&<div className="mt-3 flex flex-wrap gap-2"><a href={`https://www.coupang.com/np/search?q=${encodeURIComponent(query)}`} target="_blank" rel="noreferrer" className="rounded-lg border border-border px-3 py-2 text-caption font-bold">쿠팡에서 검색</a><a href={`https://www.temu.com/search_result.html?search_key=${encodeURIComponent(query)}`} target="_blank" rel="noreferrer" className="rounded-lg border border-border px-3 py-2 text-caption font-bold">테무에서 검색</a></div>}</div>}
-    <CatalogToolbar categories={categories} category={category} setCategory={setCategory} filterOpen={filterOpen} setFilterOpen={setFilterOpen} searchOpen={searchOpen} setSearchOpen={setSearchOpen} query={query} setQuery={setQuery} view={view} setView={value=>setViews(current=>({...current,[tab]:value}))}/>
+    <CatalogToolbar affiliates={affiliates} affiliate={affiliate} setAffiliate={setAffiliate} categories={categories} category={category} setCategory={setCategory} filterOpen={filterOpen} setFilterOpen={setFilterOpen} searchOpen={searchOpen} setSearchOpen={setSearchOpen} query={query} setQuery={setQuery} view={view} setView={value=>setViews(current=>({...current,[tab]:value}))}/>
     {query&&source.length===0&&tab==="recommended"&&<div className="mb-4 rounded-xl bg-surface-raised p-4 text-caption"><p>추천상품에 “{query}” 검색 결과가 없습니다. 위 제휴사 검색 버튼을 이용해 보세요.</p></div>}
     <section {...swipeProps}>
       {source.length===0&&!query&&<p className="rounded-xl bg-surface-page p-5 text-caption text-text-secondary">{tab==="cart"?"경품 리스트가 비어 있습니다.":"조건에 맞는 추천상품이 없습니다."}</p>}
