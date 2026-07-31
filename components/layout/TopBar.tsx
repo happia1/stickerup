@@ -96,11 +96,10 @@ export function AdminTopBar() {
     <div className="flex items-center justify-between bg-surface-page px-6 py-3">
       <span className="text-subtitle font-extrabold">StickerUp Admin</span>
       <div className="flex items-center gap-4 text-caption text-text-secondary">
-        <span>승인 대기 {totalPending}건</span>
         <span className="flex items-center gap-2 font-bold text-text-primary"><Avatar name={me?.name ?? "관리자"} size={30} imageUrl={me?.profile_image_url} />{me?.name ?? "관리자"}</span>
-        <button aria-label="관리자 알림" className="relative text-text-primary" onClick={() => setNotifOpen(true)}>
+        <button aria-label={`관리자 알림${totalPending > 0 ? `, 승인 대기 ${totalPending}건` : ""}`} className="relative text-text-primary" onClick={() => setNotifOpen(true)}>
           <BellIcon />
-          {totalPending > 0 && <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-brand-amber" />}
+          {totalPending > 0 && <span className="absolute -right-2.5 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-amber px-1 text-[9px] font-extrabold leading-none text-surface-page">{totalPending > 99 ? "99+" : totalPending}</span>}
         </button>
         <Link href="/admin/settings" aria-label="관리자 설정" className="text-text-primary"><SettingsIcon /></Link>
       </div>
