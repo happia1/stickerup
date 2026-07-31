@@ -98,12 +98,50 @@ export async function POST(request: Request) {
   const authorized = await getAuthorizedTeacher(request);
   if ("error" in authorized) return NextResponse.json({ error: authorized.error }, { status: authorized.status });
   const { db, teacher } = authorized;
-  const body = await request.json() as { type?: "attendance" | "homework"; studentId?: string; classId?: string; checkDate?: string; tier?: string; count?: number };
-  if (!body.type || !body.studentId || !body.checkDate || !body.tier || !/^\d{4}-\d{2}-\d{2}$/.test(body.checkDate) || body.checkDate > koreaDateKey()) {
+  const body = await request.json() as { type?: ApprovalType; studentId?: string; classId?: string; checkDate?: string; tier?: string; count?: number; reason?: string };
+  if (!body.type || !body.studentId || !body.checkDate || (body.type !== "praise" && !body.tier) || !/^\d{4}-\d{2}-\d{2}$/.test(body.checkDate) || body.checkDate > koreaDateKey()) {
     return NextResponse.json({ error: "학생, 날짜, 신청 내용을 확인해 주세요." }, { status: 400 });
   }
   const student = await db.from("students").select("id").eq("id", body.studentId).eq("tenant_id", teacher.tenant_id).maybeSingle();
   if (!student.data) return NextResponse.json({ error: "이 학원의 학생을 찾을 수 없습니다." }, { status: 404 });
+
+  const timestamp = sourceTimestamp(body.checkDate);
+  const requestedCount = Math.min(100, Math.max(0, Math.round(body.count ?? 2)));
+  if (body.type === "praise") {
+    const reason = body.reason?.trim();
+    if (!reason) return NextResponse.json({ error: "칭찬 사유를 입력해 주세요." }, { status: 400 });
+    const duplicate = await db.from("praise_requests")
+      .select("id")
+      .eq("student_id", body.studentId)
+      .gte("requested_at", `${body.checkDate}T00:00:00+09:00`)
+      .lte("requested_at", `${body.checkDate}T23:59:59.999+09:00`)
+      .neq("approval_status", "rejected")
+      .limit(1)
+      .maybeSingle();
+    if (duplicate.error) return NextResponse.json({ error: duplicate.error.message }, { status: 400 });
+    if (duplicate.data) return NextResponse.json({ error: "해당 날짜에 이미 신청 또는 지급된 칭찬 기록이 있습니다." }, { status: 409 });
+    const defaultClass = await db.from("classes").select("id").eq("tenant_id", teacher.tenant_id).eq("is_default", true).eq("status", "active").maybeSingle();
+    if (!defaultClass.data) return NextResponse.json({ error: "스티커를 지급할 기본 소속 반을 찾을 수 없습니다." }, { status: 400 });
+    const praise = await db.from("praise_requests").insert({
+      tenant_id: teacher.tenant_id,
+      student_id: body.studentId,
+      class_id: null,
+      category: "teacher_direct",
+      reason,
+      sticker_count: requestedCount,
+      approval_status: "approved",
+      approver_id: teacher.id,
+      requested_at: timestamp,
+      approved_at: new Date().toISOString(),
+    }).select("id").single();
+    if (praise.error || !praise.data) return NextResponse.json({ error: praise.error?.message ?? "칭찬 기록을 저장하지 못했습니다." }, { status: 400 });
+    const ledger = await db.from("sticker_ledger").insert({ tenant_id: teacher.tenant_id, student_id: body.studentId, class_id: defaultClass.data.id, source_type: "praise", source_id: praise.data.id, count: requestedCount, status: "active", actor_teacher_id: teacher.id, created_at: timestamp });
+    if (ledger.error) {
+      await db.from("praise_requests").delete().eq("id", praise.data.id);
+      return NextResponse.json({ error: ledger.error.message }, { status: 400 });
+    }
+    return NextResponse.json({ ok: true });
+  }
 
   const policy = body.type === "attendance" ? DEFAULT_ATTENDANCE_TIERS : DEFAULT_HOMEWORK_TIERS;
   const tier = policy.find((item) => item.tier === body.tier);
@@ -128,7 +166,6 @@ export async function POST(request: Request) {
   if (duplicate.error) return NextResponse.json({ error: duplicate.error.message }, { status: 400 });
   if (duplicate.data && duplicate.data.approval_status !== "rejected") return NextResponse.json({ error: "해당 날짜에 이미 신청 또는 지급된 기록이 있습니다." }, { status: 409 });
 
-  const timestamp = sourceTimestamp(body.checkDate);
   let source;
   if (body.type === "attendance") {
     const values = { tenant_id: teacher.tenant_id, student_id: body.studentId, class_id: classId, check_date: body.checkDate, checked_at: timestamp, tier: body.tier, sticker_count: count, approval_status: "approved", approver_id: teacher.id, approved_at: new Date().toISOString() };

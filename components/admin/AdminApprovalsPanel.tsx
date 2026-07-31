@@ -18,12 +18,13 @@ export default function AdminApprovalsPanel({ embedded = false }: { embedded?: b
   const [edits, setEdits] = useState<Record<string, RequestEdit>>({});
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [directOpen, setDirectOpen] = useState(false);
-  const [directType, setDirectType] = useState<"attendance" | "homework">("attendance");
+  const [directType, setDirectType] = useState<RequestType>("attendance");
   const [directStudentId, setDirectStudentId] = useState("");
   const [directClassId, setDirectClassId] = useState("");
   const [directDate, setDirectDate] = useState(koreaDateKey());
   const [directTier, setDirectTier] = useState(state.attendancePolicy[0]?.tier ?? "on_time");
   const [directCount, setDirectCount] = useState(String(state.attendancePolicy[0]?.count ?? 5));
+  const [directReason, setDirectReason] = useState("");
 
   const pendingAttendance = state.attendanceRecords.filter((item) => item.approval_status === "pending");
   const pendingHomework = state.homeworkSubmissions.filter((item) => item.approval_status === "pending");
@@ -78,17 +79,18 @@ export default function AdminApprovalsPanel({ embedded = false }: { embedded?: b
     }
   }
 
-  function updateDirectType(type: "attendance" | "homework") {
-    const policy = type === "attendance" ? state.attendancePolicy : state.homeworkPolicy;
+  function updateDirectType(type: RequestType) {
+    const policy = type === "attendance" ? state.attendancePolicy : type === "homework" ? state.homeworkPolicy : [];
     setDirectType(type);
     setDirectTier(policy[0]?.tier ?? "");
-    setDirectCount(String(policy[0]?.count ?? 0));
-    if (type === "attendance") setDirectClassId("");
+    setDirectCount(String(policy[0]?.count ?? (type === "praise" ? 2 : 0)));
+    if (type !== "homework") setDirectClassId("");
   }
 
   async function createDirectRecord() {
     if (!directStudentId) return showToast("학생을 선택해 주세요.");
     if (directType === "homework" && !directClassId) return showToast("과제 반을 선택해 주세요.");
+    if (directType === "praise" && !directReason.trim()) return showToast("칭찬 사유를 입력해 주세요.");
     const parsedCount = Number(directCount);
     if (directCount.trim() === "" || !Number.isFinite(parsedCount) || parsedCount < 0 || parsedCount > 100) {
       return showToast("지급할 스티커 수를 0~100 사이로 입력해 주세요.");
@@ -99,12 +101,13 @@ export default function AdminApprovalsPanel({ embedded = false }: { embedded?: b
       const response = await fetch("/api/admin/approvals", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ type: directType, studentId: directStudentId, classId: directClassId || undefined, checkDate: directDate, tier: directTier, count: parsedCount }),
+        body: JSON.stringify({ type: directType, studentId: directStudentId, classId: directClassId || undefined, checkDate: directDate, tier: directTier || undefined, count: parsedCount, reason: directReason.trim() || undefined }),
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? "직접 등록하지 못했습니다.");
       await refreshState(token);
       setDirectOpen(false);
+      setDirectReason("");
       showToast("선생님이 직접 등록하고 스티커를 지급했어요.");
     } catch (error) {
       showToast(error instanceof Error ? error.message : "직접 등록하지 못했습니다.");
@@ -131,10 +134,10 @@ export default function AdminApprovalsPanel({ embedded = false }: { embedded?: b
 
       {directOpen && (
         <section className="mb-5 rounded-xl border border-brand-amber/40 bg-surface-card p-4">
-          <h3 className="mb-3 text-subtitle">학생 출결·과제 직접 등록</h3>
+          <h3 className="mb-3 text-subtitle">학생 스티커 직접 등록</h3>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <label className="text-caption text-text-secondary">유형
-              <select value={directType} onChange={(event) => updateDirectType(event.target.value as "attendance" | "homework")} className="mt-1 w-full rounded-lg border border-border px-2.5 py-2 text-body"><option value="attendance">출석</option><option value="homework">과제</option></select>
+              <select value={directType} onChange={(event) => updateDirectType(event.target.value as RequestType)} className="mt-1 w-full rounded-lg border border-border px-2.5 py-2 text-body"><option value="attendance">출석</option><option value="homework">과제</option><option value="praise">칭찬</option></select>
             </label>
             <label className="text-caption text-text-secondary">학생
               <select value={directStudentId} onChange={(event) => { setDirectStudentId(event.target.value); setDirectClassId(""); }} className="mt-1 w-full rounded-lg border border-border px-2.5 py-2 text-body"><option value="">학생 선택</option>{state.students.map((student) => <option key={student.id} value={student.id}>{student.name}</option>)}</select>
@@ -145,9 +148,12 @@ export default function AdminApprovalsPanel({ embedded = false }: { embedded?: b
             {directType === "homework" && <label className="text-caption text-text-secondary">과제 반
               <select value={directClassId} onChange={(event) => setDirectClassId(event.target.value)} className="mt-1 w-full rounded-lg border border-border px-2.5 py-2 text-body"><option value="">반 선택</option>{directClasses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
             </label>}
-            <label className="text-caption text-text-secondary">{directType === "attendance" ? "출석 기준" : "과제 완료율"}
+            {directType !== "praise" && <label className="text-caption text-text-secondary">{directType === "attendance" ? "출석 기준" : "과제 완료율"}
               <select value={directTier} onChange={(event) => { const policy = directType === "attendance" ? state.attendancePolicy : state.homeworkPolicy; const selected = policy.find((item) => item.tier === event.target.value); setDirectTier(event.target.value); if (selected) setDirectCount(String(selected.count)); }} className="mt-1 w-full rounded-lg border border-border px-2.5 py-2 text-body">{(directType === "attendance" ? state.attendancePolicy : state.homeworkPolicy).map((item) => <option key={item.tier} value={item.tier}>{item.label}</option>)}</select>
-            </label>
+            </label>}
+            {directType === "praise" && <label className="text-caption text-text-secondary sm:col-span-2">칭찬 사유
+              <textarea value={directReason} onChange={(event) => setDirectReason(event.target.value)} placeholder="학생에게 칭찬 스티커를 지급하는 이유를 입력해 주세요." className="mt-1 min-h-20 w-full rounded-lg border border-border px-2.5 py-2 text-body" />
+            </label>}
             <label className="text-caption text-text-secondary">지급 스티커
               <input type="number" min={0} max={100} value={directCount} onChange={(event) => setDirectCount(event.target.value)} className="mt-1 w-full rounded-lg border border-border px-2.5 py-2 text-body" />
             </label>
